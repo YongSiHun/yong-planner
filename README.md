@@ -14,6 +14,8 @@
 
 ```sh
 yarn install                # 의존성 설치
+npx expo install --check     # Expo SDK 패키지 호환성 확인
+npx expo install --fix --yarn # Expo SDK 호환 버전으로 패키지 조정
 yarn start                  # 캐시 초기화 후 개발 서버
 yarn android                # Android 네이티브 실행
 yarn ios                    # iOS 네이티브 실행
