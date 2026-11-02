@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+dist/
+coverage/
+*.tsbuildinfo
+.env*
+android/
+ios/
+.husky/_/
+.cache/
+artifacts/

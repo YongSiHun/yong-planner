@@ -1,0 +1,100 @@
+name: yong-planner-ios
+run-name: ios / ${{ inputs.branch }} / ${{ inputs.environment }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch
+        required: true
+        default: main
+        type: string
+      environment:
+        description: Environment
+        required: true
+        type: choice
+        options: [production, preview, development]
+        default: production
+
+permissions:
+  contents: read
+
+env:
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+  TARGET_ENV: ${{ inputs.environment }}
+  EAS_CLI_VERSION: 27.2.0
+  DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - name: checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: check-build-configuration
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Set the repository secret EXPO_TOKEN."
+            exit 1
+          fi
+          if [ ! -f yarn.lock ]; then
+            echo "::error::Run yarn install with Yarn 1.22.22 and commit yarn.lock before building."
+            exit 1
+          fi
+
+      - name: setup-nodeJS
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: yarn
+          cache-dependency-path: yarn.lock
+
+      - name: setup-yarn-classic
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+          test "$(yarn --version)" = "1.22.22"
+
+      - name: select-xcode
+        run: |
+          sudo xcode-select --switch "$DEVELOPER_DIR"
+          xcodebuild -version
+
+      - name: install-dependencies
+        run: |
+          yarn install --frozen-lockfile
+          yarn global add "eas-cli@$EAS_CLI_VERSION"
+          echo "$(yarn global bin)" >> "$GITHUB_PATH"
+
+      - name: quality-checks
+        run: |
+          yarn lint
+          yarn format:check
+          yarn typecheck
+
+      - name: versioning
+        run: |
+          VERSION=$(yarn --silent expo config --json | jq -er '.version')
+          BUILD=$((100 + GITHUB_RUN_NUMBER))
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "BUILD=$BUILD" >> "$GITHUB_ENV"
+          mkdir -p artifacts
+          echo "Version: $VERSION / Build: $BUILD"
+
+      - name: build-ipa-local
+        run: |
+          OUTPUT="$GITHUB_WORKSPACE/artifacts/yong-planner-$VERSION-$BUILD-$TARGET_ENV.ipa"
+          eas build --platform ios --profile "$TARGET_ENV" --local --non-interactive --output "$OUTPUT"
+          test -s "$OUTPUT"
+
+      - name: upload-artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: yong-planner-${{ env.VERSION }}-${{ env.BUILD }}-${{ inputs.environment }}-ios
+          path: artifacts/*.ipa
+          if-no-files-found: error
+          retention-days: 14

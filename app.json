@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "용플래너",
+    "slug": "yong-planner",
+    "version": "1.0.0",
+    "scheme": "yongplanner",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yongplanner.app"
+    },
+    "android": {
+      "package": "com.yongplanner.app",
+      "softwareKeyboardLayoutMode": "resize",
+      "allowBackup": false
+    },
+    "plugins": ["expo-router", "expo-sqlite", "expo-document-picker"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
