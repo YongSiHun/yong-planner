@@ -13,13 +13,16 @@
 ## Commands
 
 ```sh
-yarn install           # 의존성 설치
-yarn start             # 개발 서버
-yarn android           # Android 실행
-yarn ios               # iOS 실행
-yarn lint              # ESLint
-yarn format            # 포맷 적용
-yarn typecheck         # TS 검사
-yarn build:android     # Android 빌드
-yarn build:ios         # iOS 빌드
+yarn install                # 의존성 설치
+yarn start                  # 캐시 초기화 후 개발 서버
+yarn android                # Android 네이티브 실행
+yarn ios                    # iOS 네이티브 실행
+yarn prebuild               # 네이티브 프로젝트 생성
+yarn rebuild                # 네이티브 프로젝트 재생성
+yarn apk                    # APK 로컬 빌드
+yarn ipa                    # IPA 로컬 빌드
+yarn submit-ipa ./app.ipa    # IPA 제출
+yarn lint                   # ESLint
+yarn format                 # 포맷 적용
+yarn typecheck              # TS 검사
 ```
