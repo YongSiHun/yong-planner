@@ -1,3 +1,22 @@
+const { withGradleProperties } = require('expo/config-plugins');
+
+function withCmakePathLimit(config) {
+  return withGradleProperties(config, (modConfig) => {
+    const propertyName = 'expo.android.cmakeObjectPathMax';
+    const properties = modConfig.modResults.filter((entry) => entry.key !== propertyName);
+    const isWindows = process.platform === 'win32';
+
+    // 긴 개체 파일 경로를 해시로 줄여 Windows Ninja의 경로 제한을 피한다.
+    if (isWindows) {
+      properties.push({ type: 'property', key: propertyName, value: '240' });
+    }
+
+    modConfig.modResults = properties;
+
+    return modConfig;
+  });
+}
+
 function getBuildNumber(value) {
   const hasBuildNumber = value !== undefined;
 
@@ -18,15 +37,16 @@ function getBuildNumber(value) {
 }
 
 module.exports = function configureApp({ config }) {
+  const nativeConfig = withCmakePathLimit(config);
   const buildNumber = getBuildNumber(process.env.BUILD);
   const hasBuildNumber = buildNumber !== undefined;
 
   if (!hasBuildNumber) {
-    return config;
+    return nativeConfig;
   }
 
   return {
-    ...config,
+    ...nativeConfig,
     ios: { ...config.ios, buildNumber: String(buildNumber) },
     android: { ...config.android, versionCode: buildNumber },
   };
