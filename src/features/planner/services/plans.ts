@@ -1,57 +1,121 @@
 import { reconcileOrder } from './order';
-export { defaultSort, reconcileOrder, moveEntry } from './order';
-import type { PlannerData, PlanEntry, RecurringPlan, RecurringPlanException } from '../types';
+import type {
+  DailyPlanItem,
+  PlannerData,
+  PlanEntry,
+  RecurringPlan,
+  RecurringPlanException,
+} from '../types';
 import type { HolidayService } from '../../../services/holiday';
 import { weekday } from '../../../utils/date';
-export function occursOn(plan: RecurringPlan, date: string, holidays: HolidayService): boolean {
-  if (date < plan.startDate || (plan.endDate !== null && date > plan.endDate)) return false;
-  const holiday = holidays.isHoliday(date);
-  if (plan.holidayPolicy === 'only') return holiday;
-  return plan.weekdays.includes(weekday(date)) && (plan.holidayPolicy !== 'exclude' || !holiday);
+
+function isWithinPeriod(plan: RecurringPlan, date: string): boolean {
+  const hasStarted = date >= plan.startDate;
+  const hasNotEnded = plan.endDate === null || date <= plan.endDate;
+
+  return hasStarted && hasNotEnded;
 }
+
+export function occursOn(plan: RecurringPlan, date: string, holidays: HolidayService): boolean {
+  const isActiveDate = isWithinPeriod(plan, date);
+
+  if (!isActiveDate) {
+    return false;
+  }
+
+  const isHoliday = holidays.isHoliday(date);
+  const usesHolidaysOnly = plan.holidayPolicy === 'only';
+
+  if (usesHolidaysOnly) {
+    return isHoliday;
+  }
+
+  const isSelectedWeekday = plan.weekdays.includes(weekday(date));
+  const isExcludedHoliday = plan.holidayPolicy === 'exclude' && isHoliday;
+
+  return isSelectedWeekday && !isExcludedHoliday;
+}
+
+function findException(data: PlannerData, recurringPlanId: string, date: string) {
+  return data.recurringPlanExceptions.find(
+    (exception) => exception.recurringPlanId === recurringPlanId && exception.date === date,
+  );
+}
+
+function matchesException(
+  exception: RecurringPlanException | undefined,
+  planId: string,
+  date: string,
+): boolean {
+  return exception?.recurringPlanId === planId && exception.date === date;
+}
+
+function getRecurringTime(plan: RecurringPlan, exception?: RecurringPlanException): string | null {
+  const timeOverride = exception?.time;
+  const hasOverride = timeOverride !== undefined;
+
+  if (hasOverride) {
+    return timeOverride;
+  }
+
+  return plan.time;
+}
+
 export function recurringEntry(
   plan: RecurringPlan,
   date: string,
   holidays: HolidayService,
   exception?: RecurringPlanException,
 ): PlanEntry | null {
-  if (exception && (exception.recurringPlanId !== plan.id || exception.date !== date))
-    exception = undefined;
-  if (!occursOn(plan, date, holidays) || exception?.cancelled) return null;
-  const title = exception?.title ?? plan.title;
-  const time = exception?.time !== undefined ? exception.time : plan.time;
+  const hasMatchingException = matchesException(exception, plan.id, date);
+  const applicableException = hasMatchingException ? exception : undefined;
+  const isVisible = occursOn(plan, date, holidays) && !applicableException?.cancelled;
+
+  if (!isVisible) {
+    return null;
+  }
+
+  const title = applicableException?.title ?? plan.title;
+  const time = getRecurringTime(plan, applicableException);
+  const timePrefix = time ? Number(time.slice(0, 2)) + time.slice(2) + ' ' : '';
+
   return {
     id: 'recurring:' + plan.id,
     sourceId: plan.id,
     kind: 'recurring',
     time,
-    content: (time ? Number(time.slice(0, 2)) + time.slice(2) + ' ' : '') + title,
+    content: timePrefix + title,
     sortKey: plan.id,
   };
 }
+
+function createDailyEntry(item: DailyPlanItem): PlanEntry {
+  return {
+    id: 'daily:' + item.id,
+    sourceId: item.id,
+    kind: 'daily',
+    content: item.content,
+    time: null,
+    sortKey: item.createdAt + ':' + item.id,
+  };
+}
+
+function isEntryVisible(entry: PlanEntry | null): entry is PlanEntry {
+  return entry !== null;
+}
+
 export function plansForDate(
   data: PlannerData,
   date: string,
   holidays: HolidayService,
 ): PlanEntry[] {
-  const entries: PlanEntry[] = data.dailyPlanItems
-    .filter((p) => p.date === date)
-    .map((p) => ({
-      id: 'daily:' + p.id,
-      sourceId: p.id,
-      kind: 'daily',
-      content: p.content,
-      time: null,
-      sortKey: p.createdAt + ':' + p.id,
-    }));
-  for (const plan of data.recurringPlans) {
-    const entry = recurringEntry(
-      plan,
-      date,
-      holidays,
-      data.recurringPlanExceptions.find((e) => e.recurringPlanId === plan.id && e.date === date),
-    );
-    if (entry) entries.push(entry);
-  }
-  return reconcileOrder(entries, data.dailyPlanOrders.find((o) => o.date === date)?.itemIds);
+  const dailyEntries = data.dailyPlanItems
+    .filter((item) => item.date === date)
+    .map(createDailyEntry);
+  const recurringEntries = data.recurringPlans
+    .map((plan) => recurringEntry(plan, date, holidays, findException(data, plan.id, date)))
+    .filter(isEntryVisible);
+  const customOrder = data.dailyPlanOrders.find((order) => order.date === date)?.itemIds;
+
+  return reconcileOrder([...dailyEntries, ...recurringEntries], customOrder);
 }

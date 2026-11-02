@@ -15,6 +15,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+function getButtonOpacity(isDisabled: boolean, isPressed: boolean): number {
+  if (isDisabled) {
+    return 0.4;
+  }
+  if (isPressed) {
+    return 0.6;
+  }
+
+  return 1;
+}
+
 export const light = {
   bg: '#FAF9F6',
   text: '#242925',
@@ -36,7 +47,9 @@ export const dark: typeof light = {
   blue: '#8DB8ED',
 };
 export const ThemeContext = createContext(light);
-export const useTheme = () => useContext(ThemeContext);
+export function useTheme() {
+  return useContext(ThemeContext);
+}
 
 export function Label({
   children,
@@ -48,6 +61,7 @@ export function Label({
   style?: object;
 }) {
   const theme = useTheme();
+
   return (
     <Text
       style={[{ color: muted ? theme.muted : theme.text, fontSize: 16, lineHeight: 25 }, style]}
@@ -78,6 +92,7 @@ export function Button({
   style,
 }: ButtonProps) {
   const theme = useTheme();
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -95,7 +110,7 @@ export function Button({
           justifyContent: 'center',
           borderRadius: 10,
           backgroundColor: selected ? theme.selected : 'transparent',
-          opacity: disabled ? 0.4 : pressed ? 0.6 : 1,
+          opacity: getButtonOpacity(disabled, pressed),
         },
         style,
       ]}
@@ -116,13 +131,18 @@ export function Button({
 export function Input(props: TextInputProps) {
   const theme = useTheme();
   const [contentHeight, setContentHeight] = useState(48);
+
   return (
     <TextInput
       {...props}
       placeholderTextColor={theme.muted}
       scrollEnabled={props.multiline ? false : props.scrollEnabled}
       onContentSizeChange={(event) => {
-        if (props.multiline) setContentHeight(Math.max(48, event.nativeEvent.contentSize.height));
+        const isMultiline = Boolean(props.multiline);
+
+        if (isMultiline) {
+          setContentHeight(Math.max(48, event.nativeEvent.contentSize.height));
+        }
         props.onContentSizeChange?.(event);
       }}
       style={[
@@ -156,6 +176,7 @@ export function Sheet({
   scroll?: boolean;
 }) {
   const theme = useTheme();
+
   return (
     <Modal transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
@@ -215,7 +236,5 @@ export function report(error: unknown): void {
 }
 export const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
-  divider: { height: 1 },
-  section: { marginVertical: 16 },
   page: { flex: 1, paddingHorizontal: 20 },
 });

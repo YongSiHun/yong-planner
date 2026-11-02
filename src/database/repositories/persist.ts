@@ -2,36 +2,52 @@ import type { PlannerData } from '../../features/planner/types';
 import { getDatabase, loadData, replaceData } from './planner';
 import { validateData } from '../../services/backup';
 let previous: PlannerData | undefined;
+
+// 비교: 삭제와 변경 목록을 나누어 중첩 분기 제거.
+async function synchronizeRows<T>(
+  before: T[],
+  after: T[],
+  key: (item: T) => string,
+  remove: (item: T) => Promise<unknown>,
+  save: (item: T) => Promise<unknown>,
+): Promise<void> {
+  const previousRows = new Map(before.map((item) => [key(item), JSON.stringify(item)]));
+  const currentKeys = new Set(after.map(key));
+  const removed = before.filter((item) => !currentKeys.has(key(item)));
+  const changed = after.filter((item) => previousRows.get(key(item)) !== JSON.stringify(item));
+
+  for (const item of removed) {
+    await remove(item);
+  }
+  for (const item of changed) {
+    await save(item);
+  }
+}
+
 export async function persistData(input: PlannerData): Promise<void> {
   const data = validateData(input);
   const db = await getDatabase();
   const before = previous ?? (await loadData());
-  const sync = async <T>(
-    old: T[],
-    next: T[],
-    key: (p: T) => string,
-    remove: (p: T) => Promise<unknown>,
-    insert: (p: T) => Promise<unknown>,
-  ) => {
-    const prior = new Map(old.map((p) => [key(p), JSON.stringify(p)]));
-    const current = new Set(next.map(key));
-    for (const p of old) if (!current.has(key(p))) await remove(p);
-    for (const p of next) if (prior.get(key(p)) !== JSON.stringify(p)) await insert(p);
-  };
-  // This connection has foreign_keys enabled. All writes use the store queue;
-  // no unrelated writes can enter this transaction.
+
+  // 저장: 외래 키가 켜진 같은 연결과 직렬 큐 사용.
   await db.withTransactionAsync(async () => {
     const exceptionKeys = new Set(
       data.recurringPlanExceptions.map((e) => JSON.stringify([e.recurringPlanId, e.date])),
     );
-    for (const e of before.recurringPlanExceptions)
-      if (!exceptionKeys.has(JSON.stringify([e.recurringPlanId, e.date])))
-        await db.runAsync(
-          'DELETE FROM recurring_plan_exceptions WHERE recurringPlanId = ? AND date = ?',
-          e.recurringPlanId,
-          e.date,
-        );
-    await sync(
+    const removedExceptions = before.recurringPlanExceptions.filter(
+      (exception) =>
+        !exceptionKeys.has(JSON.stringify([exception.recurringPlanId, exception.date])),
+    );
+
+    for (const exception of removedExceptions) {
+      await db.runAsync(
+        'DELETE FROM recurring_plan_exceptions WHERE recurringPlanId = ? AND date = ?',
+        exception.recurringPlanId,
+        exception.date,
+      );
+    }
+
+    await synchronizeRows(
       before.recurringPlans,
       data.recurringPlans,
       (p) => p.id,
@@ -45,7 +61,7 @@ export async function persistData(input: PlannerData): Promise<void> {
           JSON.stringify(p),
         ),
     );
-    await sync(
+    await synchronizeRows(
       before.dailyPlanItems,
       data.dailyPlanItems,
       (p) => p.id,
@@ -59,7 +75,7 @@ export async function persistData(input: PlannerData): Promise<void> {
           p.createdAt,
         ),
     );
-    await sync(
+    await synchronizeRows(
       before.recurringPlanExceptions,
       data.recurringPlanExceptions,
       (p) => JSON.stringify([p.recurringPlanId, p.date]),
@@ -77,7 +93,7 @@ export async function persistData(input: PlannerData): Promise<void> {
           JSON.stringify(p),
         ),
     );
-    await sync(
+    await synchronizeRows(
       before.dailyPlanOrders,
       data.dailyPlanOrders,
       (p) => p.date,
@@ -89,7 +105,7 @@ export async function persistData(input: PlannerData): Promise<void> {
           JSON.stringify(p),
         ),
     );
-    await sync(
+    await synchronizeRows(
       before.holidayOverrides,
       data.holidayOverrides,
       (p) => p.date,

@@ -1,9 +1,28 @@
 import Holidays from 'date-holidays';
 import type { HolidayOverride } from '../../features/planner/types';
+
 export interface HolidayService {
   isHoliday(date: string): boolean;
   getHolidayName(date: string): string | null;
 }
+
+function collectYearHolidays(holidays: Holidays, year: string): Map<string, string> {
+  const entries = new Map<string, string>();
+  const publicHolidays = holidays
+    .getHolidays(Number(year))
+    .filter((holiday) => holiday.type === 'public');
+
+  publicHolidays.forEach((holiday) => {
+    const date = holiday.date.slice(0, 10);
+    const previousName = entries.get(date);
+    const name = previousName ? previousName + ' · ' + holiday.name : holiday.name;
+
+    entries.set(date, name);
+  });
+
+  return entries;
+}
+
 export function createHolidayService(overrides: HolidayOverride[] = []): HolidayService {
   const holidays = new Holidays('KR', {
     languages: 'ko',
@@ -11,22 +30,32 @@ export function createHolidayService(overrides: HolidayOverride[] = []): Holiday
     types: ['public'],
   });
   const years = new Map<string, Map<string, string>>();
-  const custom = new Map(overrides.map((o) => [o.date, o.name]));
-  const getHolidayName = (date: string): string | null => {
-    if (custom.has(date)) return custom.get(date) ?? null;
-    const year = date.slice(0, 4);
-    if (!years.has(year)) {
-      const entries = new Map<string, string>();
-      for (const h of holidays.getHolidays(Number(year))) {
-        if (h.type === 'public') {
-          const key = h.date.slice(0, 10);
-          const prior = entries.get(key);
-          entries.set(key, prior ? prior + ' · ' + h.name : h.name);
-        }
-      }
-      years.set(year, entries);
+  const customHolidays = new Map(overrides.map((override) => [override.date, override.name]));
+
+  function getYear(year: string): Map<string, string> {
+    const cachedYear = years.get(year);
+    const hasCachedYear = cachedYear !== undefined;
+
+    if (hasCachedYear) {
+      return cachedYear;
     }
-    return years.get(year)?.get(date) ?? null;
-  };
+
+    const entries = collectYearHolidays(holidays, year);
+
+    years.set(year, entries);
+
+    return entries;
+  }
+
+  function getHolidayName(date: string): string | null {
+    const hasOverride = customHolidays.has(date);
+
+    if (hasOverride) {
+      return customHolidays.get(date) ?? null;
+    }
+
+    return getYear(date.slice(0, 4)).get(date) ?? null;
+  }
+
   return { getHolidayName, isHoliday: (date) => getHolidayName(date) !== null };
 }

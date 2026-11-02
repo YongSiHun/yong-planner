@@ -38,49 +38,72 @@ export const usePlanner = create<State>((set, get) => ({
   error: null,
   revision: 0,
   initialize: () => {
-    if (get().ready) return Promise.resolve();
-    if (!initializing) {
-      initializing = loadData()
-        .then((data) => {
-          set({ data, ready: true, error: null });
-        })
-        .catch((error: unknown) => {
-          set({ error: String(error) });
-          throw error;
-        })
-        .finally(() => {
-          initializing = undefined;
-        });
+    const isReady = get().ready;
+
+    if (isReady) {
+      return Promise.resolve();
     }
+
+    const pendingInitialization = initializing;
+    const isInitializing = pendingInitialization !== undefined;
+
+    if (isInitializing) {
+      return pendingInitialization;
+    }
+
+    initializing = loadData()
+      .then((data) => {
+        set({ data, ready: true, error: null });
+      })
+      .catch((error: unknown) => {
+        set({ error: String(error) });
+        throw error;
+      })
+      .finally(() => {
+        initializing = undefined;
+      });
+
     return initializing;
   },
   update: (change, immediate = false) => {
-    if (!get().ready || get().restoring) return;
+    const state = get();
+    const isUnavailable = !state.ready || state.restoring;
+
+    if (isUnavailable) {
+      return;
+    }
     const data = change(get().data);
+
     set({ data, dirty: true, revision: get().revision + 1 });
     clearTimeout(timer);
     if (immediate) {
       void get()
         .flush()
         .catch(() => {});
-    } else {
-      timer = setTimeout(() => {
-        void get()
-          .flush()
-          .catch(() => {});
-      }, 500);
+
+      return;
     }
+
+    timer = setTimeout(() => {
+      void get()
+        .flush()
+        .catch(() => {});
+    }, 500);
   },
   flush: async () => {
     clearTimeout(timer);
     await queue.enqueue(async () => {
-      if (!get().dirty) return;
+      const hasPendingChanges = get().dirty;
+
+      if (!hasPendingChanges) {
+        return;
+      }
       set({ saving: true });
       try {
-        // Edits made during an in-flight write must also be committed before
-        // a date transition or Done action is allowed to complete.
+        // 저장: 진행 중 추가된 입력까지 커밋한 뒤 날짜 이동 허용.
         while (get().dirty) {
           const snapshot = get();
+
           await persistData(snapshot.data);
           set({ dirty: get().revision !== snapshot.revision, error: null });
         }
@@ -94,7 +117,11 @@ export const usePlanner = create<State>((set, get) => ({
   },
   restore: async (input) => {
     const data = validateData(input);
-    if (get().restoring) throw new Error('이미 복원 중입니다.');
+    const isRestoring = get().restoring;
+
+    if (isRestoring) {
+      throw new Error('이미 복원 중입니다.');
+    }
     set({ restoring: true });
     try {
       await get().flush();
@@ -109,11 +136,13 @@ export const usePlanner = create<State>((set, get) => ({
 }));
 
 let lastCreated = 0;
+
 export function addDaily(date: string): string {
   const id = randomUUID();
   const stored = usePlanner
     .getState()
     .data.dailyPlanItems.reduce((latest, item) => Math.max(latest, Date.parse(item.createdAt)), 0);
+
   lastCreated = Math.max(Date.now(), lastCreated + 1, stored + 1);
   usePlanner.getState().update(
     (data) => ({
@@ -130,6 +159,7 @@ export function addDaily(date: string): string {
     }),
     true,
   );
+
   return id;
 }
 export function editDaily(id: string, content: string): void {

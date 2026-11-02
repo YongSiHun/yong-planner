@@ -1,54 +1,123 @@
 import type { PlanEntry } from '../types';
-export function defaultSort(entries: PlanEntry[]): PlanEntry[] {
-  const group = (e: PlanEntry) => (e.kind === 'daily' ? 2 : e.time !== null ? 0 : 1);
-  return [...entries].sort(
-    (a, b) =>
-      group(a) - group(b) ||
-      (group(a) === 0 ? (a.time ?? '').localeCompare(b.time ?? '') : 0) ||
-      a.sortKey.localeCompare(b.sortKey) ||
-      a.id.localeCompare(b.id),
+
+function getEntryGroup(entry: PlanEntry): number {
+  const isDaily = entry.kind === 'daily';
+
+  if (isDaily) {
+    return 2;
+  }
+
+  const hasTime = entry.time !== null;
+
+  return hasTime ? 0 : 1;
+}
+
+function compareEntries(first: PlanEntry, second: PlanEntry): number {
+  const firstGroup = getEntryGroup(first);
+  const groupDifference = firstGroup - getEntryGroup(second);
+  const hasDifferentGroups = groupDifference !== 0;
+
+  if (hasDifferentGroups) {
+    return groupDifference;
+  }
+
+  const isTimedGroup = firstGroup === 0;
+  const timeDifference = isTimedGroup ? (first.time ?? '').localeCompare(second.time ?? '') : 0;
+
+  return (
+    timeDifference ||
+    first.sortKey.localeCompare(second.sortKey) ||
+    first.id.localeCompare(second.id)
   );
 }
-// Preserve the relative order of all surviving custom entries. Insert new entries next
-// to the closest preceding entry in the default order; stale ids remain stored for
-// rules/exceptions that may become active again, but are never rendered.
+
+export function defaultSort(entries: PlanEntry[]): PlanEntry[] {
+  return [...entries].sort(compareEntries);
+}
+
+function insertNewEntry(ids: string[], base: PlanEntry[], index: number): void {
+  const entry = base[index]!;
+  const isPresent = ids.includes(entry.id);
+
+  if (isPresent) {
+    return;
+  }
+
+  const previous = base
+    .slice(0, index)
+    .reverse()
+    .find((candidate) => ids.includes(candidate.id));
+  const insertionIndex = previous ? ids.indexOf(previous.id) + 1 : 0;
+
+  ids.splice(insertionIndex, 0, entry.id);
+}
+
+// 정렬: 기존 상대 순서를 유지하고 새 항목만 삽입.
 export function reconcileOrder(entries: PlanEntry[], custom?: string[]): PlanEntry[] {
   const base = defaultSort(entries);
-  if (!custom) return base;
-  const byId = new Map(base.map((e) => [e.id, e]));
-  const ids = [...new Set(custom)].filter((id) => byId.has(id));
-  for (let i = 0; i < base.length; i++) {
-    const entry = base[i]!;
-    if (ids.includes(entry.id)) continue;
-    const previous = base
-      .slice(0, i)
-      .reverse()
-      .find((e) => ids.includes(e.id));
-    ids.splice(previous ? ids.indexOf(previous.id) + 1 : 0, 0, entry.id);
+  const hasCustomOrder = custom !== undefined;
+
+  if (!hasCustomOrder) {
+    return base;
   }
-  return ids.map((id) => byId.get(id)!);
+
+  const entriesById = new Map(base.map((entry) => [entry.id, entry]));
+  const ids = [...new Set(custom)].filter((id) => entriesById.has(id));
+
+  base.forEach((_, index) => insertNewEntry(ids, base, index));
+
+  return ids.map((id) => entriesById.get(id)!);
 }
+
 export function moveEntry<T>(items: T[], from: number, to: number): T[] {
   const next = [...items];
-  if (from < 0 || from >= items.length || to < 0 || to >= items.length) return next;
+  const hasValidSource = from >= 0 && from < items.length;
+  const hasValidTarget = to >= 0 && to < items.length;
+  const canMove = hasValidSource && hasValidTarget;
+
+  if (!canMove) {
+    return next;
+  }
+
   const [entry] = next.splice(from, 1);
+
   next.splice(to, 0, entry!);
+
   return next;
 }
 
-// Retain temporarily hidden occurrence identifiers when a visible list is dragged.
+function getHiddenInsertionIndex(previous: string[], next: string[], index: number): number {
+  const before = previous
+    .slice(0, index)
+    .reverse()
+    .find((id) => next.includes(id));
+  const hasPrevious = before !== undefined;
+
+  if (hasPrevious) {
+    return next.indexOf(before) + 1;
+  }
+
+  const after = previous.slice(index + 1).find((id) => next.includes(id));
+
+  return after === undefined ? next.length : next.indexOf(after);
+}
+
+function retainHiddenEntry(previous: string[], next: string[], index: number): void {
+  const id = previous[index]!;
+  const isVisible = next.includes(id);
+
+  if (isVisible) {
+    return;
+  }
+
+  next.splice(getHiddenInsertionIndex(previous, next, index), 0, id);
+}
+
+// 예외: 숨겨진 반복 ID도 재정렬 시 보존.
 export function mergeOrderIds(previous: string[], visible: string[]): string[] {
   const next = [...new Set(visible)];
-  for (let index = 0; index < previous.length; index++) {
-    const id = previous[index]!;
-    if (next.includes(id)) continue;
-    const before = previous
-      .slice(0, index)
-      .reverse()
-      .find((key) => next.includes(key));
-    const after = previous.slice(index + 1).find((key) => next.includes(key));
-    const position = before ? next.indexOf(before) + 1 : after ? next.indexOf(after) : next.length;
-    next.splice(position, 0, id);
-  }
+
+  previous.forEach((_, index) => retainHiddenEntry(previous, next, index));
+
   return next;
 }

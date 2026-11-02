@@ -1,51 +1,44 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import {
-  Keyboard,
-  PanResponder,
-  ScrollView,
-  Text,
-  View,
-  type GestureResponderHandlers,
-} from 'react-native';
+import { useCallback, useMemo, type ReactNode } from 'react';
+import { PanResponder, ScrollView, Text, View, type LayoutChangeEvent } from 'react-native';
 import { useTheme } from '../../../components/ui';
-import { moveEntry } from '../services/plans';
-interface Props<T> {
+import { useDragList } from '../hooks/useDragList';
+import type { DragVisual } from '../services/drag';
+
+interface DragListProps<T> {
   items: T[];
   id(item: T): string;
   render(item: T): ReactNode;
   onOrder(items: T[]): void;
   footer?: ReactNode;
 }
-function Handle({
-  start,
-  move,
-  end,
-  cancel,
-  actions,
-}: {
-  start(): void;
-  move(y: number, dy: number): void;
-  end(): void;
-  cancel(): void;
-  actions(direction: number): void;
-}) {
-  const t = useTheme();
-  const current = useRef({ start, move, end, cancel });
-  current.current = { start, move, end, cancel };
-  const responder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => current.current.start(),
-      onPanResponderMove: (_, g) => current.current.move(g.moveY, g.dy),
-      onPanResponderRelease: () => current.current.end(),
-      onPanResponderTerminate: () => current.current.cancel(),
-      onPanResponderTerminationRequest: () => false,
-    }),
-  ).current;
+
+interface DragHandleProps {
+  onStart(): void;
+  onMove(pointer: number, delta: number): void;
+  onEnd(): void;
+  onCancel(): void;
+  onAccessibleMove(direction: number): void;
+}
+
+function DragHandle({ onStart, onMove, onEnd, onCancel, onAccessibleMove }: DragHandleProps) {
+  const theme = useTheme();
+  const responder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: onStart,
+        onPanResponderMove: (_, gesture) => onMove(gesture.moveY, gesture.dy),
+        onPanResponderRelease: onEnd,
+        onPanResponderTerminate: onCancel,
+        onPanResponderTerminationRequest: () => false,
+      }),
+    [onStart, onMove, onEnd, onCancel],
+  );
+
   return (
     <View
-      {...(responder.panHandlers as GestureResponderHandlers)}
+      {...responder.panHandlers}
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel="일정 순서 변경"
@@ -54,151 +47,123 @@ function Handle({
         { name: 'increment', label: '아래로 이동' },
         { name: 'decrement', label: '위로 이동' },
       ]}
-      onAccessibilityAction={(e) => actions(e.nativeEvent.actionName === 'increment' ? 1 : -1)}
+      onAccessibilityAction={(event) =>
+        onAccessibleMove(event.nativeEvent.actionName === 'increment' ? 1 : -1)
+      }
       style={{ width: 44, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}
     >
-      <Text style={{ color: t.muted, fontSize: 23 }}>☰</Text>
+      <Text style={{ color: theme.muted, fontSize: 23 }}>☰</Text>
     </View>
   );
 }
-export function DragList<T>({ items, id, render, onOrder, footer }: Props<T>) {
-  const t = useTheme();
-  const scroll = useRef<ScrollView>(null);
-  const root = useRef<View>(null);
-  const bounds = useRef({ top: 0, height: 0 });
-  const rows = useRef(new Map<string, { y: number; height: number }>());
-  const offset = useRef(0);
-  const contentHeight = useRef(0);
-  const latest = useRef({ items, id, onOrder });
-  latest.current = { items, id, onOrder };
-  const active = useRef<{
-    index: number;
-    startOffset: number;
-    dy: number;
-    pointer: number;
-    target: number;
-  } | null>(null);
-  const [visual, setVisual] = useState<{ index: number; dy: number; target: number } | null>(null);
-  const calculate = () => {
-    const a = active.current;
-    if (!a) return;
-    const current = latest.current;
-    const row = rows.current.get(current.id(current.items[a.index]!));
-    if (!row) return;
-    const delta = a.dy + offset.current - a.startOffset;
-    const center = row.y + row.height / 2 + delta;
-    let target = a.index;
-    let distance = Infinity;
-    current.items.forEach((item, i) => {
-      const r = rows.current.get(current.id(item));
-      if (r && Math.abs(r.y + r.height / 2 - center) < distance) {
-        distance = Math.abs(r.y + r.height / 2 - center);
-        target = i;
-      }
-    });
-    a.target = target;
-    setVisual({ index: a.index, dy: delta, target });
-  };
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const a = active.current;
-      if (!a) return;
-      const b = bounds.current;
-      const direction = a.pointer < b.top + 50 ? -1 : a.pointer > b.top + b.height - 50 ? 1 : 0;
-      if (!direction) return;
-      const next = Math.max(
-        0,
-        Math.min(contentHeight.current - b.height, offset.current + direction * 12),
-      );
-      if (next !== offset.current) {
-        offset.current = next;
-        scroll.current?.scrollTo({ y: next, animated: false });
-        calculate();
-      }
-    }, 40);
-    return () => clearInterval(interval);
-  }, []);
+
+interface DragRowHandlers {
+  handleStart(index: number): void;
+  handleMove(pointer: number, delta: number): void;
+  handleEnd(): void;
+  handleCancel(): void;
+  handleAccessibleMove(index: number, direction: number): void;
+  handleRowLayout(id: string, event: LayoutChangeEvent): void;
+}
+
+function DragRow<T>({
+  item,
+  index,
+  visual,
+  render,
+  itemId,
+  handlers,
+}: {
+  item: T;
+  index: number;
+  visual: DragVisual | null;
+  render(item: T): ReactNode;
+  itemId: string;
+  handlers: DragRowHandlers;
+}) {
+  const theme = useTheme();
+  const isActive = visual?.index === index;
+  const isTarget = visual?.target === index;
+  const translation = isActive ? visual!.dy : 0;
+  const { handleStart, handleAccessibleMove } = handlers;
+
+  const handleDragStart = useCallback(() => handleStart(index), [handleStart, index]);
+  const handleAccessibleDrag = useCallback(
+    (direction: number) => handleAccessibleMove(index, direction),
+    [handleAccessibleMove, index],
+  );
+
   return (
     <View
-      ref={root}
-      style={{ flexShrink: 1, minHeight: 70 }}
-      onLayout={() =>
-        root.current?.measureInWindow((_, y, __, height) => {
-          bounds.current = { top: y, height };
-        })
-      }
+      onLayout={(event) => handlers.handleRowLayout(itemId, event)}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: isActive ? theme.selected : theme.bg,
+        borderTopWidth: 2,
+        borderTopColor: isTarget ? theme.accent : 'transparent',
+        zIndex: isActive ? 2 : 0,
+        transform: [{ translateY: translation }],
+      }}
     >
+      <DragHandle
+        onStart={handleDragStart}
+        onMove={handlers.handleMove}
+        onEnd={handlers.handleEnd}
+        onCancel={handlers.handleCancel}
+        onAccessibleMove={handleAccessibleDrag}
+      />
+      <View style={{ flex: 1, paddingVertical: 5 }}>{render(item)}</View>
+    </View>
+  );
+}
+
+export function DragList<T>({ items, id, render, onOrder, footer }: DragListProps<T>) {
+  const {
+    rootRef,
+    scrollRef,
+    visual,
+    isDragging,
+    handleMeasure,
+    handleStart,
+    handleMove,
+    handleEnd,
+    handleCancel,
+    handleAccessibleMove,
+    handleRowLayout,
+    handleScroll,
+    handleContentSizeChange,
+  } = useDragList(items, id, onOrder);
+  const handlers = {
+    handleStart,
+    handleMove,
+    handleEnd,
+    handleCancel,
+    handleAccessibleMove,
+    handleRowLayout,
+  };
+
+  return (
+    <View ref={rootRef} style={{ flexShrink: 1, minHeight: 70 }} onLayout={handleMeasure}>
       <ScrollView
-        ref={scroll}
+        ref={scrollRef}
         keyboardShouldPersistTaps="handled"
-        scrollEnabled={!visual}
+        scrollEnabled={!isDragging}
         scrollEventThrottle={16}
-        onScroll={(e) => {
-          offset.current = e.nativeEvent.contentOffset.y;
-        }}
-        onContentSizeChange={(_, h) => {
-          contentHeight.current = h;
-        }}
+        onScroll={handleScroll}
+        onContentSizeChange={handleContentSizeChange}
         contentContainerStyle={{ paddingBottom: 24 }}
       >
         {items.map((item, index) => (
-          <View
+          <DragRow
             key={id(item)}
-            onLayout={(e) =>
-              rows.current.set(id(item), {
-                y: e.nativeEvent.layout.y,
-                height: e.nativeEvent.layout.height,
-              })
-            }
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: visual?.index === index ? t.selected : t.bg,
-              borderTopWidth: 2,
-              borderTopColor: visual?.target === index ? t.accent : 'transparent',
-              zIndex: visual?.index === index ? 2 : 0,
-              transform: [{ translateY: visual?.index === index ? visual.dy : 0 }],
-            }}
-          >
-            <Handle
-              start={() => {
-                Keyboard.dismiss();
-                root.current?.measureInWindow((_, y, __, height) => {
-                  bounds.current = { top: y, height };
-                });
-                active.current = {
-                  index,
-                  startOffset: offset.current,
-                  dy: 0,
-                  pointer: bounds.current.top + bounds.current.height / 2,
-                  target: index,
-                };
-                setVisual({ index, dy: 0, target: index });
-              }}
-              move={(pointer, dy) => {
-                if (active.current) {
-                  active.current.pointer = pointer;
-                  active.current.dy = dy;
-                  calculate();
-                }
-              }}
-              end={() => {
-                const a = active.current;
-                active.current = null;
-                setVisual(null);
-                if (a && a.index !== a.target) onOrder(moveEntry(items, a.index, a.target));
-              }}
-              cancel={() => {
-                active.current = null;
-                setVisual(null);
-              }}
-              actions={(direction) => {
-                if (index + direction >= 0 && index + direction < items.length)
-                  onOrder(moveEntry(items, index, index + direction));
-              }}
-            />
-            <View style={{ flex: 1, paddingVertical: 5 }}>{render(item)}</View>
-          </View>
+            itemId={id(item)}
+            item={item}
+            index={index}
+            visual={visual}
+            handlers={handlers}
+            render={render}
+          />
         ))}
         {footer}
       </ScrollView>

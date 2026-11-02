@@ -11,27 +11,40 @@ import { validateData } from '../../services/backup';
 import { migrate } from '../migrations';
 import { replaceRows } from './transactions';
 let database: Promise<SQLiteDatabase> | undefined;
+
+async function openPlannerDatabase(): Promise<SQLiteDatabase> {
+  const connection = await openDatabaseAsync('yong-planner.db');
+
+  try {
+    await migrate(connection);
+
+    return connection;
+  } catch (error) {
+    await connection.closeAsync().catch(() => {});
+    throw error;
+  }
+}
+
 export function getDatabase(): Promise<SQLiteDatabase> {
-  if (!database)
-    database = openDatabaseAsync('yong-planner.db')
-      .then(async (db) => {
-        try {
-          await migrate(db);
-          return db;
-        } catch (error) {
-          await db.closeAsync().catch(() => {});
-          throw error;
-        }
-      })
-      .catch((error) => {
-        database = undefined;
-        throw error;
-      });
+  const connection = database;
+  const hasConnection = connection !== undefined;
+
+  if (hasConnection) {
+    return connection;
+  }
+
+  database = openPlannerDatabase().catch((error) => {
+    database = undefined;
+    throw error;
+  });
+
   return database;
 }
+
 export async function loadData(): Promise<PlannerData> {
   const db = await getDatabase();
   const result = emptyData();
+
   result.dailyPlanItems = await db.getAllAsync<DailyPlanItem>(
     'SELECT * FROM daily_plan_items ORDER BY createdAt, id',
   );
@@ -39,18 +52,20 @@ export async function loadData(): Promise<PlannerData> {
     (await db.getAllAsync<{ payload: string }>('SELECT payload FROM ' + table)).map(
       (r) => JSON.parse(r.payload) as T,
     );
+
   result.recurringPlans = await payloads('recurring_plans');
   result.recurringPlanExceptions = await payloads('recurring_plan_exceptions');
   result.dailyPlanOrders = await payloads('daily_plan_orders');
   result.holidayOverrides = await payloads('holiday_overrides');
   result.settings = (await payloads<PlannerData['settings']>('settings'))[0] ?? result.settings;
+
   return validateData(result);
 }
-// Called only by the store's serialized writer. A whole snapshot is atomic;
-// transaction failure leaves the previous data intact.
+// 복원: 직렬 저장 큐 안에서 전체 데이터를 원자적으로 교체.
 export async function replaceData(input: PlannerData): Promise<void> {
   const data = validateData(input);
   const db = await getDatabase();
+
   await db.withTransactionAsync(async () => {
     await replaceRows(db, data);
   });
@@ -75,6 +90,7 @@ export async function queryMonth(month: string): Promise<{
     (await db.getAllAsync<{ payload: string }>(sql, start, end)).map(
       (r) => JSON.parse(r.payload) as T,
     );
+
   return {
     daily: await queryDailyRange(start, end),
     recurring: (
