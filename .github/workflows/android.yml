@@ -1,5 +1,6 @@
 name: yong-planner-android
-run-name: android / ${{ inputs.branch }} / ${{ inputs.environment }} / ${{ inputs.build_type }}
+
+run-name: yong-planner-android-build
 
 on:
   workflow_dispatch:
@@ -8,37 +9,41 @@ on:
         description: Branch
         required: true
         default: main
-        type: string
+
       environment:
-        description: Environment
-        required: true
+        description: Environments
         type: choice
-        options: [production, preview, development]
+        options:
+          - production
+          - preview
+          - development
         default: production
+
       build_type:
-        description: Build type
-        required: true
+        description: Build Type
         type: choice
-        options: [both, apk, aab]
+        options:
+          - both
+          - apk
+          - aab
         default: both
+
+env:
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
 permissions:
   contents: read
 
-env:
-  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-  TARGET_ENV: ${{ inputs.environment }}
-  EAS_CLI_VERSION: 27.2.0
-
 jobs:
   build:
     runs-on: ubuntu-24.04
+
     timeout-minutes: 90
+
     steps:
-      - name: checkout
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.event.inputs.branch }}
 
       - name: check-build-configuration
         run: |
@@ -56,13 +61,6 @@ jobs:
         with:
           node-version-file: .node-version
           cache: yarn
-          cache-dependency-path: yarn.lock
-
-      - name: setup-yarn-classic
-        run: |
-          corepack enable
-          corepack prepare yarn@1.22.22 --activate
-          test "$(yarn --version)" = "1.22.22"
 
       - name: setup-java
         uses: actions/setup-java@v5
@@ -70,53 +68,87 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: setup-yarn-classic
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+          test "$(yarn --version)" = "1.22.22"
+
       - name: install-dependencies
         run: |
+          npm install -g eas-cli@27.2.0
           yarn install --frozen-lockfile
-          yarn global add "eas-cli@$EAS_CLI_VERSION"
-          echo "$(yarn global bin)" >> "$GITHUB_PATH"
 
       - name: quality-checks
         run: |
           yarn lint
           yarn format:check
           yarn typecheck
+          yarn test
 
       - name: versioning
         run: |
-          VERSION=$(yarn --silent expo config --json | jq -er '.version')
-          BUILD=$((100 + GITHUB_RUN_NUMBER))
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "BUILD=$BUILD" >> "$GITHUB_ENV"
-          mkdir -p artifacts
-          echo "Version: $VERSION / Build: $BUILD"
+          VERSION=$(npx expo config --json | jq -r '.version')
+          BUILD=$((100 + ${{ github.run_number }}))
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "BUILD=$BUILD" >> $GITHUB_ENV
+
+          echo "Version: $VERSION"
+          echo "Build: $BUILD"
 
       - name: build-aab-local
-        if: inputs.build_type == 'aab' || inputs.build_type == 'both'
+        if: github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both'
         env:
-          GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx6g -XX:MaxMetaspaceSize=1g"
+          BUILD: ${{ env.BUILD }}
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx6g -XX:MaxMetaspaceSize=1g'"
         run: |
-          PROFILE="$TARGET_ENV"
-          if [ "$TARGET_ENV" = "development" ]; then
-            PROFILE="development-aab"
+          eas build \
+            -p android \
+            --profile "$(if [ '${{ github.event.inputs.environment }}' = development ]; then echo development-aab; else echo '${{ github.event.inputs.environment }}'; fi)" \
+            --local \
+            --non-interactive
+
+          AAB=$(find . -type f -name "*.aab" | xargs ls -t | head -n 1)
+
+          if [ -z "$AAB" ]; then
+            echo "AAB not found"
+            exit 1
           fi
-          OUTPUT="$GITHUB_WORKSPACE/artifacts/yong-planner-$VERSION-$BUILD-$TARGET_ENV.aab"
-          eas build --platform android --profile "$PROFILE" --local --non-interactive --output "$OUTPUT"
-          test -s "$OUTPUT"
+
+          echo "Found: $AAB"
+
+          cp "$AAB" \
+            "yong-planner-${VERSION}-${BUILD}-${{ github.event.inputs.environment }}.aab"
 
       - name: build-apk-local
-        if: inputs.build_type == 'apk' || inputs.build_type == 'both'
+        if: github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
         env:
-          GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx6g -XX:MaxMetaspaceSize=1g"
+          BUILD: ${{ env.BUILD }}
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx6g -XX:MaxMetaspaceSize=1g'"
         run: |
-          OUTPUT="$GITHUB_WORKSPACE/artifacts/yong-planner-$VERSION-$BUILD-$TARGET_ENV.apk"
-          eas build --platform android --profile "$TARGET_ENV-apk" --local --non-interactive --output "$OUTPUT"
-          test -s "$OUTPUT"
+          eas build \
+            -p android \
+            --profile ${{ github.event.inputs.environment }}-apk \
+            --local \
+            --non-interactive
+
+          APK=$(find . -type f -name "*.apk" | xargs ls -t | head -n 1)
+
+          if [ -z "$APK" ]; then
+            echo "APK not found"
+            exit 1
+          fi
+
+          echo "Found: $APK"
+
+          cp "$APK" \
+            "yong-planner-${VERSION}-${BUILD}-${{ github.event.inputs.environment }}.apk"
 
       - name: upload-artifact
         uses: actions/upload-artifact@v5
         with:
-          name: yong-planner-${{ env.VERSION }}-${{ env.BUILD }}-${{ inputs.environment }}-android
-          path: artifacts/*
-          if-no-files-found: error
-          retention-days: 14
+          name: yong-planner-${{ env.VERSION }}-${{ env.BUILD }}-${{ github.event.inputs.environment }}-and
+          path: |
+            yong-planner-${{ env.VERSION }}-${{ env.BUILD }}-${{ github.event.inputs.environment }}.aab
+            yong-planner-${{ env.VERSION }}-${{ env.BUILD }}-${{ github.event.inputs.environment }}.apk

@@ -1,5 +1,6 @@
 name: yong-planner-ios
-run-name: ios / ${{ inputs.branch }} / ${{ inputs.environment }}
+
+run-name: yong-planner-ios-build
 
 on:
   workflow_dispatch:
@@ -8,32 +9,33 @@ on:
         description: Branch
         required: true
         default: main
-        type: string
+
       environment:
-        description: Environment
-        required: true
+        description: Environments
         type: choice
-        options: [production, preview, development]
+        options:
+          - production
+          - preview
+          - development
         default: production
+
+env:
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
 permissions:
   contents: read
 
-env:
-  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-  TARGET_ENV: ${{ inputs.environment }}
-  EAS_CLI_VERSION: 27.2.0
-  DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
-
 jobs:
   build:
     runs-on: macos-26
+
     timeout-minutes: 90
+
     steps:
       - name: checkout
         uses: actions/checkout@v5
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.event.inputs.branch }}
 
       - name: check-build-configuration
         run: |
@@ -51,7 +53,11 @@ jobs:
         with:
           node-version-file: .node-version
           cache: yarn
-          cache-dependency-path: yarn.lock
+
+      - name: Select Xcode 26.6
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+          xcodebuild -version
 
       - name: setup-yarn-classic
         run: |
@@ -59,42 +65,55 @@ jobs:
           corepack prepare yarn@1.22.22 --activate
           test "$(yarn --version)" = "1.22.22"
 
-      - name: select-xcode
-        run: |
-          sudo xcode-select --switch "$DEVELOPER_DIR"
-          xcodebuild -version
-
       - name: install-dependencies
         run: |
+          npm install -g eas-cli@27.2.0
           yarn install --frozen-lockfile
-          yarn global add "eas-cli@$EAS_CLI_VERSION"
-          echo "$(yarn global bin)" >> "$GITHUB_PATH"
 
       - name: quality-checks
         run: |
           yarn lint
           yarn format:check
           yarn typecheck
+          yarn test
 
       - name: versioning
         run: |
-          VERSION=$(yarn --silent expo config --json | jq -er '.version')
-          BUILD=$((100 + GITHUB_RUN_NUMBER))
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "BUILD=$BUILD" >> "$GITHUB_ENV"
-          mkdir -p artifacts
-          echo "Version: $VERSION / Build: $BUILD"
+          VERSION=$(npx expo config --json | jq -r '.version')
+          BUILD=$((100 + ${{ github.run_number }}))
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "BUILD=$BUILD" >> $GITHUB_ENV
+
+          echo "Version: $VERSION"
+          echo "Build: $BUILD"
 
       - name: build-ipa-local
+        env:
+          BUILD: ${{ env.BUILD }}
+          DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
         run: |
-          OUTPUT="$GITHUB_WORKSPACE/artifacts/yong-planner-$VERSION-$BUILD-$TARGET_ENV.ipa"
-          eas build --platform ios --profile "$TARGET_ENV" --local --non-interactive --output "$OUTPUT"
-          test -s "$OUTPUT"
+          eas build \
+            -p ios \
+            --profile ${{ github.event.inputs.environment }} \
+            --local \
+            --non-interactive
+
+          IPA=$(find . -type f -name "*.ipa" | xargs ls -t | head -n 1)
+
+          if [ -z "$IPA" ]; then
+            echo "IPA not found"
+            exit 1
+          fi
+
+          echo "Found: $IPA"
+
+          cp "$IPA" \
+            "yong-planner-${VERSION}-${BUILD}-${{ github.event.inputs.environment }}.ipa"
 
       - name: upload-artifact
         uses: actions/upload-artifact@v5
         with:
-          name: yong-planner-${{ env.VERSION }}-${{ env.BUILD }}-${{ inputs.environment }}-ios
-          path: artifacts/*.ipa
-          if-no-files-found: error
-          retention-days: 14
+          name: yong-planner-${{ env.VERSION }}-${{ env.BUILD }}-${{ github.event.inputs.environment }}-ios
+          path: |
+            yong-planner-${{ env.VERSION }}-${{ env.BUILD }}-${{ github.event.inputs.environment }}.ipa
