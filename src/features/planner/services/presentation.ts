@@ -26,14 +26,3 @@ export function getDateColor(
 
   return defaultColor;
 }
-
-export function getSaveStatus(isSaving: boolean, isDirty: boolean): string {
-  if (isSaving) {
-    return '저장 중…';
-  }
-  if (isDirty) {
-    return '입력 저장 대기';
-  }
-
-  return '저장됨';
-}

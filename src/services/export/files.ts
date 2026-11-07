@@ -1,14 +1,15 @@
+import { Share } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
 import type { PlannerData } from '../../features/planner/types';
-import { today } from '../../utils/date';
+import { monthLabel, today } from '../../utils/date';
 import { monthTxt, monthCsv } from './index';
 import { createBackup, MAX_BACKUP_BYTES, parseBackup } from '../backup';
 import { createHolidayService } from '../holiday';
 
-export type ExportFormat = 'txt' | 'csv' | 'clipboard';
+export type ExportFormat = 'txt' | 'csv' | 'clipboard' | 'share';
 
 const fileTypes: Record<string, string> = {
   'application/json': 'public.json',
@@ -43,6 +44,14 @@ export async function exportMonth(
 
   if (isClipboard) {
     await Clipboard.setStringAsync(content);
+
+    return;
+  }
+
+  const isMessageShare = format === 'share';
+
+  if (isMessageShare) {
+    await Share.share({ title: monthLabel(month) + ' 일정', message: content });
 
     return;
   }

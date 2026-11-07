@@ -119,6 +119,12 @@ function readUniqueList<T>(
   return items;
 }
 
+function optionalDailyTime(value: unknown): { time?: string | null } {
+  const time = readOptionalTime(value);
+
+  return time === undefined ? {} : { time };
+}
+
 function readDailyItem(value: unknown): DailyPlanItem {
   const item = readRecord(value);
 
@@ -127,6 +133,7 @@ function readDailyItem(value: unknown): DailyPlanItem {
     date: readDate(item.date),
     content: readText(item.content),
     createdAt: readCreatedAt(item.createdAt),
+    ...optionalDailyTime(item.time),
   };
 }
 
@@ -262,7 +269,12 @@ function readSettings(value: unknown): Settings {
 
   ensureValid(isTheme, '테마가 올바르지 않습니다.');
 
-  return { theme };
+  const timeFormat = settings.timeFormat;
+  const validFormat = timeFormat === undefined || timeFormat === '12h' || timeFormat === '24h';
+
+  ensureValid(validFormat, '시간 표시 형식이 올바르지 않습니다.');
+
+  return timeFormat === undefined ? { theme } : { theme, timeFormat };
 }
 
 // 복사: 검증한 필드만 새 객체에 반영.

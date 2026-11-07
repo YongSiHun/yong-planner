@@ -49,10 +49,6 @@ function validatedDateKey(date: Date): string {
   return key;
 }
 
-export function shiftDate(date: string, days: number): string {
-  return validatedDateKey(addDays(parseDate(date), days));
-}
-
 export function shiftMonth(date: string, months: number): string {
   return validatedDateKey(addMonths(parseDate(date), months));
 }
@@ -73,20 +69,6 @@ export function monthLabel(date: string): string {
   const parsedDate = parseDate(date);
 
   return parsedDate.getFullYear() + '년 ' + (parsedDate.getMonth() + 1) + '월';
-}
-
-export function dayLabel(date: string): string {
-  const parsedDate = parseDate(date);
-
-  return (
-    parsedDate.getMonth() +
-    1 +
-    '월 ' +
-    parsedDate.getDate() +
-    '일 ' +
-    weekdays[parsedDate.getDay()] +
-    '요일'
-  );
 }
 
 export function validTime(value: unknown): value is string | null {

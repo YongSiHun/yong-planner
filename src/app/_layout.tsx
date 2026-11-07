@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { AppState, useColorScheme, View } from 'react-native';
 import { Stack } from 'expo-router';
+import { useFonts } from 'expo-font';
+import { appFonts } from '../components/ui/fonts';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { usePlanner } from '../stores/planner';
-import { Button, Label, ThemeContext, light, dark, useTheme } from '../components/ui';
+import { Button, Label, ThemeContext, light, dark, useTheme, design } from '../components/ui';
 
 function initializePlanner() {
   void usePlanner
@@ -66,7 +68,12 @@ function RootNavigation() {
     <Stack
       screenOptions={{
         headerStyle: { backgroundColor: theme.bg },
-        headerTintColor: theme.text,
+        headerTintColor: theme.accent,
+        headerTitleStyle: {
+          fontFamily: design.font.bold,
+          fontWeight: 'normal',
+          fontSize: design.type.title,
+        },
         contentStyle: { backgroundColor: theme.bg },
         headerShadowVisible: false,
       }}
@@ -79,6 +86,8 @@ function RootNavigation() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts(appFonts);
+  const canShowContent = fontsLoaded || fontError !== null;
   const setting = usePlanner((state) => state.data.settings.theme);
   const systemTheme = useColorScheme();
   const followsSystem = setting === 'system';
@@ -92,7 +101,11 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeContext.Provider value={theme}>
         <StatusBar style={isDarkTheme ? 'light' : 'dark'} />
-        <RootNavigation />
+        {canShowContent ? (
+          <RootNavigation />
+        ) : (
+          <View style={{ flex: 1, backgroundColor: theme.bg }} />
+        )}
       </ThemeContext.Provider>
     </SafeAreaProvider>
   );

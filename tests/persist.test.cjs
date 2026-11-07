@@ -2,11 +2,11 @@ require('./register.cjs');
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { DatabaseSync } = require('node:sqlite');
-const { initialSchema } = require('../src/database/migrations/index.ts');
+const { initialSchema, addDailyTime } = require('../src/database/migrations/index.ts');
 const { replaceRows } = require('../src/database/repositories/transactions.ts');
 const { emptyData } = require('../src/features/planner/types/index.ts');
 const sqlite = new DatabaseSync(':memory:');
-sqlite.exec('PRAGMA foreign_keys = ON;' + initialSchema);
+sqlite.exec('PRAGMA foreign_keys = ON;' + initialSchema + addDailyTime);
 const statements = [];
 let failNextWrite = false;
 const database = {
@@ -120,5 +120,31 @@ test('failed transaction rolls back and the same change can be retried', async (
   assert.equal(
     sqlite.prepare('SELECT count(*) AS count FROM recurring_plan_exceptions').get().count,
     0,
+  );
+});
+
+test('daily time and format-only settings changes persist in SQLite', async () => {
+  const data = await seed();
+  const next = {
+    ...data,
+    dailyPlanItems: [
+      {
+        id: 'meal',
+        date: '2026-11-07',
+        content: '식사',
+        createdAt: '2026-11-01T00:00:00.000Z',
+        time: '13:00',
+      },
+    ],
+    settings: { ...data.settings, timeFormat: '12h' },
+  };
+  await persistData(next);
+  assert.equal(
+    sqlite.prepare('SELECT time FROM daily_plan_items WHERE id = ?').get('meal').time,
+    '13:00',
+  );
+  assert.equal(
+    JSON.parse(sqlite.prepare('SELECT payload FROM settings').get().payload).timeFormat,
+    '12h',
   );
 });

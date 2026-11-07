@@ -1,3 +1,4 @@
+import { displayPlanEntry } from '../../features/planner/services/time';
 import { csvCell, wrapText } from './text';
 import type { PlannerData } from '../../features/planner/types';
 import type { HolidayService } from '../holiday';
@@ -17,7 +18,7 @@ export function monthTxt(
       .map((date) =>
         wrapText(
           plansForDate(data, date, holidays)
-            .map((e) => e.content)
+            .map((e) => displayPlanEntry(e, data.settings.timeFormat ?? '24h'))
             .join(', '),
           Number(date.slice(8)) + weekdays[weekday(date)]! + ' ',
           columns,
@@ -36,7 +37,7 @@ export function monthCsv(data: PlannerData, month: string, holidays: HolidayServ
           weekdays[weekday(date)],
           csvCell(
             plansForDate(data, date, holidays)
-              .map((e) => e.content)
+              .map((e) => displayPlanEntry(e, data.settings.timeFormat ?? '24h'))
               .join(', '),
           ),
         ].join(','),

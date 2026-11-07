@@ -7,16 +7,24 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yongplanner.app"
+      "bundleIdentifier": "com.yongplanner.app",
+      "icon": "./assets/icon-sky.png"
     },
     "android": {
       "package": "com.yongplanner.app",
       "softwareKeyboardLayoutMode": "resize",
-      "allowBackup": false
+      "allowBackup": false,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon-sky.png",
+        "backgroundColor": "#79BDEB"
+      }
     },
     "plugins": ["expo-router", "expo-sqlite", "expo-document-picker"],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "icon": "./assets/icon-sky.png",
+    "primaryColor": "#1F6EAC",
+    "orientation": "default"
   }
 }

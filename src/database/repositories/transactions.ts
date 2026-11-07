@@ -9,11 +9,12 @@ export async function replaceRows(tx: WriteDatabase, data: PlannerData): Promise
   );
   for (const p of data.dailyPlanItems) {
     await tx.runAsync(
-      'INSERT INTO daily_plan_items VALUES (?, ?, ?, ?)',
+      'INSERT INTO daily_plan_items (id, date, content, createdAt, time) VALUES (?, ?, ?, ?, ?)',
       p.id,
       p.date,
       p.content,
       p.createdAt,
+      p.time ?? null,
     );
   }
   for (const p of data.recurringPlans) {

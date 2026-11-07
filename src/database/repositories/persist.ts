@@ -53,11 +53,12 @@ export async function persistData(input: PlannerData): Promise<void> {
       (p) => db.runAsync('DELETE FROM daily_plan_items WHERE id = ?', p.id),
       (p) =>
         db.runAsync(
-          'INSERT INTO daily_plan_items VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET date=excluded.date, content=excluded.content, createdAt=excluded.createdAt',
+          'INSERT INTO daily_plan_items (id, date, content, createdAt, time) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET date=excluded.date, content=excluded.content, createdAt=excluded.createdAt, time=excluded.time',
           p.id,
           p.date,
           p.content,
           p.createdAt,
+          p.time ?? null,
         ),
     );
     await synchronizeRows(
@@ -102,7 +103,7 @@ export async function persistData(input: PlannerData): Promise<void> {
           JSON.stringify(p),
         ),
     );
-    const settingsChanged = before.settings.theme !== data.settings.theme;
+    const settingsChanged = JSON.stringify(before.settings) !== JSON.stringify(data.settings);
 
     if (settingsChanged) {
       await db.runAsync(

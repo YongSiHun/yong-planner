@@ -16,7 +16,7 @@
     "ipa": "eas build --platform ios --profile production --local",
     "submit-ipa": "eas submit --platform ios --profile production --path",
     "eas-build-pre-install": "corepack enable",
-    "prebuild": "npx expo prebuild",
+    "prebuild": "npx expo prebuild --no-clean",
     "rebuild": "npx expo prebuild --clean",
     "prepare": "husky",
     "lint": "eslint .",
@@ -46,7 +46,9 @@
     "zustand": "5.0.16",
     "date-fns": "4.1.0",
     "date-holidays": "3.38.0",
-    "expo-dev-client": "~58.0.18"
+    "expo-dev-client": "~58.0.18",
+    "expo-font": "~58.0.11",
+    "@expo/vector-icons": "^15.0.2"
   },
   "devDependencies": {
     "@types/react": "~19.3.0",

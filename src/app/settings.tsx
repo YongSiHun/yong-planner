@@ -1,7 +1,9 @@
+import { TimeFormatSettings } from '../features/settings/components/TimeFormatSettings';
 import { useRef, useState } from 'react';
 import { Alert, ScrollView, View } from 'react-native';
 import Constants from 'expo-constants';
-import { Button, Label, report, styles, useTheme } from '../components/ui';
+import fontNotice from '../../assets/fonts/NOTICE.json';
+import { Button, Label, Sheet, report, styles, useTheme } from '../components/ui';
 import { usePlanner } from '../stores/planner';
 import { backupFile, chooseBackup } from '../services/export/files';
 import { HolidayOverrides } from '../features/settings/components/HolidayOverrides';
@@ -17,7 +19,9 @@ function ThemeSettings() {
   const selectedTheme = usePlanner((state) => state.data.settings.theme);
 
   function handleThemeChange(theme: PlannerData['settings']['theme']) {
-    usePlanner.getState().update((data) => ({ ...data, settings: { theme } }), true);
+    usePlanner
+      .getState()
+      .update((data) => ({ ...data, settings: { ...data.settings, theme } }), true);
   }
 
   return (
@@ -126,6 +130,7 @@ function BackupSettings() {
 
 export default function SettingsScreen() {
   const theme = useTheme();
+  const [licenseOpen, setLicenseOpen] = useState(false);
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
   return (
@@ -134,6 +139,7 @@ export default function SettingsScreen() {
       contentContainerStyle={{ paddingBottom: 40, gap: 16 }}
     >
       <ThemeSettings />
+      <TimeFormatSettings />
       <View style={{ height: 1, backgroundColor: theme.line }} />
 
       <BackupSettings />
@@ -142,6 +148,15 @@ export default function SettingsScreen() {
       <HolidayOverrides />
 
       <Label muted>용플래너 {version}</Label>
+      <Button compact title="Pretendard 글꼴 라이선스" onPress={() => setLicenseOpen(true)} />
+      {licenseOpen ? (
+        <Sheet title="Pretendard" onClose={() => setLicenseOpen(false)} scroll>
+          <Label muted>{fontNotice.copyright}</Label>
+          <Label muted style={{ fontSize: 12, lineHeight: 18 }}>
+            {fontNotice.license}
+          </Label>
+        </Sheet>
+      ) : null}
       <Label muted style={{ fontSize: 12 }}>
         공휴일: date-holidays / commenthol · ISC 및 CC BY 3.0{'\n'}
         github.com/commenthol/date-holidays

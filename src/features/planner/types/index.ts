@@ -2,6 +2,7 @@ export interface DailyPlanItem {
   id: string;
   date: string;
   content: string;
+  time?: string | null;
   createdAt: string;
 }
 export type HolidayPolicy = 'include' | 'exclude' | 'only';
@@ -29,8 +30,10 @@ export interface HolidayOverride {
   date: string;
   name: string | null;
 }
+export type TimeFormat = '12h' | '24h';
 export interface Settings {
   theme: 'system' | 'light' | 'dark';
+  timeFormat?: TimeFormat;
 }
 export interface PlannerData {
   dailyPlanItems: DailyPlanItem[];

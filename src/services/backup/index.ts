@@ -11,7 +11,7 @@ export function parseBackup(json: string): PlannerData {
   ensureValid(hasValidSize, '백업 파일은 50MB 이하여야 합니다.');
 
   const root = readRecord(JSON.parse(json));
-  const isSupportedVersion = root.version === 1;
+  const isSupportedVersion = root.version === 1 || root.version === 2;
 
   ensureValid(isSupportedVersion, '지원하지 않는 백업 버전입니다.');
   readTimestamp(root.exportedAt);
@@ -20,7 +20,7 @@ export function parseBackup(json: string): PlannerData {
 }
 
 export function createBackup(data: PlannerData): string {
-  const backup = { version: 1, exportedAt: new Date().toISOString(), ...validateData(data) };
+  const backup = { version: 2, exportedAt: new Date().toISOString(), ...validateData(data) };
 
   return JSON.stringify(backup, null, 2);
 }

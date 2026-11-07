@@ -1,3 +1,5 @@
+import { validTime } from '../utils/date';
+import { copyNoteToDates, deleteSelectedNotes } from '../features/planner/services/noteSelection';
 import { create } from 'zustand';
 import { randomUUID } from 'expo-crypto';
 import {
@@ -9,7 +11,7 @@ import {
 import { loadData } from '../database/repositories/planner';
 import { persistData, restoreData } from '../database/repositories/persist';
 import { WriteQueue } from './writeQueue';
-import { mergeOrderIds } from '../features/planner/services/order';
+import { applyDailyNote } from '../features/planner/services/note';
 import { validateData } from '../services/backup';
 
 interface State {
@@ -72,7 +74,12 @@ export const usePlanner = create<State>((set, get) => ({
     if (isUnavailable) {
       return;
     }
-    const data = change(get().data);
+    const data = change(state.data);
+    const isUnchanged = data === state.data;
+
+    if (isUnchanged) {
+      return;
+    }
 
     set({ data, dirty: true, revision: get().revision + 1 });
     clearTimeout(timer);
@@ -135,72 +142,6 @@ export const usePlanner = create<State>((set, get) => ({
   },
 }));
 
-let lastCreated = 0;
-
-export function addDaily(date: string): string {
-  const id = randomUUID();
-  const stored = usePlanner
-    .getState()
-    .data.dailyPlanItems.reduce((latest, item) => Math.max(latest, Date.parse(item.createdAt)), 0);
-
-  lastCreated = Math.max(Date.now(), lastCreated + 1, stored + 1);
-  usePlanner.getState().update(
-    (data) => ({
-      ...data,
-      dailyPlanItems: [
-        ...data.dailyPlanItems,
-        {
-          id,
-          date,
-          content: '',
-          createdAt: new Date(lastCreated).toISOString(),
-        },
-      ],
-    }),
-    true,
-  );
-
-  return id;
-}
-export function editDaily(id: string, content: string): void {
-  usePlanner.getState().update((data) => ({
-    ...data,
-    dailyPlanItems: data.dailyPlanItems.map((item) =>
-      item.id === id ? { ...item, content } : item,
-    ),
-  }));
-}
-export function deleteDaily(id: string): void {
-  usePlanner.getState().update(
-    (data) => ({
-      ...data,
-      dailyPlanItems: data.dailyPlanItems.filter((item) => item.id !== id),
-    }),
-    true,
-  );
-}
-export function saveOrder(date: string, itemIds: string[] | null): void {
-  usePlanner.getState().update(
-    (data) => ({
-      ...data,
-      dailyPlanOrders: [
-        ...data.dailyPlanOrders.filter((order) => order.date !== date),
-        ...(itemIds
-          ? [
-              {
-                date,
-                itemIds: mergeOrderIds(
-                  data.dailyPlanOrders.find((order) => order.date === date)?.itemIds ?? [],
-                  itemIds,
-                ),
-              },
-            ]
-          : []),
-      ],
-    }),
-    true,
-  );
-}
 export function saveRecurring(plan: RecurringPlan): void {
   usePlanner.getState().update(
     (data) =>
@@ -239,6 +180,35 @@ export function saveException(
           ...(value ? [value] : []),
         ],
       }),
+    true,
+  );
+}
+
+export function saveDailyNote(date: string, text: string): void {
+  usePlanner.getState().update((data) => applyDailyNote(data, date, text, randomUUID));
+}
+
+export function deleteDailyNotes(ids: ReadonlySet<string>) {
+  usePlanner.getState().update((data) => deleteSelectedNotes(data, ids), true);
+}
+
+export function copyDailyNote(id: string, dates: string[]) {
+  usePlanner.getState().update((data) => copyNoteToDates(data, id, dates, randomUUID), true);
+}
+
+export function saveDailyTime(id: string, time: string | null) {
+  const isValid = validTime(time);
+
+  if (!isValid) {
+    throw new Error('시간을 확인해 주세요.');
+  }
+  usePlanner.getState().update(
+    (data) => ({
+      ...data,
+      dailyPlanItems: data.dailyPlanItems.map((item) =>
+        item.id === id ? { ...item, time } : item,
+      ),
+    }),
     true,
   );
 }

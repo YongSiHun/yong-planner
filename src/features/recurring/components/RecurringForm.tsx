@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Alert, View } from 'react-native';
-import { Button, Input, Label, Sheet, report, styles } from '../../../components/ui';
+import { useState, type ComponentRef } from 'react';
+import { Alert, View, type TextInput } from 'react-native';
+import { Button, Input, Label, report, styles, useTheme, design } from '../../../components/ui';
 import { usePlanner, saveRecurring } from '../../../stores/planner';
 import type { RecurringPlan } from '../../planner/types';
 import { weekdays } from '../../../utils/date';
@@ -85,7 +85,18 @@ function DateFields({
   );
 }
 
-export function RecurringForm({ initial, onClose }: { initial: RecurringPlan; onClose(): void }) {
+export function RecurringForm({
+  initial,
+  onClose,
+  onInputFocus,
+  onInputLayout,
+}: {
+  initial: RecurringPlan;
+  onClose(): void;
+  onInputFocus(input: ComponentRef<typeof TextInput> | null): void;
+  onInputLayout(): void;
+}) {
+  const theme = useTheme();
   const [draft, setDraft] = useState(initial);
   const [calendar, setCalendar] = useState<CalendarField | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -133,9 +144,16 @@ export function RecurringForm({ initial, onClose }: { initial: RecurringPlan; on
   }
 
   return (
-    <Sheet title={title} onClose={handleClose} scroll>
+    <View style={{ gap: design.space.sm, paddingVertical: design.space.sm }}>
+      <View style={styles.row}>
+        <Label style={{ flex: 1, color: theme.accent, fontWeight: '700' }}>{title}</Label>
+        <Button compact title="닫기" onPress={handleClose} />
+      </View>
       <Label>일정 이름</Label>
       <Input
+        onInputFocus={onInputFocus}
+        onContentSizeChange={onInputLayout}
+        onSelectionChange={onInputLayout}
         accessibilityLabel="반복 일정 이름"
         multiline
         value={draft.title}
@@ -145,6 +163,8 @@ export function RecurringForm({ initial, onClose }: { initial: RecurringPlan; on
 
       <Label>시간 · 선택 사항</Label>
       <Input
+        onInputFocus={onInputFocus}
+        onSelectionChange={onInputLayout}
         accessibilityLabel="반복 시간"
         value={draft.time ?? ''}
         onChangeText={(time) => handleChange({ time: time || null })}
@@ -179,10 +199,14 @@ export function RecurringForm({ initial, onClose }: { initial: RecurringPlan; on
       </Label>
 
       {calendar ? (
-        <Sheet title={calendarTitle} onClose={() => setCalendar(null)}>
+        <View style={{ gap: design.space.xs }}>
+          <View style={styles.row}>
+            <Label style={{ flex: 1 }}>{calendarTitle}</Label>
+            <Button compact title="날짜 선택 닫기" onPress={() => setCalendar(null)} />
+          </View>
           <Calendar selected={draft[calendar] ?? draft.startDate} onSelect={handleDateSelect} />
-        </Sheet>
+        </View>
       ) : null}
-    </Sheet>
+    </View>
   );
 }
