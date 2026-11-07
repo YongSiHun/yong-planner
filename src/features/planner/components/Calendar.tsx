@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { Button, Label, styles, useTheme } from '../../../components/ui';
 import { monthDates, monthLabel, shiftMonth, today, weekday, weekdays } from '../../../utils/date';
-import { plansForDate } from '../services/plans';
+import { hasPlansForDate } from '../services/plans';
 import { getDateColor } from '../services/presentation';
 import { usePlanner } from '../../../stores/planner';
 import { useHolidays } from '../hooks/useHolidays';
@@ -43,7 +43,7 @@ function CalendarDate({
   const holidayName = holidays.getHolidayName(date);
   const isHoliday = holidayName !== null;
   const isToday = date === today();
-  const hasPlan = plansForDate(data, date, holidays).length > 0;
+  const hasPlan = hasPlansForDate(data, date, holidays);
   const holidayDescription = isHoliday ? ', ' + holidayName : '';
   const planDescription = hasPlan ? ', 일정 있음' : '';
   const color = getDateColor(date, isHoliday, theme, theme.text);
@@ -97,7 +97,7 @@ export function Calendar({ selected, onSelect }: CalendarProps) {
   const [month, setMonth] = useState(selected);
   const data = usePlanner((state) => state.data);
   const holidays = useHolidays();
-  const dates = monthDates(month);
+  const dates = useMemo(() => monthDates(month), [month]);
   const cells = [...Array<string | null>(weekday(dates[0]!)).fill(null), ...dates];
 
   function handleTodayPress() {

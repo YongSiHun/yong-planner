@@ -31,22 +31,7 @@ export async function persistData(input: PlannerData): Promise<void> {
 
   // 저장: 외래 키가 켜진 같은 연결과 직렬 큐 사용.
   await db.withTransactionAsync(async () => {
-    const exceptionKeys = new Set(
-      data.recurringPlanExceptions.map((e) => JSON.stringify([e.recurringPlanId, e.date])),
-    );
-    const removedExceptions = before.recurringPlanExceptions.filter(
-      (exception) =>
-        !exceptionKeys.has(JSON.stringify([exception.recurringPlanId, exception.date])),
-    );
-
-    for (const exception of removedExceptions) {
-      await db.runAsync(
-        'DELETE FROM recurring_plan_exceptions WHERE recurringPlanId = ? AND date = ?',
-        exception.recurringPlanId,
-        exception.date,
-      );
-    }
-
+    // 부모 삭제에 연결된 예외는 외래 키의 ON DELETE CASCADE로 함께 삭제된다.
     await synchronizeRows(
       before.recurringPlans,
       data.recurringPlans,
@@ -117,10 +102,14 @@ export async function persistData(input: PlannerData): Promise<void> {
           JSON.stringify(p),
         ),
     );
-    await db.runAsync(
-      "INSERT INTO settings VALUES ('app', ?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload",
-      JSON.stringify(data.settings),
-    );
+    const settingsChanged = before.settings.theme !== data.settings.theme;
+
+    if (settingsChanged) {
+      await db.runAsync(
+        "INSERT INTO settings VALUES ('app', ?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload",
+        JSON.stringify(data.settings),
+      );
+    }
   });
   previous = data;
 }

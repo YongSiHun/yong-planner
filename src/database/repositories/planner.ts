@@ -1,11 +1,5 @@
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
-import type {
-  PlannerData,
-  DailyPlanItem,
-  RecurringPlan,
-  RecurringPlanException,
-  DailyPlanOrder,
-} from '../../features/planner/types';
+import type { PlannerData, DailyPlanItem } from '../../features/planner/types';
 import { emptyData } from '../../features/planner/types';
 import { validateData } from '../../services/backup';
 import { migrate } from '../migrations';
@@ -69,40 +63,4 @@ export async function replaceData(input: PlannerData): Promise<void> {
   await db.withTransactionAsync(async () => {
     await replaceRows(db, data);
   });
-}
-export async function queryDailyRange(start: string, end: string): Promise<DailyPlanItem[]> {
-  return (await getDatabase()).getAllAsync(
-    'SELECT * FROM daily_plan_items WHERE date >= ? AND date <= ? ORDER BY date, createdAt, id',
-    start,
-    end,
-  );
-}
-export async function queryMonth(month: string): Promise<{
-  daily: DailyPlanItem[];
-  recurring: RecurringPlan[];
-  exceptions: RecurringPlanException[];
-  orders: DailyPlanOrder[];
-}> {
-  const db = await getDatabase();
-  const start = month + '-01';
-  const end = month + '-31';
-  const payloads = async <T>(sql: string): Promise<T[]> =>
-    (await db.getAllAsync<{ payload: string }>(sql, start, end)).map(
-      (r) => JSON.parse(r.payload) as T,
-    );
-
-  return {
-    daily: await queryDailyRange(start, end),
-    recurring: (
-      await db.getAllAsync<{ payload: string }>(
-        'SELECT payload FROM recurring_plans WHERE startDate <= ? AND (endDate IS NULL OR endDate >= ?)',
-        end,
-        start,
-      )
-    ).map((r) => JSON.parse(r.payload) as RecurringPlan),
-    exceptions: await payloads(
-      'SELECT payload FROM recurring_plan_exceptions WHERE date >= ? AND date <= ?',
-    ),
-    orders: await payloads('SELECT payload FROM daily_plan_orders WHERE date >= ? AND date <= ?'),
-  };
 }

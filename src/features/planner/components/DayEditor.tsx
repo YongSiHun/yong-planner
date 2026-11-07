@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { View } from 'react-native';
 import { Button, Input, Label, Sheet, styles, useTheme } from '../../../components/ui';
 import {
@@ -105,7 +106,10 @@ export function DayEditor(props: DayEditorProps) {
   const holidays = useHolidays();
   const isSaving = usePlanner((state) => state.saving);
   const isDirty = usePlanner((state) => state.dirty);
-  const entries = plansForDate(editor.data, date, holidays);
+  const entries = useMemo(
+    () => plansForDate(editor.data, date, holidays),
+    [editor.data, date, holidays],
+  );
 
   function handleOrderChange(items: PlanEntry[]) {
     saveOrder(

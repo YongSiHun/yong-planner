@@ -27,4 +27,5 @@ yarn submit-ipa ./app.ipa    # IPA 제출
 yarn lint                   # ESLint
 yarn format                 # 포맷 적용
 yarn typecheck              # TS 검사
+yarn test                   # 일정 조회·저장 회귀 테스트
 ```

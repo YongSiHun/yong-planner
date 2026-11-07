@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Label, report, styles, useTheme } from '../components/ui';
@@ -23,7 +23,16 @@ export default function PlannerScreen() {
     useMonthNavigation();
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [menu, setMenu] = useState<PlannerMenuType | null>(null);
-  const dates = monthDates(month);
+  const dates = useMemo(() => monthDates(month), [month]);
+  const dayContents = useMemo(
+    () =>
+      dates.map((date) =>
+        plansForDate(data, date, holidays)
+          .map((entry) => entry.content)
+          .join(', '),
+      ),
+    [data, dates, holidays],
+  );
 
   function handleDateChange(date: string) {
     setEditingDate(date);
@@ -100,13 +109,11 @@ export default function PlannerScreen() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 300 }}
         onContentSizeChange={handleContentSizeChange}
       >
-        {dates.map((date) => (
+        {dates.map((date, index) => (
           <DayRow
             key={date}
             date={date}
-            content={plansForDate(data, date, holidays)
-              .map((entry) => entry.content)
-              .join(', ')}
+            content={dayContents[index]!}
             holidayName={holidays.getHolidayName(date)}
             isToday={date === currentDate}
             onEdit={setEditingDate}

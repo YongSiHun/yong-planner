@@ -1,6 +1,7 @@
 import { reconcileOrder } from './order';
 import type {
   DailyPlanItem,
+  DailyPlanOrder,
   PlannerData,
   PlanEntry,
   RecurringPlan,
@@ -8,6 +9,39 @@ import type {
 } from '../types';
 import type { HolidayService } from '../../../services/holiday';
 import { weekday } from '../../../utils/date';
+
+// 불변 배열을 키로 사용해 변경된 목록의 인덱스만 다시 만든다.
+function createIndex<T>(key: (item: T) => string) {
+  const cache = new WeakMap<T[], Map<string, T[]>>();
+
+  return (items: T[]): Map<string, T[]> => {
+    const cached = cache.get(items);
+    const hasCached = cached !== undefined;
+
+    if (hasCached) {
+      return cached;
+    }
+
+    const index = new Map<string, T[]>();
+
+    items.forEach((item) => {
+      const itemKey = key(item);
+      const bucket = index.get(itemKey) ?? [];
+
+      bucket.push(item);
+      index.set(itemKey, bucket);
+    });
+    cache.set(items, index);
+
+    return index;
+  };
+}
+
+const dailyIndex = createIndex<DailyPlanItem>((item) => item.date);
+const exceptionIndex = createIndex<RecurringPlanException>((item) =>
+  JSON.stringify([item.recurringPlanId, item.date]),
+);
+const orderIndex = createIndex<DailyPlanOrder>((item) => item.date);
 
 function isWithinPeriod(plan: RecurringPlan, date: string): boolean {
   const hasStarted = date >= plan.startDate;
@@ -23,7 +57,7 @@ export function occursOn(plan: RecurringPlan, date: string, holidays: HolidaySer
     return false;
   }
 
-  const isHoliday = holidays.isHoliday(date);
+  const isHoliday = plan.holidayPolicy !== 'include' && holidays.isHoliday(date);
   const usesHolidaysOnly = plan.holidayPolicy === 'only';
 
   if (usesHolidaysOnly) {
@@ -37,9 +71,9 @@ export function occursOn(plan: RecurringPlan, date: string, holidays: HolidaySer
 }
 
 function findException(data: PlannerData, recurringPlanId: string, date: string) {
-  return data.recurringPlanExceptions.find(
-    (exception) => exception.recurringPlanId === recurringPlanId && exception.date === date,
-  );
+  return exceptionIndex(data.recurringPlanExceptions).get(
+    JSON.stringify([recurringPlanId, date]),
+  )?.[0];
 }
 
 function matchesException(
@@ -109,13 +143,26 @@ export function plansForDate(
   date: string,
   holidays: HolidayService,
 ): PlanEntry[] {
-  const dailyEntries = data.dailyPlanItems
-    .filter((item) => item.date === date)
-    .map(createDailyEntry);
+  const dailyEntries = (dailyIndex(data.dailyPlanItems).get(date) ?? []).map(createDailyEntry);
   const recurringEntries = data.recurringPlans
     .map((plan) => recurringEntry(plan, date, holidays, findException(data, plan.id, date)))
     .filter(isEntryVisible);
-  const customOrder = data.dailyPlanOrders.find((order) => order.date === date)?.itemIds;
+  const customOrder = orderIndex(data.dailyPlanOrders).get(date)?.[0]?.itemIds;
 
   return reconcileOrder([...dailyEntries, ...recurringEntries], customOrder);
+}
+
+export function hasPlansForDate(
+  data: PlannerData,
+  date: string,
+  holidays: HolidayService,
+): boolean {
+  const hasDaily = dailyIndex(data.dailyPlanItems).has(date);
+
+  return (
+    hasDaily ||
+    data.recurringPlans.some(
+      (plan) => occursOn(plan, date, holidays) && !findException(data, plan.id, date)?.cancelled,
+    )
+  );
 }

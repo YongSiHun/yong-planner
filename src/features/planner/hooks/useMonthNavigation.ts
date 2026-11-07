@@ -1,4 +1,4 @@
-import { useRef, useState, type ComponentRef } from 'react';
+import { useCallback, useRef, useState, type ComponentRef } from 'react';
 import type { ScrollView } from 'react-native';
 import { shiftMonth, today } from '../../../utils/date';
 
@@ -52,9 +52,9 @@ export function useMonthNavigation() {
     scrollToDate(date, false);
   }
 
-  function handleMeasure(date: string, position: number) {
+  const handleMeasure = useCallback((date: string, position: number) => {
     positions.current.set(date, position);
-  }
+  }, []);
 
   return { month, scrollRef, showDate, handleMonthChange, handleContentSizeChange, handleMeasure };
 }

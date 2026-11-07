@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Pressable, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { useTheme } from '../../../components/ui';
 import { weekday, weekdays } from '../../../utils/date';
@@ -12,7 +13,14 @@ interface DayRowProps {
   onMeasure(date: string, position: number): void;
 }
 
-export function DayRow({ date, content, holidayName, isToday, onEdit, onMeasure }: DayRowProps) {
+export const DayRow = memo(function DayRow({
+  date,
+  content,
+  holidayName,
+  isToday,
+  onEdit,
+  onMeasure,
+}: DayRowProps) {
   const theme = useTheme();
   const { fontScale } = useWindowDimensions();
   const day = weekday(date);
@@ -70,4 +78,4 @@ export function DayRow({ date, content, holidayName, isToday, onEdit, onMeasure 
       </View>
     </Pressable>
   );
-}
+});
