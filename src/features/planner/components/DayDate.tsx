@@ -1,7 +1,8 @@
 import { Keyboard, Pressable, Text, View } from 'react-native';
-import { design, useTheme } from '../../../components/ui';
+import { useTheme } from '../../../components/ui';
 import { weekday, weekdays } from '../../../utils/date';
 import { getDateColor } from '../services/presentation';
+import * as styles from './DayDate.styles';
 
 export function DayDate({
   date,
@@ -49,42 +50,13 @@ export function DayDate({
       accessibilityLabel={dateLabel(date, copying, holidayName)}
       accessibilityState={{ checked: copyTarget, disabled }}
       disabled={disabled}
-      style={{
-        width: 48,
-        minHeight: design.touchTarget,
-        paddingTop: 9,
-        paddingRight: 6,
-        flexDirection: 'row',
-        gap: 4,
-        alignItems: 'flex-start',
-        borderRadius: 6,
-        backgroundColor: copyTarget ? theme.accent : 'transparent',
-        opacity: copyDateOpacity(disabled),
-      }}
+      style={styles.dayDatePressableStyle(copyTarget, theme, disabled)}
     >
       <DateDot visible={hasName} />
-      <Text
-        maxFontSizeMultiplier={1.4}
-        style={{
-          color,
-          fontSize: design.type.small,
-          fontFamily: dateFont(isToday),
-          fontVariant: ['tabular-nums'],
-          textAlign: 'right',
-          width: 20,
-        }}
-      >
+      <Text maxFontSizeMultiplier={1.4} style={styles.dayDateTextStyle(color, isToday)}>
         {Number(date.slice(8))}
       </Text>
-      <Text
-        maxFontSizeMultiplier={1.4}
-        style={{
-          color,
-          fontFamily: design.font.regular,
-          fontSize: design.type.caption,
-          paddingTop: 1,
-        }}
-      >
+      <Text maxFontSizeMultiplier={1.4} style={styles.dayDateTextStyle2(color)}>
         {weekdays[weekday(date)]}
       </Text>
     </Pressable>
@@ -102,14 +74,6 @@ function dateLabel(date: string, copying: boolean, name: string | null) {
     : date + ' ' + weekdays[weekday(date)] + '요일, 키보드 닫기';
 }
 
-function copyDateOpacity(disabled: boolean) {
-  return disabled ? 0.5 : 1;
-}
-
-function dateFont(isToday: boolean) {
-  return isToday ? design.font.bold : design.font.medium;
-}
-
 function DateDot({ visible }: { visible: boolean }) {
   const theme = useTheme();
 
@@ -117,18 +81,5 @@ function DateDot({ visible }: { visible: boolean }) {
     return null;
   }
 
-  return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        top: 3,
-        left: 17,
-        width: 3,
-        height: 3,
-        borderRadius: 2,
-        backgroundColor: theme.accent,
-      }}
-    />
-  );
+  return <View pointerEvents="none" style={styles.dateDotViewStyle(theme)} />;
 }

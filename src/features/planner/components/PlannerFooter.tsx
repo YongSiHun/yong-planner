@@ -1,8 +1,9 @@
-import { CopyBar } from './CopyBar';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { design, useTheme } from '../../../components/ui';
-import type { useNoteSelection } from '../hooks/useNoteSelection';
+import { useTheme } from '../../../components/ui';
+import type { NoteSelectionModel } from '../types/presentation';
+import { CopyBar } from './CopyBar';
+import * as styles from './PlannerFooter.styles';
 import { SelectionBar } from './SelectionBar';
 
 export function PlannerFooter({
@@ -10,7 +11,7 @@ export function PlannerFooter({
   keyboardVisible,
   onToday,
 }: {
-  selection: ReturnType<typeof useNoteSelection>;
+  selection: NoteSelectionModel;
   keyboardVisible: boolean;
   onToday(): void;
 }) {
@@ -36,7 +37,7 @@ export function PlannerFooter({
         onEdit={selection.editSelected}
         onCopy={selection.openCopy}
         onTime={selection.openTime}
-        onDelete={selection.deleteSelected}
+        onDelete={selection.requestDelete}
         onCancel={selection.clear}
       />
     );
@@ -53,36 +54,14 @@ function TodayButton({ onPress }: { onPress(): void }) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View
-      pointerEvents="box-none"
-      style={{ position: 'absolute', bottom: 12 + insets.bottom, right: 12 }}
-    >
+    <View pointerEvents="box-none" style={styles.todayButtonViewStyle(insets.bottom)}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="오늘 날짜로 이동"
         onPress={onPress}
-        style={({ pressed }) => ({
-          backgroundColor: theme.accent,
-          borderRadius: 10,
-          borderWidth: 1,
-          borderColor: theme.accent,
-          flexDirection: 'row',
-          alignItems: 'center',
-          minHeight: design.touchTarget,
-          paddingHorizontal: 12,
-          justifyContent: 'center',
-          opacity: pressed ? 0.8 : 1,
-        })}
+        style={styles.todayButtonPressableStyle(theme)}
       >
-        <Text
-          style={{
-            color: theme.onAccent,
-            fontSize: design.type.small,
-            fontFamily: design.font.semibold,
-          }}
-        >
-          오늘 날짜로 이동
-        </Text>
+        <Text style={styles.todayButtonTextStyle(theme)}>오늘 날짜로 이동</Text>
       </Pressable>
     </View>
   );

@@ -40,9 +40,12 @@ export function useInlineKeyboard(
     const hasFrame = frame.current !== null;
 
     if (hasFrame) {
-      cancelAnimationFrame(frame.current!);
+      return;
     }
-    frame.current = requestAnimationFrame(revealInput);
+    frame.current = requestAnimationFrame(() => {
+      frame.current = null;
+      revealInput();
+    });
   }, [revealInput]);
 
   useEffect(() => {

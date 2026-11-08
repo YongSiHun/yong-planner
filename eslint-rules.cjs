@@ -39,7 +39,7 @@ function getExtraBranchCost(node) {
   return Number(hasElseBranch) + Number(hasLabelledJump) + Number(isLogicalBranch(node));
 }
 
-// 측정: 논리 연산자를 각각 세어 보수적으로 제한.
+// 복잡도: 논리 연산자별 가산.
 function measureNode(node, visitorKeys, nesting) {
   const isNestedFunction = functionNodes.has(node.type);
 
@@ -115,6 +115,83 @@ const booleanCondition = {
   },
 };
 
+const loopNodes = new Set([
+  'ForStatement',
+  'ForInStatement',
+  'ForOfStatement',
+  'WhileStatement',
+  'DoWhileStatement',
+]);
+
+function hasStructuralAncestor(node, types) {
+  const ancestors = [];
+  let parent = node.parent;
+
+  while (parent) {
+    ancestors.push(parent);
+    parent = parent.parent;
+  }
+  const boundary = ancestors.findIndex((ancestor) => functionNodes.has(ancestor.type));
+  const scope = boundary < 0 ? ancestors : ancestors.slice(0, boundary);
+
+  return scope.some((ancestor) => types.has(ancestor.type));
+}
+
+function nestingRule(types, message) {
+  return {
+    meta: { type: 'suggestion', schema: [], messages: { nested: message } },
+    create(context) {
+      function check(node) {
+        const nested = hasStructuralAncestor(node, types);
+
+        if (!nested) {
+          return;
+        }
+        context.report({ node, messageId: 'nested' });
+      }
+
+      return Object.fromEntries([...types].map((type) => [type, check]));
+    },
+  };
+}
+
+const noInlineStyles = {
+  meta: {
+    type: 'suggestion',
+    schema: [],
+    messages: { inline: '스타일은 .styles.ts로 분리하고 import해서 사용하세요.' },
+  },
+  create(context) {
+    return {
+      JSXAttribute(node) {
+        const styleAttribute = ['style', 'contentContainerStyle', 'screenOptions'].includes(
+          node.name.name,
+        );
+        const expression = node.value?.expression;
+        const inline =
+          styleAttribute &&
+          ['ObjectExpression', 'ArrayExpression', 'ArrowFunctionExpression'].includes(
+            expression?.type,
+          );
+
+        if (!inline) {
+          return;
+        }
+        context.report({ node, messageId: 'inline' });
+      },
+    };
+  },
+};
+
 module.exports = {
-  rules: { 'cognitive-complexity': cognitiveComplexity, 'boolean-condition': booleanCondition },
+  rules: {
+    'cognitive-complexity': cognitiveComplexity,
+    'boolean-condition': booleanCondition,
+    'no-nested-loops': nestingRule(loopNodes, '중첩 반복문은 인덱스 또는 단일 순회로 분리하세요.'),
+    'no-nested-if': nestingRule(
+      new Set(['IfStatement']),
+      '중첩 if 대신 early return으로 분리하세요.',
+    ),
+    'no-inline-styles': noInlineStyles,
+  },
 };

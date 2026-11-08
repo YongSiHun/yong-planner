@@ -22,14 +22,9 @@ on:
 env:
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-permissions:
-  contents: read
-
 jobs:
   build:
     runs-on: macos-26
-
-    timeout-minutes: 90
 
     steps:
       - name: checkout
@@ -37,21 +32,10 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch }}
 
-      - name: check-build-configuration
-        run: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "::error::Set the repository secret EXPO_TOKEN."
-            exit 1
-          fi
-          if [ ! -f yarn.lock ]; then
-            echo "::error::Run yarn install with Yarn 1.22.22 and commit yarn.lock before building."
-            exit 1
-          fi
-
       - name: setup-nodeJS
         uses: actions/setup-node@v5
         with:
-          node-version-file: .node-version
+          node-version: 22
           cache: yarn
 
       - name: Select Xcode 26.6
@@ -59,23 +43,10 @@ jobs:
           sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
           xcodebuild -version
 
-      - name: setup-yarn-classic
-        run: |
-          corepack enable
-          corepack prepare yarn@1.22.22 --activate
-          test "$(yarn --version)" = "1.22.22"
-
       - name: install-dependencies
         run: |
           npm install -g eas-cli@27.2.0
           yarn install --frozen-lockfile
-
-      - name: quality-checks
-        run: |
-          yarn lint
-          yarn format:check
-          yarn typecheck
-          yarn test
 
       - name: versioning
         run: |

@@ -88,7 +88,7 @@ function appendWrappedCharacter(state: WrappedLines, character: string, limit: n
   state.width += width;
 }
 
-// 출력: 화면 자동 줄바꿈과 원본 입력을 분리.
+// 출력: UI 줄바꿈·원문 분리.
 export function wrapText(text: string, firstPrefix: string, columns = 72): string {
   const prefixWidth = displayWidth(firstPrefix);
   const indent = ' '.repeat(prefixWidth);

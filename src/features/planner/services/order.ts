@@ -35,24 +35,7 @@ export function defaultSort(entries: PlanEntry[]): PlanEntry[] {
   return [...entries].sort(compareEntries);
 }
 
-function insertNewEntry(ids: string[], base: PlanEntry[], index: number): void {
-  const entry = base[index]!;
-  const isPresent = ids.includes(entry.id);
-
-  if (isPresent) {
-    return;
-  }
-
-  const previous = base
-    .slice(0, index)
-    .reverse()
-    .find((candidate) => ids.includes(candidate.id));
-  const insertionIndex = previous ? ids.indexOf(previous.id) + 1 : 0;
-
-  ids.splice(insertionIndex, 0, entry.id);
-}
-
-// 정렬: 기존 상대 순서를 유지하고 새 항목만 삽입.
+// ID 연결: 사용자 순서 유지·신규 항목 1회 순회 삽입.
 export function reconcileOrder(entries: PlanEntry[], custom?: string[]): PlanEntry[] {
   const base = defaultSort(entries);
   const hasCustomOrder = custom !== undefined;
@@ -60,11 +43,38 @@ export function reconcileOrder(entries: PlanEntry[], custom?: string[]): PlanEnt
   if (!hasCustomOrder) {
     return base;
   }
+  const byId = new Map(base.map((entry) => [entry.id, entry]));
+  const ids = [...new Set(custom)].filter((id) => byId.has(id));
+  const next = new Map<string | null, string | null>();
 
-  const entriesById = new Map(base.map((entry) => [entry.id, entry]));
-  const ids = [...new Set(custom)].filter((id) => entriesById.has(id));
+  next.set(null, ids[0] ?? null);
+  ids.forEach((id, index) => next.set(id, ids[index + 1] ?? null));
+  let previous: string | null = null;
 
-  base.forEach((_, index) => insertNewEntry(ids, base, index));
+  base.forEach((entry) => {
+    const isMissing = !next.has(entry.id);
 
-  return ids.map((id) => entriesById.get(id)!);
+    if (isMissing) {
+      next.set(entry.id, next.get(previous) ?? null);
+      next.set(previous, entry.id);
+    }
+    previous = entry.id;
+  });
+
+  return orderedEntries(next, byId);
+}
+
+function orderedEntries(
+  next: Map<string | null, string | null>,
+  byId: Map<string, PlanEntry>,
+): PlanEntry[] {
+  const result: PlanEntry[] = [];
+  let id = next.get(null) ?? null;
+
+  while (id !== null) {
+    result.push(byId.get(id)!);
+    id = next.get(id) ?? null;
+  }
+
+  return result;
 }

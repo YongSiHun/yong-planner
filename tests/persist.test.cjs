@@ -32,7 +32,7 @@ const database = {
     }
   },
 };
-// 실제 SQLite를 사용하고 Expo 네이티브 연결 계층만 대체한다.
+// 실제 SQLite + Expo 연결 mock.
 const repositoryPath = require.resolve('../src/database/repositories/planner.ts');
 require.cache[repositoryPath] = {
   id: repositoryPath,

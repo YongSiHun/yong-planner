@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import Storage from 'expo-sqlite/kv-store';
+import { useEffect, useState } from 'react';
 import { report } from '../../../components/ui';
 
 const GUIDE_HIDDEN_KEY = 'planner.guide.v1.hidden';

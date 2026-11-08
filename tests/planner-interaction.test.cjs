@@ -106,9 +106,8 @@ cacheMock('../src/components/ui/index.tsx', {
 });
 const plannerStore = (selector) => selector({ data: plannerData });
 plannerStore.getState = () => ({ data: plannerData });
-cacheMock('../src/stores/planner.ts', {
+const plannerActions = {
   saveDailyNote: (date, text) => saved.push(text),
-  usePlanner: plannerStore,
   saveDailyTime: (id, time) => {
     plannerData = {
       ...plannerData,
@@ -123,6 +122,28 @@ cacheMock('../src/stores/planner.ts', {
   copyDailyNote: (id, dates) => {
     plannerData = copyNoteToDates(plannerData, id, dates, () => 'copy-' + nativeEventCount++);
   },
+};
+cacheMock('../src/stores/planner.ts', { usePlanner: plannerStore });
+let selectionState;
+const selectionStore = (selector) => selector(selectionState);
+selectionStore.getState = () => selectionState;
+selectionStore.setState = (patch) => {
+  selectionState = { ...selectionState, ...patch };
+};
+cacheMock('../src/stores/noteSelection.ts', {
+  useNoteSelectionStore: selectionStore,
+  emptySelection: () => ({
+    active: false,
+    selected: new Set(),
+    deleteIds: null,
+    timeId: null,
+    copyId: null,
+    copyDates: new Set(),
+  }),
+});
+
+cacheMock('../src/features/planner/hooks/usePlannerActions.ts', {
+  usePlannerActions: () => plannerActions,
 });
 cacheMock('@expo/vector-icons/Feather', () => null);
 cacheMock('../src/components/ui/Dialog.tsx', { Dialog: 'Dialog' });
@@ -164,7 +185,7 @@ function renderInput(note = '회의,장보기', initialIndex, onSelect = () => {
 }
 function renderGuide() {
   cursor = 0;
-  // React 훅을 위의 상태 보존 테스트 대역으로 실행한다.
+  // React 훅: 상태 유지 mock 실행.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   return usePlannerGuide();
 }
@@ -179,6 +200,14 @@ beforeEach(() => {
   alerts = [];
   nativeEventCount = 0;
   plannerData = emptyData();
+  selectionState = {
+    active: false,
+    selected: new Set(),
+    deleteIds: null,
+    timeId: null,
+    copyId: null,
+    copyDates: new Set(),
+  };
   dimensions = { height: 800, width: 360, fontScale: 1 };
   frames.clear();
 });
@@ -190,7 +219,7 @@ test('backspace first opens the last chip for editing without deleting its text'
   ({ input } = renderInput());
   assert.equal(input.props.value, boundary + '장보기');
   assert.equal(saved.at(-1), '회의,장보기');
-  changeInput(input, ''); // A queued deletion from the old empty input.
+  changeInput(input, ''); // 이전 빈 입력의 지연 삭제 이벤트.
   ({ input } = renderInput());
   assert.equal(input.props.value, boundary + '장보기');
   assert.equal(saved.at(-1), '회의,장보기');
@@ -277,7 +306,7 @@ test('chip focus and caret wait for committed text and ignore old selection even
   editor = renderInput('회의,장보기,운동');
   assert.equal(editor.input.props.value, '회의');
   assert.deepEqual(editor.input.props.selection, { start: 2, end: 2 });
-  // A selection event from the previous native text must not release the new request.
+  // 이전 native 선택 이벤트: 새 커서 요청 유지.
   editor.input.props.onSelectionChange({ nativeEvent: { selection: { start: 2, end: 2 } } });
   editor = renderInput('회의,장보기,운동');
   assert.deepEqual(editor.input.props.selection, { start: 2, end: 2 });
@@ -373,7 +402,7 @@ const { SelectionBar } = require('../src/features/planner/components/SelectionBa
 const { MonthPicker } = require('../src/features/planner/components/MonthPicker.tsx');
 function renderSelection(edits) {
   cursor = 0;
-  // React 훅을 상태 보존 테스트 대역으로 실행한다.
+  // React 훅: 상태 유지 mock 실행.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   return useNoteSelection(
     () => {},
@@ -411,6 +440,9 @@ test('one selected schedule offers edit, copy and delete; several offer only del
   selection = renderSelection(edits);
   bar = SelectionBar({ count: 2, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
   assert.deepEqual(buttonTitles(bar), ['선택 해제', '삭제하기']);
+  selection.requestDelete();
+  assert.equal(plannerData.dailyPlanItems.length, 2);
+  selection = renderSelection(edits);
   selection.deleteSelected();
   assert.equal(plannerData.dailyPlanItems.length, 0);
 });
@@ -467,7 +499,7 @@ test('copy mode selects dates on the current page and retains dates across navig
   selection.toggleCopyDate('2026-11-08');
   selection = renderSelection(edits);
   assert.deepEqual([...selection.copyDates], ['2026-11-08']);
-  // A different visible month does not replace the hook's date selection.
+  // 표시 월 변경 시 선택 날짜 유지.
   selection.toggleCopyDate('2026-12-01');
   selection = renderSelection(edits);
   assert.deepEqual([...selection.copyDates], ['2026-11-08', '2026-12-01']);
@@ -541,6 +573,9 @@ test('today empty preview is blank while keeping the row available for editing',
   assert.deepEqual(edits, [0]);
 });
 
+cacheMock('../src/features/planner/components/DraggableSchedulePreview.tsx', {
+  DraggableSchedulePreview: function DraggableSchedulePreview() {},
+});
 cacheMock('../src/features/planner/components/RecurringNote.tsx', {
   RecurringNote: 'RecurringNote',
 });
@@ -636,4 +671,119 @@ test('editor stays within available phone and tablet widths at larger font scale
       assert.ok(editor.input.props.style.height <= 240);
     }
   }
+});
+
+test('saved time flows from the day row through the preview to the visible chip', () => {
+  const props = {
+    date: '2026-11-07',
+    note: '밥먹기',
+    noteIds: ['meal'],
+    noteTimes: ['13:00'],
+    timeFormat: '24h',
+    selectedIds: new Set(),
+    selecting: false,
+    copying: false,
+    copyTarget: false,
+    recurring: [],
+    exceptions: [],
+    holidayName: null,
+    isToday: false,
+    isEditing: false,
+    onCopyDate() {},
+    onSelect() {},
+    onEdit() {},
+    onFinish() {},
+    onMeasure() {},
+    onInputFocus() {},
+    onInputLayout() {},
+  };
+  for (const [format, label] of [
+    ['24h', '13시 밥먹기'],
+    ['12h', '오후 1시 밥먹기'],
+  ]) {
+    cursor = 0;
+    const row = DayRow.type({ ...props, timeFormat: format });
+    const preview = find(row, (node) => node.type?.name === 'DraggableSchedulePreview');
+    const tree = SchedulePreview(preview.props);
+    const chip = find(tree, (node) => node.type === ScheduleChip);
+    assert.equal(
+      find(ScheduleChip(chip.props), (node) => node.type === 'Text').props.children,
+      label,
+    );
+  }
+  assert.equal(DayRow.compare(props, { ...props, noteTimes: ['14:00'] }), false);
+});
+
+test('chips show typed time only once while the editor still holds the raw prefix', () => {
+  const tree = ScheduleChip({
+    content: '13:10 회의',
+    time: '13:10',
+    timeFormat: '12h',
+    onPress() {},
+    onLongPress() {},
+  });
+  assert.equal(find(tree, (node) => node.type === 'Text').props.children, '오후 1시 10분 회의');
+});
+
+test('programmatic boundary caret releases even if native selection acknowledgment is missing', () => {
+  let editor = renderInput('회의,장보기', 0);
+  const chip = find(
+    editor.tree,
+    (node) => node.type?.name === 'ScheduleChip' && node.props.content === '장보기',
+  );
+  chip.props.onBefore();
+  editor = renderInput('회의,장보기', 0);
+  flushFrames();
+  flushFrames();
+  editor = renderInput('회의,장보기', 0);
+  assert.equal(editor.input.props.selection, undefined);
+  assert.deepEqual(saved, []);
+});
+
+test('native content-size changes cannot undo measured explicit line breaks', () => {
+  let editor = renderInput('회의', 0);
+  changeInput(editor.input, '회의\n두 번째 줄');
+  editor = renderInput('회의', 0);
+  find(editor.tree, (node) => node.type === 'Text' && node.props.onTextLayout).props.onTextLayout({
+    nativeEvent: { lines: [{ width: 40 }, { width: 80 }] },
+  });
+  editor = renderInput('회의', 0);
+  const height = editor.input.props.style.height;
+  editor.input.props.onContentSizeChange({ nativeEvent: { contentSize: { height: 22 } } });
+  editor = renderInput('회의', 0);
+  assert.equal(editor.input.props.value, '회의\n두 번째 줄');
+  assert.equal(editor.input.props.style.height, height);
+  assert.ok(height >= 52);
+});
+
+test('canceling delete confirmation retains both schedules and selection', () => {
+  let id = 0;
+  plannerData = applyDailyNote(plannerData, '2026-11-07', '회의,운동', () => String(++id));
+  const edits = [];
+  let selection = renderSelection(edits);
+  selection.toggle('2026-11-07', 0, true);
+  selection = renderSelection(edits);
+  selection.requestDelete();
+  selection = renderSelection(edits);
+  assert.equal(selection.deleteCount, 1);
+  selection.cancelDelete();
+  selection = renderSelection(edits);
+  selection.deleteSelected();
+  assert.equal(plannerData.dailyPlanItems.length, 2);
+  assert.equal(selection.selected.size, 1);
+});
+
+test('large font line measurements keep enough height for every explicit line', () => {
+  dimensions.fontScale = 2;
+  let editor = renderInput('회의\n운동', 0);
+  find(editor.tree, (node) => node.type === 'Text' && node.props.onTextLayout).props.onTextLayout({
+    nativeEvent: {
+      lines: [
+        { width: 60, height: 44 },
+        { width: 60, height: 44 },
+      ],
+    },
+  });
+  editor = renderInput('회의\n운동', 0);
+  assert.equal(editor.input.props.style.height, 96);
 });

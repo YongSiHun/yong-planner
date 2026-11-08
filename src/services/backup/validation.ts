@@ -12,7 +12,7 @@ import { parseDate, validTime } from '../../utils/date';
 
 type BackupRecord = Record<string, unknown>;
 
-// 검증: 조건 위반 시 즉시 중단.
+// 검증 실패: 즉시 중단.
 export function ensureValid(isValid: boolean, message: string): asserts isValid {
   if (isValid) {
     return;
@@ -269,15 +269,12 @@ function readSettings(value: unknown): Settings {
 
   ensureValid(isTheme, '테마가 올바르지 않습니다.');
 
-  const timeFormat = settings.timeFormat;
-  const validFormat = timeFormat === undefined || timeFormat === '12h' || timeFormat === '24h';
-
-  ensureValid(validFormat, '시간 표시 형식이 올바르지 않습니다.');
+  const timeFormat = readTimeFormat(settings.timeFormat);
 
   return timeFormat === undefined ? { theme } : { theme, timeFormat };
 }
 
-// 복사: 검증한 필드만 새 객체에 반영.
+// 복사: 검증 필드만 반영.
 export function validateData(input: unknown): PlannerData {
   const root = readRecord(input);
   const recurringPlans = readUniqueList(root.recurringPlans, readRecurringPlan, (plan) => plan.id);
@@ -302,4 +299,12 @@ export function validateData(input: unknown): PlannerData {
       (override) => override.date,
     ),
   };
+}
+
+function readTimeFormat(value: unknown): Settings['timeFormat'] {
+  const validFormat = value === undefined || value === '12h' || value === '24h';
+
+  ensureValid(validFormat, '시간 표시 형식이 올바르지 않습니다.');
+
+  return value;
 }

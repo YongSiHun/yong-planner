@@ -31,35 +31,19 @@ on:
 env:
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-permissions:
-  contents: read
-
 jobs:
   build:
     runs-on: ubuntu-24.04
-
-    timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.inputs.branch }}
 
-      - name: check-build-configuration
-        run: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "::error::Set the repository secret EXPO_TOKEN."
-            exit 1
-          fi
-          if [ ! -f yarn.lock ]; then
-            echo "::error::Run yarn install with Yarn 1.22.22 and commit yarn.lock before building."
-            exit 1
-          fi
-
       - name: setup-nodeJS
         uses: actions/setup-node@v5
         with:
-          node-version-file: .node-version
+          node-version: 22
           cache: yarn
 
       - name: setup-java
@@ -68,23 +52,10 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: setup-yarn-classic
-        run: |
-          corepack enable
-          corepack prepare yarn@1.22.22 --activate
-          test "$(yarn --version)" = "1.22.22"
-
       - name: install-dependencies
         run: |
           npm install -g eas-cli@27.2.0
           yarn install --frozen-lockfile
-
-      - name: quality-checks
-        run: |
-          yarn lint
-          yarn format:check
-          yarn typecheck
-          yarn test
 
       - name: versioning
         run: |
@@ -103,9 +74,14 @@ jobs:
           BUILD: ${{ env.BUILD }}
           GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx6g -XX:MaxMetaspaceSize=1g'"
         run: |
+          PROFILE="${{ github.event.inputs.environment }}"
+          if [ "$PROFILE" = "development" ]; then
+            PROFILE="development-aab"
+          fi
+
           eas build \
             -p android \
-            --profile "$(if [ '${{ github.event.inputs.environment }}' = development ]; then echo development-aab; else echo '${{ github.event.inputs.environment }}'; fi)" \
+            --profile "$PROFILE" \
             --local \
             --non-interactive
 

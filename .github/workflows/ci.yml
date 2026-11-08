@@ -28,7 +28,7 @@ jobs:
       - name: setup-nodeJS
         uses: actions/setup-node@v5
         with:
-          node-version-file: .node-version
+          node-version: 22
           cache: yarn
           cache-dependency-path: yarn.lock
 

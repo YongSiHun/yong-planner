@@ -46,3 +46,54 @@ test('new backups retain times and legacy backups remain readable', () => {
   data.settings.timeFormat = '12h';
   assert.deepEqual(parseBackup(createBackup(data)), data);
 });
+
+test('leading Korean and colon times become structured times without duplicating the prefix', () => {
+  const { parseScheduleTimePrefix } = require('../src/features/planner/services/time.ts');
+  for (const text of ['13시 10분 회의', '13:10 회의', '13시10분 회의']) {
+    assert.deepEqual(parseScheduleTimePrefix(text), { time: '13:10', content: '회의' });
+    const data = applyDailyNote(emptyData(), '2026-11-07', text, () => 'meeting');
+    assert.equal(data.dailyPlanItems[0].time, '13:10');
+    assert.equal(data.dailyPlanItems[0].content, '회의');
+    assert.equal(
+      formatScheduleContent(data.dailyPlanItems[0].content, data.dailyPlanItems[0].time, '12h'),
+      '오후 1시 10분 회의',
+    );
+    assert.equal(
+      applyDailyNote(data, '2026-11-07', text, () => 'new'),
+      data,
+    );
+  }
+  assert.deepEqual(parseScheduleTimePrefix('0시 아침'), { time: '00:00', content: '아침' });
+  for (const text of [
+    '24:10 회의',
+    '13:60 회의',
+    '회의 13:10',
+    '13시 99분 회의',
+    '13:10 ',
+    '13시 10분까지 회의',
+  ]) {
+    assert.deepEqual(parseScheduleTimePrefix(text), { content: text });
+  }
+});
+
+test('comma-separated time input preserves IDs, overrides time, and survives restore and copy', () => {
+  let id = 0;
+  const nextId = () => String(++id);
+  const date = '2026-11-07';
+  let data = applyDailyNote(emptyData(), date, '13:10 회의,18시 운동', nextId);
+  const ids = dailyNoteItems(data, date).map((item) => item.id);
+  data = applyDailyNote(data, date, '14시 20분 회의,18시 운동', nextId);
+  assert.deepEqual(
+    dailyNoteItems(data, date).map((item) => item.id),
+    ids,
+  );
+  assert.deepEqual(
+    dailyNoteItems(data, date).map((item) => item.time),
+    ['14:20', '18:00'],
+  );
+  data = applyDailyNote(data, date, '회의 내용 수정,운동', nextId);
+  assert.equal(dailyNoteItems(data, date)[0].time, '14:20');
+  data = parseBackup(createBackup(data));
+  data = copyNoteToDates(data, ids[0], ['2026-11-08'], nextId);
+  assert.equal(dailyNoteItems(data, '2026-11-08')[0].time, '14:20');
+});

@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { Button, Input, Label, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
-import type { DailyPlanItem, TimeFormat } from '../types';
 import { formatScheduleContent, timeFromFields } from '../services/time';
+import type { DailyPlanItem, TimeFormat } from '../types';
+import * as styles from './TimePicker.styles';
 
 export function TimePicker({
   item,
@@ -37,37 +38,37 @@ export function TimePicker({
           disabled={time === null}
           onPress={() => onSave(time)}
           textColor={theme.onAccent}
-          style={{ backgroundColor: theme.accent }}
+          style={styles.primaryAction(theme)}
         />
       }
     >
       <Label>{formatScheduleContent(item.content, time, format)}</Label>
       {is12 ? (
-        <View style={{ flexDirection: 'row' }}>
+        <View style={styles.timePickerViewStyle}>
           <Button title="오전" selected={period === 'am'} onPress={() => setPeriod('am')} />
           <Button title="오후" selected={period === 'pm'} onPress={() => setPeriod('pm')} />
         </View>
       ) : null}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <View style={{ flex: 1 }}>
+      <View style={styles.timePickerViewStyle2}>
+        <View style={styles.timePickerViewStyle3}>
           <Input
             accessibilityLabel="시"
             value={hour}
             onChangeText={(value) => setHour(value.replace(/\D/g, '').slice(0, 2))}
             keyboardType="number-pad"
             maxLength={2}
-            style={{ textAlign: 'center' }}
+            style={styles.timePickerInputStyle}
           />
         </View>
         <Label>시</Label>
-        <View style={{ flex: 1 }}>
+        <View style={styles.timePickerViewStyle3}>
           <Input
             accessibilityLabel="분"
             value={minute}
             onChangeText={(value) => setMinute(value.replace(/\D/g, '').slice(0, 2))}
             keyboardType="number-pad"
             maxLength={2}
-            style={{ textAlign: 'center' }}
+            style={styles.timePickerInputStyle}
           />
         </View>
         <Label>분</Label>

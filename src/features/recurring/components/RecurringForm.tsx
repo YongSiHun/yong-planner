@@ -1,11 +1,20 @@
 import { useState, type ComponentRef } from 'react';
-import { Alert, View, type TextInput } from 'react-native';
-import { Button, Input, Label, report, styles, useTheme, design } from '../../../components/ui';
-import { usePlanner, saveRecurring } from '../../../stores/planner';
-import type { RecurringPlan } from '../../planner/types';
+import { View, type TextInput } from 'react-native';
+import {
+  Button,
+  Input,
+  Label,
+  styles as layoutStyles,
+  report,
+  showDialog,
+  useTheme,
+} from '../../../components/ui';
 import { weekdays } from '../../../utils/date';
 import { Calendar } from '../../planner/components/Calendar';
+import { usePlannerActions } from '../../planner/hooks/usePlannerActions';
+import type { RecurringPlan } from '../../planner/types';
 import { toggleWeekday } from '../services/presentation';
+import * as styles from './RecurringForm.styles';
 
 const holidayPolicies = [
   { value: 'include', label: '관계없음' },
@@ -31,7 +40,7 @@ function WeekdaySelector({ plan, onChange }: { plan: RecurringPlan; onChange: Ch
   return (
     <>
       <Label>반복 요일</Label>
-      <View style={styles.row}>
+      <View style={layoutStyles.row}>
         {weekdayPresets.map((preset) => (
           <Button
             key={preset.label}
@@ -41,7 +50,7 @@ function WeekdaySelector({ plan, onChange }: { plan: RecurringPlan; onChange: Ch
         ))}
       </View>
 
-      <View style={styles.row}>
+      <View style={layoutStyles.row}>
         {weekdays.map((label, day) => (
           <Button
             key={day}
@@ -73,7 +82,7 @@ function DateFields({
       <Button title={plan.startDate + ' ▾'} onPress={() => onSelect('startDate')} />
 
       <Label>종료일 · 해당 날짜 포함</Label>
-      <View style={styles.row}>
+      <View style={layoutStyles.row}>
         <Button title={endDateTitle} onPress={() => onSelect('endDate')} />
         <Button
           title="종료일 없음"
@@ -97,6 +106,7 @@ export function RecurringForm({
   onInputLayout(): void;
 }) {
   const theme = useTheme();
+  const { saveRecurring, flush } = usePlannerActions();
   const [draft, setDraft] = useState(initial);
   const [calendar, setCalendar] = useState<CalendarField | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -116,7 +126,7 @@ export function RecurringForm({
       return;
     }
 
-    Alert.alert('변경 내용 닫기', '아직 저장하지 않은 변경 내용을 버릴까요?', [
+    showDialog('변경 내용 닫기', '아직 저장하지 않은 변경 내용을 버릴까요?', [
       { text: '계속 편집', style: 'cancel' },
       { text: '버리기', style: 'destructive', onPress: onClose },
     ]);
@@ -125,7 +135,7 @@ export function RecurringForm({
   async function handleSave() {
     try {
       saveRecurring(draft);
-      await usePlanner.getState().flush();
+      await flush();
       onClose();
     } catch (error) {
       report(error);
@@ -144,9 +154,9 @@ export function RecurringForm({
   }
 
   return (
-    <View style={{ gap: design.space.sm, paddingVertical: design.space.sm }}>
-      <View style={styles.row}>
-        <Label style={{ flex: 1, color: theme.accent, fontWeight: '700' }}>{title}</Label>
+    <View style={styles.recurringFormViewStyle}>
+      <View style={layoutStyles.row}>
+        <Label style={styles.recurringFormLabelStyle(theme)}>{title}</Label>
         <Button compact title="닫기" onPress={handleClose} />
       </View>
       <Label>일정 이름</Label>
@@ -173,7 +183,7 @@ export function RecurringForm({
       />
 
       <Label>공휴일</Label>
-      <View style={styles.row}>
+      <View style={layoutStyles.row}>
         {holidayPolicies.map((policy) => (
           <Button
             key={policy.value}
@@ -199,9 +209,9 @@ export function RecurringForm({
       </Label>
 
       {calendar ? (
-        <View style={{ gap: design.space.xs }}>
-          <View style={styles.row}>
-            <Label style={{ flex: 1 }}>{calendarTitle}</Label>
+        <View style={styles.recurringFormViewStyle2}>
+          <View style={layoutStyles.row}>
+            <Label style={styles.calendarTitle}>{calendarTitle}</Label>
             <Button compact title="날짜 선택 닫기" onPress={() => setCalendar(null)} />
           </View>
           <Calendar selected={draft[calendar] ?? draft.startDate} onSelect={handleDateSelect} />

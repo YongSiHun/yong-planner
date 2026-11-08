@@ -1,5 +1,5 @@
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
-import type { PlannerData, DailyPlanItem } from '../../features/planner/types';
+import type { DailyPlanItem, PlannerData } from '../../features/planner/types';
 import { emptyData } from '../../features/planner/types';
 import { validateData } from '../../services/backup';
 import { migrate } from '../migrations';
@@ -40,7 +40,7 @@ export async function loadData(): Promise<PlannerData> {
   const result = emptyData();
 
   result.dailyPlanItems = await db.getAllAsync<DailyPlanItem>(
-    'SELECT * FROM daily_plan_items ORDER BY createdAt, id',
+    'SELECT id, date, content, createdAt, time FROM daily_plan_items ORDER BY createdAt, id',
   );
   const payloads = async <T>(table: string): Promise<T[]> =>
     (await db.getAllAsync<{ payload: string }>('SELECT payload FROM ' + table)).map(
@@ -55,7 +55,7 @@ export async function loadData(): Promise<PlannerData> {
 
   return validateData(result);
 }
-// 복원: 직렬 저장 큐 안에서 전체 데이터를 원자적으로 교체.
+// 복원: 직렬 큐 내 전체 데이터 원자 교체.
 export async function replaceData(input: PlannerData): Promise<void> {
   const data = validateData(input);
   const db = await getDatabase();

@@ -1,10 +1,12 @@
 import type { DailyPlanItem, PlannerData } from '../types';
 import { reconcileOrder } from './order';
+import { dailyItemsForDate } from './plans';
+import { parseScheduleTimePrefix } from './time';
 
 export const NOTE_SEPARATOR = ',';
 
 export function dailyNoteItems(data: PlannerData, date: string): DailyPlanItem[] {
-  const items = data.dailyPlanItems.filter((item) => item.date === date);
+  const items = dailyItemsForDate(data, date);
   const byId = new Map(items.map((item) => [item.id, item]));
   const entries = items.map((item) => ({
     id: 'daily:' + item.id,
@@ -19,7 +21,7 @@ export function dailyNoteItems(data: PlannerData, date: string): DailyPlanItem[]
   return reconcileOrder(entries, custom).map((entry) => byId.get(entry.sourceId)!);
 }
 
-// 원문 공백과 빈 구간을 보존해 구분 기호를 지우면 그대로 합칠 수 있다.
+// 공백·빈 구간 보존: 구분자 삭제 시 원문 병합.
 export function splitNote(text: string): string[] {
   const isEmpty = text.length === 0;
 
@@ -33,25 +35,26 @@ export function applyDailyNote(
   createId: () => string,
 ): PlannerData {
   const existing = dailyNoteItems(data, date);
-  const contents = splitNote(text);
+  const parsed = splitNote(text).map(parseScheduleTimePrefix);
+  const contents = parsed.map((item) => item.content);
   const isUnchanged =
     contents.length === existing.length &&
-    contents.every((content, index) => content === existing[index]!.content);
+    contents.every((content, index) =>
+      matchesSavedNote(existing[index]!, content, parsed[index]!.time),
+    );
 
   if (isUnchanged) {
     return data;
   }
 
-  const latest = data.dailyPlanItems.reduce(
-    (value, item) => Math.max(value, Date.parse(item.createdAt)),
-    Date.now(),
-  );
   const preserved = preserveNoteItems(existing, contents);
+  const latest = latestForNewItems(data, preserved);
   const items = contents.map((content, index) => ({
     ...preserved[index],
     id: preserved[index]?.id ?? createId(),
     date,
     content,
+    ...parsedTime(parsed[index]!.time),
     createdAt: preserved[index]?.createdAt ?? new Date(latest + index + 1).toISOString(),
   }));
   const previousOrder = data.dailyPlanOrders.find((order) => order.date === date)?.itemIds ?? [];
@@ -70,8 +73,8 @@ export function applyDailyNote(
   };
 }
 
-// 사용자 정렬이 있어도 입력한 메모 순서를 유지하고 반복 일정의 상대 위치를 보존한다.
-function mergeNoteOrder(previous: string[], dailyIds: string[]): string[] {
+// 메모 입력 순서·반복 일정 상대 위치 유지.
+export function mergeNoteOrder(previous: string[], dailyIds: string[]): string[] {
   let index = 0;
   const replaced = previous.flatMap((id) => {
     const isDaily = id.startsWith('daily:');
@@ -152,8 +155,8 @@ export function mergeNotePart(text: string, index: number): NoteEdit | null {
   return { text: parts.join(NOTE_SEPARATOR), index: index - 1, caret: previous.length };
 }
 
-// A native-only zero-width boundary turns backspace into one text change.
-// It is never included in stored notes or exported text.
+// Native 전용 U+200B: 백스페이스를 단일 변경으로 처리.
+// DB·내보내기에서 제외.
 export const NOTE_INPUT_BOUNDARY = '\u200B';
 export function noteInputValue(edit: NoteEdit): string {
   const prefix = edit.index > 0 ? NOTE_INPUT_BOUNDARY : '';
@@ -310,4 +313,29 @@ export function notePartTime(
   const isDraft = edit.draftSlot === true && index === edit.index;
 
   return isDraft ? null : (times[storedNoteIndex(edit, index)] ?? null);
+}
+
+function matchesSavedNote(item: DailyPlanItem, content: string, time: string | undefined): boolean {
+  const unchangedTime = time === undefined || time === item.time;
+
+  return item.content === content && unchangedTime;
+}
+
+function parsedTime(time: string | undefined): { time?: string } {
+  const hasTime = time !== undefined;
+
+  return hasTime ? { time } : {};
+}
+
+function latestForNewItems(data: PlannerData, preserved: (DailyPlanItem | undefined)[]): number {
+  const hasNewItem = preserved.some((item) => item === undefined);
+
+  if (!hasNewItem) {
+    return 0;
+  }
+
+  return data.dailyPlanItems.reduce(
+    (value, item) => Math.max(value, Date.parse(item.createdAt)),
+    Date.now(),
+  );
 }

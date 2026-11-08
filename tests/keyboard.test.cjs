@@ -57,7 +57,7 @@ function flushFrames() {
 }
 function setup() {
   const calls = [];
-  // React 훅을 위의 테스트 대역으로 실행하는 하네스다.
+  // React 훅: mock 하네스 실행.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const controller = useInlineKeyboard({ current: { scrollTo: (options) => calls.push(options) } });
   return { calls, controller };

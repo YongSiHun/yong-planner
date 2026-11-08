@@ -23,7 +23,7 @@ function collectYearHolidays(holidays: Holidays, year: string): Map<string, stri
   return entries;
 }
 
-// 기본 공휴일은 편집기·달력·내보내기에서 공유하고 사용자 수정은 분리한다.
+// 기본 공휴일 캐시 공유; 사용자 수정 별도.
 let holidays: Holidays | undefined;
 const years = new Map<string, Map<string, string>>();
 

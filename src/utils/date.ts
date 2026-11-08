@@ -11,7 +11,7 @@ function matchesDateParts(date: Date, year: number, month: number, day: number):
   return isSupportedYear && hasSameYear && hasSameMonth && hasSameDay;
 }
 
-// 날짜: 현지 정오를 사용해 자정의 시차 경계 회피.
+// 현지 정오: 자정 시차 회피.
 export function parseDate(value: string): Date {
   const hasDateFormat = /^\d{4}-\d{2}-\d{2}$/.test(value);
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { Button, Input, Label, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
+import * as styles from './MonthPicker.styles';
 
 export function MonthPicker({
   month,
@@ -35,11 +36,11 @@ export function MonthPicker({
             )
           }
           textColor={theme.onAccent}
-          style={{ backgroundColor: theme.accent }}
+          style={styles.monthPickerButtonStyle(theme)}
         />
       }
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <View style={styles.monthPickerViewStyle}>
         <Button
           compact
           title="−"
@@ -47,14 +48,14 @@ export function MonthPicker({
           disabled={!validYear || yearNumber <= 1}
           onPress={() => setYear(String(yearNumber - 1))}
         />
-        <View style={{ flex: 1 }}>
+        <View style={styles.monthPickerViewStyle2}>
           <Input
             value={year}
             onChangeText={(value) => setYear(value.replace(/\D/g, '').slice(0, 4))}
             keyboardType="number-pad"
             maxLength={4}
             accessibilityLabel="이동할 연도"
-            style={{ textAlign: 'center' }}
+            style={styles.monthPickerInputStyle}
           />
         </View>
         <Label>년</Label>
@@ -66,7 +67,7 @@ export function MonthPicker({
           onPress={() => setYear(String(yearNumber + 1))}
         />
       </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+      <View style={styles.monthPickerViewStyle3}>
         {Array.from({ length: 12 }, (_, index) => index + 1).map((value) => (
           <Button
             key={value}
@@ -74,7 +75,7 @@ export function MonthPicker({
             title={value + '월'}
             selected={selectedMonth === value}
             onPress={() => setSelectedMonth(value)}
-            style={{ width: '25%' }}
+            style={styles.monthPickerButtonStyle2}
           />
         ))}
       </View>

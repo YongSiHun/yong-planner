@@ -80,3 +80,19 @@ export function timeFromFields(
 
   return String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
 }
+
+export function parseScheduleTimePrefix(text: string): { content: string; time?: string } {
+  const match =
+    /^(?:([01]?\d|2[0-3]):([0-5]\d)|([01]?\d|2[0-3])시(?:\s*([0-5]?\d)분)?)\s+([\s\S]*\S[\s\S]*)$/.exec(
+      text,
+    );
+  const hasTime = match !== null && !/^\d+분/.test(match[5]!);
+
+  if (!hasTime) {
+    return { content: text };
+  }
+  const hour = match[1] ?? match[3]!;
+  const minute = match[2] ?? match[4] ?? '00';
+
+  return { content: match[5]!, time: hour.padStart(2, '0') + ':' + minute.padStart(2, '0') };
+}

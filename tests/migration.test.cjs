@@ -33,7 +33,7 @@ test('version 1 upgrade preserves schedules and can run repeatedly', async () =>
     const row = sqlite.prepare('SELECT * FROM daily_plan_items').get();
     assert.equal(row.content, '기존 일정');
     assert.equal(row.time, null);
-    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 2);
+    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 3);
   } finally {
     sqlite.close();
   }
@@ -48,9 +48,35 @@ test('new database is initialized and future versions are rejected', async () =>
         .all()
         .some((column) => column.name === 'time'),
     );
-    sqlite.exec('PRAGMA user_version = 3;');
+    sqlite.exec('PRAGMA user_version = 4;');
     await assert.rejects(migrate(adapter(sqlite)), /더 최신 앱/);
-    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 3);
+    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 4);
+  } finally {
+    sqlite.close();
+  }
+});
+
+test('version 2 upgrade preserves assigned time and removes the startup temporary sort', async () => {
+  const { addDailyTime } = require('../src/database/migrations/index.ts');
+  const sqlite = new DatabaseSync(':memory:');
+  try {
+    sqlite.exec(initialSchema + addDailyTime + 'PRAGMA user_version = 2;');
+    sqlite
+      .prepare(
+        'INSERT INTO daily_plan_items (id, date, content, createdAt, time) VALUES (?, ?, ?, ?, ?)',
+      )
+      .run('meal', '2026-11-07', '식사', '2026-11-01T00:00:00.000Z', '13:10');
+    await migrate(adapter(sqlite));
+    assert.equal(sqlite.prepare('SELECT time FROM daily_plan_items').get().time, '13:10');
+    const plan = sqlite
+      .prepare(
+        'EXPLAIN QUERY PLAN SELECT id, date, content, createdAt, time FROM daily_plan_items ORDER BY createdAt, id',
+      )
+      .all()
+      .map((row) => row.detail)
+      .join(' ');
+    assert.match(plan, /daily_created_order/);
+    assert.doesNotMatch(plan, /TEMP B-TREE/);
   } finally {
     sqlite.close();
   }

@@ -1,5 +1,5 @@
-import type { RecurringPlan } from '../../planner/types';
 import { weekdays } from '../../../utils/date';
+import type { RecurringPlan } from '../../planner/types';
 
 export function toggleWeekday(days: number[], day: number): number[] {
   const isSelected = days.includes(day);

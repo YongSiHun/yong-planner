@@ -1,15 +1,35 @@
-import { Share } from 'react-native';
-import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
 import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { Share } from 'react-native';
 import type { PlannerData } from '../../features/planner/types';
 import { monthLabel, today } from '../../utils/date';
-import { monthTxt, monthCsv } from './index';
 import { createBackup, MAX_BACKUP_BYTES, parseBackup } from '../backup';
 import { createHolidayService } from '../holiday';
+import { monthCsv, monthTxt } from './index';
 
-export type ExportFormat = 'txt' | 'csv' | 'clipboard' | 'share';
+export type ExportFormat = keyof typeof monthExporters;
+type MonthExporter = (
+  data: PlannerData,
+  month: string,
+  holidays: ReturnType<typeof createHolidayService>,
+) => Promise<unknown>;
+
+const monthExporters = {
+  txt: async (data, month, holidays) =>
+    shareFile(monthFilename(month, 'txt'), monthTxt(data, month, holidays), 'text/plain'),
+  csv: async (data, month, holidays) =>
+    shareFile(monthFilename(month, 'csv'), monthCsv(data, month, holidays), 'text/csv'),
+  clipboard: async (data, month, holidays) =>
+    Clipboard.setStringAsync(monthTxt(data, month, holidays)),
+  share: async (data, month, holidays) =>
+    Share.share({ title: monthLabel(month) + ' 일정', message: monthTxt(data, month, holidays) }),
+} satisfies Record<string, MonthExporter>;
+
+function monthFilename(month: string, extension: string): string {
+  return 'yong_planner_' + month.slice(0, 7).replace('-', '_') + '.' + extension;
+}
 
 const fileTypes: Record<string, string> = {
   'application/json': 'public.json',
@@ -31,34 +51,15 @@ export async function shareFile(name: string, content: string, mimeType: string)
   await Sharing.shareAsync(file.uri, { mimeType, UTI: fileTypes[mimeType] ?? 'public.plain-text' });
 }
 
-// 공유: 저장 시점은 호출자가 결정.
+// 공유 전 저장: 호출자 담당.
 export async function exportMonth(
   data: PlannerData,
   month: string,
   format: ExportFormat,
 ): Promise<void> {
   const holidays = createHolidayService(data.holidayOverrides);
-  const isCsv = format === 'csv';
-  const content = isCsv ? monthCsv(data, month, holidays) : monthTxt(data, month, holidays);
-  const isClipboard = format === 'clipboard';
 
-  if (isClipboard) {
-    await Clipboard.setStringAsync(content);
-
-    return;
-  }
-
-  const isMessageShare = format === 'share';
-
-  if (isMessageShare) {
-    await Share.share({ title: monthLabel(month) + ' 일정', message: content });
-
-    return;
-  }
-
-  const filename = 'yong_planner_' + month.slice(0, 7).replace('-', '_') + '.' + format;
-
-  await shareFile(filename, content, isCsv ? 'text/csv' : 'text/plain');
+  await monthExporters[format](data, month, holidays);
 }
 
 export async function backupFile(data: PlannerData): Promise<void> {

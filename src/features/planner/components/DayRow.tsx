@@ -1,38 +1,14 @@
+import { memo, useCallback, useState } from 'react';
+import { Keyboard, Pressable, Text, View, type LayoutChangeEvent } from 'react-native';
+import { Button, report, useTheme } from '../../../components/ui';
+import { usePlannerActions } from '../hooks/usePlannerActions';
+import type { DayRowProps } from '../types/presentation';
 import { DateInfo } from './DateInfo';
-import { memo, useState, type ComponentRef } from 'react';
-import { Keyboard, Pressable, Text, TextInput, View, type LayoutChangeEvent } from 'react-native';
-import { Button, design, report, useTheme } from '../../../components/ui';
-import { saveException, usePlanner } from '../../../stores/planner';
 import { DayDate } from './DayDate';
-import { ScheduleInput, SchedulePreview } from './ScheduleInput';
-import type { PlanEntry, RecurringPlanException, TimeFormat } from '../types';
+import * as styles from './DayRow.styles';
+import { DraggableSchedulePreview } from './DraggableSchedulePreview';
 import { RecurringNote } from './RecurringNote';
-
-interface DayRowProps {
-  date: string;
-  note: string;
-  noteIds: string[];
-  noteTimes: (string | null)[];
-  timeFormat: TimeFormat;
-  selectedIds: ReadonlySet<string>;
-  selecting: boolean;
-  copying: boolean;
-  copyTarget: boolean;
-  copySourceDate?: string;
-  onCopyDate(date: string): void;
-  editingIndex?: number;
-  onSelect(date: string, index: number, begin?: boolean): void;
-  recurring: PlanEntry[];
-  exceptions: RecurringPlanException[];
-  holidayName: string | null;
-  isToday: boolean;
-  isEditing: boolean;
-  onEdit(date: string): void;
-  onFinish(date: string): void;
-  onMeasure(date: string, position: number, height: number): void;
-  onInputFocus(input: ComponentRef<typeof TextInput> | null): void;
-  onInputLayout(): void;
-}
+import { ScheduleInput } from './ScheduleInput';
 
 export const DayRow = memo(function DayRow({
   date,
@@ -60,6 +36,11 @@ export const DayRow = memo(function DayRow({
   onInputLayout,
 }: DayRowProps) {
   const theme = useTheme();
+  const { saveException, flush, moveDailyNote } = usePlannerActions();
+  const handleMove = useCallback(
+    (from: number, boundary: number) => moveDailyNote(date, from, boundary),
+    [date, moveDailyNote],
+  );
   const [infoOpen, setInfoOpen] = useState(false);
   const [initialSlot, setInitialSlot] = useState<number | undefined>();
   const selectedIndexes = new Set(
@@ -90,7 +71,7 @@ export const DayRow = memo(function DayRow({
 
   function handleBlur() {
     onFinish(date);
-    void usePlanner.getState().flush().catch(report);
+    void flush().catch(report);
   }
 
   function handleLayout(event: LayoutChangeEvent) {
@@ -104,14 +85,7 @@ export const DayRow = memo(function DayRow({
       accessible={false}
       onPress={handleDayPress}
       onLayout={handleLayout}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        paddingHorizontal: design.space.xs,
-        borderBottomWidth: 0.5,
-        borderBottomColor: theme.line,
-        backgroundColor: isToday ? theme.selected : 'transparent',
-      }}
+      style={styles.screenPressableStyle(theme, isToday)}
     >
       <DayDate
         date={date}
@@ -124,10 +98,7 @@ export const DayRow = memo(function DayRow({
         onCopyDate={onCopyDate}
         onFinish={onFinish}
       />
-      <View
-        pointerEvents={bodyPointerEvents(copying)}
-        style={{ flex: 1, minWidth: 0, paddingVertical: 2 }}
-      >
+      <View pointerEvents={bodyPointerEvents(copying)} style={styles.screenViewStyle}>
         {isEditing ? (
           <ScheduleInput
             date={date}
@@ -143,9 +114,12 @@ export const DayRow = memo(function DayRow({
             onInputLayout={onInputLayout}
           />
         ) : (
-          <SchedulePreview
+          <DraggableSchedulePreview
+            onMove={handleMove}
             date={date}
             note={note}
+            noteTimes={noteTimes}
+            timeFormat={timeFormat}
             onEdit={startEditing}
             onInsert={startInsertion}
             selecting={selecting}
@@ -163,17 +137,8 @@ export const DayRow = memo(function DayRow({
           />
         ))}
         {exceptions.map((exception) => (
-          <View
-            key={exception.recurringPlanId}
-            style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}
-          >
-            <Text
-              style={{
-                fontFamily: design.font.regular,
-                fontSize: design.type.caption,
-                color: theme.muted,
-              }}
-            >
+          <View key={exception.recurringPlanId} style={styles.screenViewStyle2}>
+            <Text style={styles.screenTextStyle(theme)}>
               {exception.cancelled ? '취소한 반복 일정' : '수정한 반복 일정'}
             </Text>
             <Button

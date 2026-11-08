@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { Button, Label, styles, useTheme } from '../../../components/ui';
+import { Button, Label, useTheme } from '../../../components/ui';
+import type { HolidayService } from '../../../services/holiday';
+import { usePlanner } from '../../../stores/planner';
 import { monthDates, monthLabel, shiftMonth, today, weekday, weekdays } from '../../../utils/date';
+import { useHolidays } from '../hooks/useHolidays';
 import { hasPlansForDate } from '../services/plans';
 import { getDateColor } from '../services/presentation';
-import { usePlanner } from '../../../stores/planner';
-import { useHolidays } from '../hooks/useHolidays';
-import type { HolidayService } from '../../../services/holiday';
 import type { PlannerData } from '../types';
+import * as styles from './Calendar.styles';
 
 interface CalendarProps {
   selected: string;
@@ -26,8 +27,8 @@ function WeekdayHeading({ day }: { day: number }) {
   const color = weekendColors[day] ?? theme.muted;
 
   return (
-    <View style={{ width: '14.2857%', alignItems: 'center', paddingVertical: 8 }}>
-      <Label style={{ color }}>{weekdays[day]}</Label>
+    <View style={styles.weekdayHeadingViewStyle}>
+      <Label style={styles.weekdayHeadingLabelStyle(color)}>{weekdays[day]}</Label>
     </View>
   );
 }
@@ -49,36 +50,17 @@ function CalendarDate({
   const color = getDateColor(date, isHoliday, theme, theme.text);
 
   return (
-    <View style={{ width: '14.2857%', padding: 1 }}>
+    <View style={styles.calendarDateViewStyle}>
       <Button
         title={String(Number(date.slice(8)))}
         accessibilityLabel={date + holidayDescription + planDescription}
         textColor={color}
         selected={date === selected}
         onPress={() => onSelect(date)}
-        style={{
-          paddingHorizontal: 0,
-          minWidth: 0,
-          paddingBottom: 14,
-          borderWidth: isToday ? 1 : 0,
-          borderColor: theme.accent,
-        }}
+        style={styles.calendarDateButtonStyle(isToday, theme)}
       />
 
-      {hasPlan ? (
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            bottom: 7,
-            alignSelf: 'center',
-            width: 4,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: theme.accent,
-          }}
-        />
-      ) : null}
+      {hasPlan ? <View pointerEvents="none" style={styles.calendarDateViewStyle2(theme)} /> : null}
     </View>
   );
 }
@@ -87,7 +69,7 @@ function CalendarCell({ date, index, ...props }: CalendarCellProps) {
   const hasDate = date !== null;
 
   if (!hasDate) {
-    return <View key={'blank-' + index} style={{ width: '14.2857%' }} />;
+    return <View key={'blank-' + index} style={styles.calendarCellViewStyle} />;
   }
 
   return <CalendarDate date={date} {...props} />;
@@ -109,19 +91,19 @@ export function Calendar({ selected, onSelect }: CalendarProps) {
 
   return (
     <View>
-      <View style={[styles.row, { justifyContent: 'space-between' }]}>
+      <View style={styles.calendarViewStyle}>
         <Button title="이전 달" onPress={() => setMonth(shiftMonth(month, -1))} />
         <Label>{monthLabel(month)}</Label>
         <Button title="다음 달" onPress={() => setMonth(shiftMonth(month, 1))} />
       </View>
 
-      <View style={{ flexDirection: 'row' }}>
+      <View style={styles.calendarViewStyle2}>
         {weekdays.map((label, day) => (
           <WeekdayHeading key={label} day={day} />
         ))}
       </View>
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+      <View style={styles.calendarViewStyle3}>
         {cells.map((date, index) => (
           <CalendarCell
             key={date ?? 'blank-' + index}

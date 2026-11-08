@@ -6,7 +6,7 @@ function withCmakePathLimit(config) {
     const properties = modConfig.modResults.filter((entry) => entry.key !== propertyName);
     const isWindows = process.platform === 'win32';
 
-    // 긴 개체 파일 경로를 해시로 줄여 Windows Ninja의 경로 제한을 피한다.
+    // 경로 해시: Win Ninja 길이 제한 회피.
     if (isWindows) {
       properties.push({ type: 'property', key: propertyName, value: '240' });
     }

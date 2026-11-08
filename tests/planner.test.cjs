@@ -48,7 +48,7 @@ function fixture() {
   return data;
 }
 
-// 변경 전의 전체 목록 검색 방식으로 결과를 비교한다.
+// 기존 전체 검색 결과와 비교.
 function referencePlans(data, date) {
   const daily = data.dailyPlanItems
     .filter((item) => item.date === date)

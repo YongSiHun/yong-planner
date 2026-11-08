@@ -1,11 +1,13 @@
-import { displayPlanEntry } from '../services/time';
+import { router } from 'expo-router';
 import { useRef, useState, type ComponentRef } from 'react';
 import { Keyboard, Pressable, Text, TextInput, View } from 'react-native';
-import { router } from 'expo-router';
-import { Button, design, report, useTheme } from '../../../components/ui';
-import { saveException, usePlanner } from '../../../stores/planner';
+import { Button, report, useTheme } from '../../../components/ui';
+import { usePlanner } from '../../../stores/planner';
 import { validTime } from '../../../utils/date';
+import { usePlannerActions } from '../hooks/usePlannerActions';
+import { displayPlanEntry } from '../services/time';
 import type { PlanEntry } from '../types';
+import * as styles from './RecurringNote.styles';
 
 export function RecurringNote({
   entry,
@@ -20,6 +22,7 @@ export function RecurringNote({
 }) {
   const theme = useTheme();
   const format = usePlanner((state) => state.data.settings.timeFormat ?? '24h');
+  const { saveException } = usePlannerActions();
   const displayContent = displayPlanEntry(entry, format);
   const titleInput = useRef<ComponentRef<typeof TextInput>>(null);
   const timeInput = useRef<ComponentRef<typeof TextInput>>(null);
@@ -65,35 +68,20 @@ export function RecurringNote({
         onPress={startEditing}
         accessibilityRole="button"
         accessibilityLabel={displayContent + ', 이 날짜 반복 일정 수정'}
-        style={{ minHeight: 32, justifyContent: 'center' }}
+        style={styles.recurringNotePressableStyle}
       >
-        <Text
-          style={{
-            color: theme.accent,
-            fontFamily: design.font.regular,
-            fontSize: design.type.body,
-            lineHeight: design.lineHeight,
-          }}
-        >
-          <Text style={{ color: theme.muted }}>↻ </Text>
+        <Text style={styles.recurringNoteTextStyle(theme)}>
+          <Text style={styles.recurringNoteTextStyle2(theme)}>↻ </Text>
           {displayContent}
         </Text>
       </Pressable>
     );
   }
 
-  const inputStyle = {
-    color: theme.text,
-    fontFamily: design.font.regular,
-    fontSize: design.type.body,
-    padding: design.space.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.line,
-    minHeight: design.touchTarget,
-  };
+  const inputStyle = styles.recurringNoteInput(theme);
 
   return (
-    <View style={{ paddingVertical: design.space.xs }}>
+    <View style={styles.recurringNoteViewStyle}>
       <TextInput
         ref={titleInput}
         onFocus={() => onInputFocus(titleInput.current)}
@@ -122,7 +110,7 @@ export function RecurringNote({
         cursorColor={theme.accent}
         style={inputStyle}
       />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+      <View style={styles.recurringNoteViewStyle2}>
         <Button compact title="저장" onPress={save} />
         <Button
           compact

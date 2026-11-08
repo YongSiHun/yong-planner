@@ -1,42 +1,18 @@
-import { useEffect } from 'react';
-import { AppState, useColorScheme, View } from 'react-native';
-import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
-import { appFonts } from '../components/ui/fonts';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useColorScheme, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as styles from '../components/navigation/RootLayout.styles';
+import { Button, dark, Label, light, ThemeContext, useTheme } from '../components/ui';
+import { DialogHost } from '../components/ui/DialogHost';
+import { appFonts } from '../components/ui/fonts';
+import { usePlannerActions } from '../features/planner/hooks/usePlannerActions';
+import { usePlannerInit } from '../features/planner/hooks/usePlannerInit';
 import { usePlanner } from '../stores/planner';
-import { Button, Label, ThemeContext, light, dark, useTheme, design } from '../components/ui';
-
-function initializePlanner() {
-  void usePlanner
-    .getState()
-    .initialize()
-    .catch(() => {});
-}
-
-function usePlannerLifecycle() {
-  useEffect(() => {
-    initializePlanner();
-
-    const subscription = AppState.addEventListener('change', (state) => {
-      const isBackground = state !== 'active';
-
-      if (!isBackground) {
-        return;
-      }
-
-      void usePlanner
-        .getState()
-        .flush()
-        .catch(() => {});
-    });
-
-    return () => subscription.remove();
-  }, []);
-}
 
 function LoadingScreen() {
+  const { initialize } = usePlannerActions();
   const theme = useTheme();
   const error = usePlanner((state) => state.error);
   const message = error
@@ -44,12 +20,17 @@ function LoadingScreen() {
     : '용플래너를 여는 중…';
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', padding: 32, backgroundColor: theme.bg }}>
+    <View style={styles.loadingScreenViewStyle(theme)}>
       <Label>{message}</Label>
       {error ? (
         <>
           <Label muted>{error}</Label>
-          <Button title="다시 시도" onPress={initializePlanner} />
+          <Button
+            title="다시 시도"
+            onPress={() => {
+              void initialize().catch(() => {});
+            }}
+          />
         </>
       ) : null}
     </View>
@@ -65,19 +46,7 @@ function RootNavigation() {
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: theme.bg },
-        headerTintColor: theme.accent,
-        headerTitleStyle: {
-          fontFamily: design.font.bold,
-          fontWeight: 'normal',
-          fontSize: design.type.title,
-        },
-        contentStyle: { backgroundColor: theme.bg },
-        headerShadowVisible: false,
-      }}
-    >
+    <Stack screenOptions={styles.rootNavigationStackScreenOptions(theme)}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="recurring" options={{ title: '반복 일정' }} />
       <Stack.Screen name="settings" options={{ title: '설정' }} />
@@ -90,23 +59,24 @@ export default function RootLayout() {
   const canShowContent = fontsLoaded || fontError !== null;
   const setting = usePlanner((state) => state.data.settings.theme);
   const systemTheme = useColorScheme();
-  const followsSystem = setting === 'system';
-  const selectedTheme = followsSystem ? systemTheme : setting;
-  const isDarkTheme = selectedTheme === 'dark';
+  const isDarkTheme = usesDarkTheme(setting, systemTheme);
   const theme = isDarkTheme ? dark : light;
 
-  usePlannerLifecycle();
+  usePlannerInit();
 
   return (
     <SafeAreaProvider>
       <ThemeContext.Provider value={theme}>
-        <StatusBar style={isDarkTheme ? 'light' : 'dark'} />
-        {canShowContent ? (
-          <RootNavigation />
-        ) : (
-          <View style={{ flex: 1, backgroundColor: theme.bg }} />
-        )}
+        <StatusBar style={styles.rootLayoutStatusBarStyle(isDarkTheme)} />
+        {canShowContent ? <RootNavigation /> : <View style={styles.rootLayoutViewStyle(theme)} />}
+        <DialogHost />
       </ThemeContext.Provider>
     </SafeAreaProvider>
   );
+}
+
+function usesDarkTheme(setting: string, systemTheme: string | null | undefined): boolean {
+  const selectedTheme = setting === 'system' ? systemTheme : setting;
+
+  return selectedTheme === 'dark';
 }

@@ -1,5 +1,5 @@
-import type { PlannerData } from '../types';
 import { parseDate } from '../../../utils/date';
+import type { PlannerData } from '../types';
 import { dailyNoteItems } from './note';
 
 export function deleteSelectedNotes(data: PlannerData, ids: ReadonlySet<string>): PlannerData {
@@ -14,10 +14,7 @@ export function deleteSelectedNotes(data: PlannerData, ids: ReadonlySet<string>)
   return {
     ...data,
     dailyPlanItems: items,
-    dailyPlanOrders: data.dailyPlanOrders.map((order) => ({
-      ...order,
-      itemIds: order.itemIds.filter((id) => !orderIds.has(id)),
-    })),
+    dailyPlanOrders: data.dailyPlanOrders.map((order) => removeOrderIds(order, orderIds)),
   };
 }
 
@@ -52,8 +49,9 @@ export function copyNoteToDates(
     createdAt: new Date(latest + index + 1).toISOString(),
   }));
   const targetSet = new Set(targets);
+  const ordersByDate = new Map(data.dailyPlanOrders.map((order) => [order.date, order]));
   const orders = copies.map((item) => {
-    const existing = data.dailyPlanOrders.find((order) => order.date === item.date);
+    const existing = ordersByDate.get(item.date);
     const itemIds =
       existing?.itemIds ?? dailyNoteItems(data, item.date).map((note) => 'daily:' + note.id);
 
@@ -68,4 +66,11 @@ export function copyNoteToDates(
       ...orders,
     ],
   };
+}
+
+function removeOrderIds(order: PlannerData['dailyPlanOrders'][number], ids: ReadonlySet<string>) {
+  const itemIds = order.itemIds.filter((id) => !ids.has(id));
+  const unchanged = itemIds.length === order.itemIds.length;
+
+  return unchanged ? order : { ...order, itemIds };
 }

@@ -1,4 +1,4 @@
-// 가운데로 이동하되 실제 스크롤 가능한 내용 범위를 넘지 않는다.
+// 중앙 이동: 스크롤 범위 내 제한.
 export function centeredDateOffset(
   position: number,
   rowHeight: number,

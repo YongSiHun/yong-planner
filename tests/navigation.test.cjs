@@ -31,7 +31,7 @@ require.cache[reactPath] = {
 const { useMonthNavigation } = require('../src/features/planner/hooks/useMonthNavigation.ts');
 function render() {
   cursor = 0;
-  // React 훅을 위의 상태 보존 테스트 대역으로 실행한다.
+  // React 훅: 상태 유지 mock 실행.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   return useMonthNavigation();
 }

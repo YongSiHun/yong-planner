@@ -1,11 +1,11 @@
-import { TimePicker } from './TimePicker';
-import type { useNoteSelection } from '../hooks/useNoteSelection';
-import type { TimeFormat } from '../types';
-import type { usePlannerGuide } from '../hooks/usePlannerGuide';
 import type { ExportFormat } from '../../../services/export/files';
+import type { TimeFormat } from '../types';
+import type { NoteSelectionModel, PlannerGuideModel } from '../types/presentation';
+import { DeleteSchedules } from './DeleteSchedules';
+import { MonthPicker } from './MonthPicker';
 import { PlannerGuide } from './PlannerGuide';
 import { PlannerMenu, type PlannerMenuType } from './PlannerMenu';
-import { MonthPicker } from './MonthPicker';
+import { TimePicker } from './TimePicker';
 
 export function PlannerDialogs({
   guide,
@@ -20,8 +20,8 @@ export function PlannerDialogs({
   onShowExport,
   onExport,
 }: {
-  guide: ReturnType<typeof usePlannerGuide>;
-  selection: ReturnType<typeof useNoteSelection>;
+  guide: PlannerGuideModel;
+  selection: NoteSelectionModel;
   timeFormat: TimeFormat;
   monthPickerOpen: boolean;
   month: string;
@@ -34,14 +34,7 @@ export function PlannerDialogs({
 }) {
   return (
     <>
-      {selection.timeSource ? (
-        <TimePicker
-          item={selection.timeSource}
-          format={timeFormat}
-          onClose={selection.closeTime}
-          onSave={selection.saveTime}
-        />
-      ) : null}
+      <SelectionDialogs selection={selection} timeFormat={timeFormat} />
       {monthPickerOpen ? (
         <MonthPicker month={month} onClose={onCloseMonth} onChoose={onChooseMonth} />
       ) : null}
@@ -59,6 +52,34 @@ export function PlannerDialogs({
           onClose={onCloseMenu}
           onShowExport={onShowExport}
           onExport={onExport}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function SelectionDialogs({
+  selection,
+  timeFormat,
+}: {
+  selection: NoteSelectionModel;
+  timeFormat: TimeFormat;
+}) {
+  return (
+    <>
+      {selection.timeSource ? (
+        <TimePicker
+          item={selection.timeSource}
+          format={timeFormat}
+          onClose={selection.closeTime}
+          onSave={selection.saveTime}
+        />
+      ) : null}
+      {selection.deleteCount > 0 ? (
+        <DeleteSchedules
+          count={selection.deleteCount}
+          onCancel={selection.cancelDelete}
+          onConfirm={selection.deleteSelected}
         />
       ) : null}
     </>

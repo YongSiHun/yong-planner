@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const ts = require('typescript');
 
-// 앱의 TypeScript 모듈과 컴포넌트를 Node 테스트에서 로드한다.
+// Node 테스트용 TS·컴포넌트 로더.
 const compile = (module, filename) => {
   const { outputText } = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
     compilerOptions: {

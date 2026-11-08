@@ -1,9 +1,9 @@
 import type { PlannerData } from '../../features/planner/types';
-import { getDatabase, loadData, replaceData } from './planner';
 import { validateData } from '../../services/backup';
+import { getDatabase, loadData, replaceData } from './planner';
 let previous: PlannerData | undefined;
 
-// 비교: 삭제와 변경 목록을 나누어 중첩 분기 제거.
+// Diff: 삭제·변경 분리.
 async function synchronizeRows<T>(
   before: T[],
   after: T[],
@@ -29,9 +29,9 @@ export async function persistData(input: PlannerData): Promise<void> {
   const db = await getDatabase();
   const before = previous ?? (await loadData());
 
-  // 저장: 외래 키가 켜진 같은 연결과 직렬 큐 사용.
+  // 저장: FK 활성 연결·직렬 큐 공유.
   await db.withTransactionAsync(async () => {
-    // 부모 삭제에 연결된 예외는 외래 키의 ON DELETE CASCADE로 함께 삭제된다.
+    // 부모 삭제 → FK CASCADE로 예외 삭제.
     await synchronizeRows(
       before.recurringPlans,
       data.recurringPlans,

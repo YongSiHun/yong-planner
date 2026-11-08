@@ -2,7 +2,7 @@ import { changeNoteInput, noteInputValue, type NoteEdit } from './note';
 
 type Transition = { kind: 'split' | 'merge' | 'select'; before: string; after: string };
 
-// Native input can emit more edits against its old buffer before a JS text update arrives.
+// JS 반영 전 native 구버퍼의 후속 입력 가능.
 export class NoteInputEvents {
   private eventCount = -1;
   private lastRaw: string | null = null;
