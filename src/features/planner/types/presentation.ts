@@ -21,6 +21,7 @@ export interface NoteSelectionModel {
   deleteCount: number;
   toggle(date: string, index: number, begin?: boolean): void;
   clear(): void;
+  selectAll(month: string): void;
   editSelected(): void;
   deleteSelected(): void;
   requestDelete(): void;

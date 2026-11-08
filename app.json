@@ -46,6 +46,11 @@
     },
     "icon": "./assets/icon-dragon.png",
     "primaryColor": "#1F6EAC",
-    "orientation": "default"
+    "orientation": "default",
+    "extra": {
+      "eas": {
+        "projectId": "80f9c919-4846-402e-8440-fba738804bd1"
+      }
+    }
   }
 }

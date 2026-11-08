@@ -12,6 +12,7 @@ export function SelectionBar({
   allAlarm = false,
   onDelete,
   onCancel,
+  onSelectAll,
 }: {
   count: number;
   onImportant(): void;
@@ -22,6 +23,7 @@ export function SelectionBar({
   allAlarm?: boolean;
   onDelete(): void;
   onCancel(): void;
+  onSelectAll(): void;
 }) {
   const theme = useTheme();
   const hasSelection = count > 0;
@@ -30,14 +32,27 @@ export function SelectionBar({
     <View style={styles.container(theme)}>
       <View style={styles.summary}>
         <Label style={styles.count}>{count}개 선택</Label>
-        <Button
-          labelSize={design.type.small}
-          style={styles.cancel}
-          compact
-          bold
-          title="전체 선택 해제"
-          onPress={onCancel}
-        />
+        <View style={styles.selectionControls}>
+          <Button
+            labelSize={design.type.small}
+            style={styles.cancel}
+            compact
+            bold
+            title="전체선택"
+            accessibilityLabel="이번 달 일정 전체 선택"
+            onPress={onSelectAll}
+          />
+          <Label muted>|</Label>
+          <Button
+            labelSize={design.type.small}
+            style={styles.cancel}
+            compact
+            bold
+            title="해제"
+            accessibilityLabel="전체 선택 해제"
+            onPress={onCancel}
+          />
+        </View>
       </View>
       <ScrollView
         horizontal

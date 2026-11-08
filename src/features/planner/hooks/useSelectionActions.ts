@@ -150,6 +150,24 @@ export function useSelectionActions(
 
   return {
     clear,
+    selectAll: useCallback(
+      (month: string) => {
+        const items = usePlanner.getState().data.dailyPlanItems;
+        const selected = new Set(
+          items
+            .filter((item) => item.date.slice(0, 7) === month.slice(0, 7))
+            .map((item) => item.id),
+        );
+        const hasSelection = selected.size > 0;
+
+        if (!hasSelection) {
+          return;
+        }
+        onBegin();
+        ui.setState({ ...emptySelection(), active: true, selected });
+      },
+      [onBegin],
+    ),
     toggleImportant: useCallback(() => {
       const selected = ui.getState().selected;
       const items = usePlanner

@@ -484,7 +484,8 @@ test('single and multiple selections offer the same actions', () => {
   assert.equal(selection.selected.size, 1);
   let bar = SelectionBar({ count: 1, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
   assert.deepEqual(buttonTitles(bar), [
-    '전체 선택 해제',
+    '전체선택',
+    '해제',
     '중요 일정 등록',
     '시간 설정',
     '일정 복사',
@@ -495,7 +496,8 @@ test('single and multiple selections offer the same actions', () => {
   selection = renderSelection(edits);
   bar = SelectionBar({ count: 2, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
   assert.deepEqual(buttonTitles(bar), [
-    '전체 선택 해제',
+    '전체선택',
+    '해제',
     '중요 일정 등록',
     '시간 설정',
     '일정 복사',
@@ -1187,4 +1189,38 @@ test('empty days and date labels dismiss selection without opening input or date
     onOutsidePress: renderSelection([]).clear,
   }).props.onPress();
   assert.equal(renderSelection([]).active, false);
+});
+
+test('select all targets the displayed month, stays selected on repeat and clears from the bar', () => {
+  let id = 0;
+  for (const date of ['2026-10-31', '2026-11-01', '2026-11-30', '2026-12-01', '2027-11-01']) {
+    plannerData = applyDailyNote(plannerData, date, '회의,운동', () => 'all-' + ++id);
+  }
+  let selection = renderSelection([]);
+  selection.toggle('2026-11-01', 0, true);
+  const renderBar = () => {
+    selection = renderSelection([]);
+    return SelectionBar({
+      count: selection.selected.size,
+      onSelectAll: () => selection.selectAll('2026-11-08'),
+      onCancel: selection.clear,
+    });
+  };
+  const press = (title) =>
+    find(
+      renderBar(),
+      (node) => node.type === 'Button' && node.props.title === title,
+    ).props.onPress();
+  press('전체선택');
+  const expected = plannerData.dailyPlanItems
+    .filter((item) => item.date.startsWith('2026-11-'))
+    .map((item) => item.id);
+  assert.deepEqual([...renderSelection([]).selected], expected);
+  assert.equal(renderSelection([]).active, true);
+  press('전체선택');
+  assert.deepEqual([...renderSelection([]).selected], expected);
+  press('해제');
+  assert.equal(renderSelection([]).selected.size, 0);
+  assert.equal(renderSelection([]).active, false);
+  assert.equal(plannerData.dailyPlanItems.length, 10);
 });

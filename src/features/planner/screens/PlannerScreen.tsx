@@ -178,6 +178,7 @@ export default function PlannerScreen() {
           </ScrollView>
           <PlannerFooter
             selection={selection}
+            month={month}
             keyboardVisible={keyboardVisible}
             onToday={handleToday}
           />

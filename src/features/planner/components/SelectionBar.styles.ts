@@ -50,3 +50,9 @@ export const cancel = {
   paddingVertical: 0,
   backgroundColor: 'transparent',
 } as const;
+
+export const selectionControls = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: design.space.sm,
+} as const;
