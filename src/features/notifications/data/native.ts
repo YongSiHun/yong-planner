@@ -44,7 +44,6 @@ export async function prepareNotificationChannels(
   await native.setNotificationChannelAsync(channelId('alarm', preferences.lockScreen), {
     name: '일정 알람',
     importance: native.AndroidImportance.HIGH,
-    sound: 'default',
     enableVibrate: false,
     showBadge: false,
     lockscreenVisibility: visibility,
@@ -156,7 +155,7 @@ export async function createNativeNotificationPort(
         content: {
           title: item.title,
           body: item.body,
-          sound: item.kind === 'alarm' ? 'default' : false,
+          sound: item.kind === 'alarm',
           data: { kind: item.kind, date: item.date, fingerprint },
           threadIdentifier: 'yong-' + item.kind,
         },

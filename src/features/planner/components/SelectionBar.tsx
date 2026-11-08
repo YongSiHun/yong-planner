@@ -4,7 +4,6 @@ import * as styles from './SelectionBar.styles';
 
 export function SelectionBar({
   count,
-  onEdit,
   onImportant,
   allImportant = false,
   onCopy,
@@ -15,7 +14,6 @@ export function SelectionBar({
   onCancel,
 }: {
   count: number;
-  onEdit(): void;
   onImportant(): void;
   allImportant?: boolean;
   onCopy(): void;
@@ -30,43 +28,42 @@ export function SelectionBar({
 
   return (
     <View style={styles.container(theme)}>
+      <View style={styles.summary}>
+        <Label style={styles.count}>{count}개 선택</Label>
+        <Button
+          labelSize={design.type.small}
+          style={styles.cancel}
+          compact
+          bold
+          title="전체 선택 해제"
+          onPress={onCancel}
+        />
+      </View>
       <ScrollView
         horizontal
         style={styles.viewport}
-        showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.actions}
+        showsHorizontalScrollIndicator
+        keyboardShouldPersistTaps="handled"
       >
-        <Label style={styles.count}>{count}개 선택</Label>
         <Button
           labelSize={design.type.body}
           style={styles.action}
           compact
           bold
-          title="선택 해제"
-          onPress={onCancel}
-        />
-        <Button
-          labelSize={design.type.body}
-          style={styles.action}
-          compact
-          bold
-          title={allImportant ? '중요 일정 해제' : '중요 일정으로 설정'}
+          title={allImportant ? '중요 일정 해제' : '중요 일정 등록'}
+          accessibilityLabel={allImportant ? '중요 일정 해제' : '중요 일정 등록'}
+          selected={allImportant}
           onPress={onImportant}
         />
-        <Button
-          labelSize={design.type.body}
-          style={styles.action}
-          compact
-          bold
-          title="수정하기"
-          onPress={onEdit}
-        />
+
         <Button
           labelSize={design.type.body}
           style={styles.action}
           compact
           bold
           title="시간 설정"
+          accessibilityLabel="시간 설정"
           onPress={onTime}
         />
         <Button
@@ -75,6 +72,7 @@ export function SelectionBar({
           compact
           bold
           title="일정 복사"
+          accessibilityLabel="일정 복사"
           onPress={onCopy}
         />
         <Button
@@ -83,6 +81,8 @@ export function SelectionBar({
           compact
           bold
           title={allAlarm ? '알람 해제' : '알람 설정'}
+          accessibilityLabel={allAlarm ? '알람 해제' : '알람 설정'}
+          selected={allAlarm}
           disabled={!hasSelection}
           onPress={onAlarm}
         />
@@ -91,7 +91,8 @@ export function SelectionBar({
           style={styles.action}
           compact
           bold
-          title="삭제하기"
+          title="삭제"
+          accessibilityLabel="삭제"
           danger
           disabled={count === 0}
           onPress={onDelete}

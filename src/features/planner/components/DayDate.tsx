@@ -14,6 +14,8 @@ export function DayDate({
   onCopyDate,
   onFinish,
   onInfo,
+  selecting = false,
+  onOutsidePress,
 }: {
   date: string;
   holidayName: string | null;
@@ -24,6 +26,8 @@ export function DayDate({
   onCopyDate(date: string): void;
   onFinish(date: string): void;
   onInfo(): void;
+  selecting?: boolean;
+  onOutsidePress?(): void;
 }) {
   const theme = useTheme();
   const hasName = holidayName !== null;
@@ -33,6 +37,11 @@ export function DayDate({
   function handlePress() {
     if (copying) {
       onCopyDate(date);
+
+      return;
+    }
+    if (selecting) {
+      onOutsidePress?.();
 
       return;
     }

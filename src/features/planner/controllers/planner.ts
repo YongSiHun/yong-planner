@@ -171,8 +171,8 @@ export function saveException(
   );
 }
 
-export function saveDailyNote(date: string, text: string): void {
-  updatePlanner((data) => applyDailyNote(data, date, text, randomUUID));
+export function saveDailyNote(date: string, text: string, replaceTimes = false): void {
+  updatePlanner((data) => applyDailyNote(data, date, text, randomUUID, replaceTimes));
 }
 
 export function deleteDailyNotes(ids: ReadonlySet<string>) {

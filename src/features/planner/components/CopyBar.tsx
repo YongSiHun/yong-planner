@@ -24,7 +24,7 @@ export function CopyBar({
         <Button compact title="취소" onPress={onCancel} />
       </View>
       <Label muted style={styles.copyBarLabelStyle}>
-        복사할 날짜를 본문에서 누르세요.
+        복사할 날짜를 누르세요. 월을 바꿔도 선택은 유지돼요.
       </Label>
       <Button
         compact

@@ -57,6 +57,7 @@ export interface DayRowProps {
   onCopyDate(date: string): void;
   editingIndex?: number;
   onSelect(date: string, index: number, begin?: boolean): void;
+  onOutsidePress?(): void;
   recurring: PlanEntry[];
   exceptions: RecurringPlanException[];
   holidayName: string | null;
@@ -92,6 +93,7 @@ export interface SchedulePreviewProps {
   date: string;
   onEdit(index?: number): void;
   onArm?(index: number): void;
+  onOutsidePress?(): void;
   onChipLayout?(index: number, event: LayoutChangeEvent): void;
   draggingIndex?: number | null;
   overlay?: ReactNode;

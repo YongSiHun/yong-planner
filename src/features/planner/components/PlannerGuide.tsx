@@ -44,7 +44,13 @@ export function PlannerGuide({
           백스페이스를 입력하면 칩의 내용을 수정할 수 있어요.
         </Label>
       </GuideStep>
-      <GuideStep title="3. 공유와 복사">
+      <GuideStep title="3. 일정 복사">
+        <Label muted style={styles.plannerGuideLabelStyle}>
+          칩 길게 누르기 → 일정 복사 → 날짜 선택 → 복사. 월을 넘겨 여러 날짜를 고를 수 있어요.
+          복사한 일정은 맨 뒤에 붙어요.
+        </Label>
+      </GuideStep>
+      <GuideStep title="4. 공유">
         <Label muted style={styles.plannerGuideLabelStyle}>
           우측 메뉴 → 내보내기에서 공유하거나 복사하세요.
         </Label>

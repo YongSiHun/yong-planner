@@ -24,3 +24,5 @@ export function plannerScreenScrollViewContentContainerStyle(
     paddingBottom: selectionActive || selectionCopySource ? 12 : 76,
   } as const;
 }
+
+export const surface = { flex: 1 } as const;

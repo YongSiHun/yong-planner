@@ -252,7 +252,7 @@ test('native alarm requests use canonical times and fall back when exact access 
   assert.equal(new Date(request.trigger.date).getHours(), 13);
   assert.equal(new Date(request.trigger.date).getMinutes(), 10);
   assert.equal(request.content.body, '오후 1시 10분 회의');
-  assert.equal(request.content.sound, 'default');
+  assert.equal(request.content.sound, true);
   const handler = events.find((event) => event.type === 'handler').handler;
   assert.equal((await handler.handleNotification({ request })).shouldPlaySound, true);
   assert.equal(
@@ -315,4 +315,13 @@ test('chip alarm setup requests required access and denied notifications stop se
   await authorizeScheduleAlarm();
   assert.equal(events.filter((event) => event.type === 'permission').length, prompts);
   assert.equal(events.filter((event) => event.type === 'exact').length, exacts);
+});
+
+test('alarm channels use the SDK default instead of resolving a custom default sound file', async () => {
+  await authorizeScheduleAlarm();
+  const channels = events.filter((event) => event.type === 'channel');
+  const alarm = channels.find((event) => event.id.includes('-alarm-'));
+  const summary = channels.find((event) => event.id.includes('-summary-'));
+  assert.equal(Object.hasOwn(alarm.config, 'sound'), false);
+  assert.equal(summary.config.sound, null);
 });

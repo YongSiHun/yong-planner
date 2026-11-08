@@ -36,7 +36,9 @@ export class NoteInputEvents {
     const next = changeNoteInput(edit, value);
     const error = noteLengthError(next.text);
 
-    if (error) {
+    const exceedsLimit = error !== null && next.text.length >= edit.text.length;
+
+    if (exceedsLimit) {
       this.onInvalid(error);
 
       return null;

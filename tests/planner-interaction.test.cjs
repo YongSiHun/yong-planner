@@ -217,7 +217,7 @@ function find(node, predicate) {
   if (predicate(node)) return node;
   return find(node.props?.children, predicate);
 }
-function renderInput(note = '회의,장보기', initialIndex, onSelect = () => {}) {
+function renderInput(note = '회의,장보기', initialIndex, onSelect = () => {}, options = {}) {
   cursor = 0;
   const tree = ScheduleInput({
     date: '2026-11-07',
@@ -228,6 +228,7 @@ function renderInput(note = '회의,장보기', initialIndex, onSelect = () => {
     onEditPart() {},
     onInputFocus() {},
     onInputLayout() {},
+    ...options,
   });
   const input = find(tree, (node) => node.type === 'TextInput');
   input.props.ref.current = nativeInput;
@@ -483,25 +484,23 @@ test('single and multiple selections offer the same actions', () => {
   assert.equal(selection.selected.size, 1);
   let bar = SelectionBar({ count: 1, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
   assert.deepEqual(buttonTitles(bar), [
-    '선택 해제',
-    '중요 일정으로 설정',
-    '수정하기',
+    '전체 선택 해제',
+    '중요 일정 등록',
     '시간 설정',
     '일정 복사',
     '알람 설정',
-    '삭제하기',
+    '삭제',
   ]);
   selection.toggle('2026-11-07', 1);
   selection = renderSelection(edits);
   bar = SelectionBar({ count: 2, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
   assert.deepEqual(buttonTitles(bar), [
-    '선택 해제',
-    '중요 일정으로 설정',
-    '수정하기',
+    '전체 선택 해제',
+    '중요 일정 등록',
     '시간 설정',
     '일정 복사',
     '알람 설정',
-    '삭제하기',
+    '삭제',
   ]);
   selection.requestDelete();
   assert.equal(plannerData.dailyPlanItems.length, 2);
@@ -1091,4 +1090,101 @@ test('selected chips authorize alarms, save their own time and can be disabled t
     false,
   );
   assert.equal(alarmPermissionRequests, 1);
+});
+
+test('saved times are editable native input text and cannot remain as undeletable labels', () => {
+  const options = { noteTimes: ['13:10', '18:00'] };
+  let editor = renderInput('회의,운동', 0, () => {}, options);
+  assert.equal(editor.input.props.value, '13:10 회의');
+  changeInput(editor.input, '회의');
+  editor = renderInput('회의,운동', 0, () => {}, options);
+  assert.equal(editor.input.props.value, '회의');
+  assert.equal(saved.at(-1), '회의,18:00 운동');
+  assert.equal(
+    find(editor.tree, (node) => node.type?.name === 'ActiveTimeLabel'),
+    undefined,
+  );
+});
+
+test('copy selection spans month and year boundaries and retains all chosen dates', () => {
+  plannerData = applyDailyNote(plannerData, '2026-11-08', '회의', () => 'cross-month');
+  let selection = renderSelection([]);
+  selection.toggle('2026-11-08', 0, true);
+  renderSelection([]).openCopy();
+  for (const date of ['2026-11-30', '2026-12-01', '2027-01-01']) {
+    renderSelection([]).toggleCopyDate(date);
+  }
+  selection = renderSelection([]);
+  assert.deepEqual([...selection.copyDates], ['2026-11-30', '2026-12-01', '2027-01-01']);
+  assert.equal(selection.copySource.id, 'cross-month');
+  selection.copySelected();
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => item.date),
+    ['2026-11-08', '2026-11-30', '2026-12-01', '2027-01-01'],
+  );
+});
+
+test('backspacing through a timed chip removes every character without recreating its time label', () => {
+  const options = { noteTimes: ['13:10'] };
+  let editor = renderInput('회의', 0, () => {}, options);
+  const original = editor.input.props.value;
+  for (let length = original.length - 1; length >= 0; length--) {
+    changeInput(editor.input, original.slice(0, length));
+    editor = renderInput('회의', 0, () => {}, options);
+    assert.equal(editor.input.props.value, original.slice(0, length));
+  }
+  assert.equal(saved.at(-1), '');
+});
+
+test('selection exits on schedule whitespace while chip taps keep toggling selected items', () => {
+  let id = 0;
+  const date = '2026-11-08';
+  plannerData = applyDailyNote(plannerData, date, '회의,운동', () => 'outside-' + ++id);
+  renderSelection([]).toggle(date, 0, true);
+  renderSelection([]).toggle(date, 1);
+  const selection = renderSelection([]);
+  const tree = SchedulePreview({
+    note: '회의,운동',
+    date,
+    selecting: true,
+    onEdit: () => assert.fail('selection must not start editing'),
+    onSelect: (index) => renderSelection([]).toggle(date, index),
+    onOutsidePress: selection.clear,
+  });
+  find(tree, (node) => node.type === ScheduleChip).props.onPress();
+  assert.equal(renderSelection([]).selected.size, 1);
+  assert.equal(renderSelection([]).active, true);
+  tree.props.onPress();
+  assert.equal(renderSelection([]).selected.size, 0);
+  assert.equal(renderSelection([]).active, false);
+});
+
+test('empty days and date labels dismiss selection without opening input or date information', () => {
+  const date = '2026-11-08';
+  plannerData = applyDailyNote(plannerData, date, '회의', () => 'empty-outside');
+  const select = () => renderSelection([]).toggle(date, 0, true);
+  select();
+  SchedulePreview({
+    note: '',
+    date,
+    selecting: true,
+    onEdit: () => assert.fail('selection must not start editing'),
+    onOutsidePress: renderSelection([]).clear,
+  }).props.onPress();
+  assert.equal(renderSelection([]).active, false);
+  select();
+  DayDate({
+    date,
+    holidayName: '기념일',
+    selecting: true,
+    copying: false,
+    isToday: false,
+    copyTarget: false,
+    copySource: false,
+    onCopyDate: () => assert.fail('not copying'),
+    onInfo: () => assert.fail('selection dismissal takes priority'),
+    onFinish: () => assert.fail('selection dismissal takes priority'),
+    onOutsidePress: renderSelection([]).clear,
+  }).props.onPress();
+  assert.equal(renderSelection([]).active, false);
 });

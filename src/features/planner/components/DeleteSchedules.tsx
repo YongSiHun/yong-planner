@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { Button, Label, useTheme } from '../../../components/ui';
+import { Button, design, Label, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
 import * as styles from './DeleteSchedules.styles';
 
@@ -19,19 +19,27 @@ export function DeleteSchedules({
       title="삭제하시겠습니까?"
       onClose={onCancel}
       footer={
-        <View style={styles.deleteSchedulesViewStyle}>
-          <Button title="취소" onPress={onCancel} style={styles.deleteSchedulesButtonStyle} />
+        <View style={styles.actions}>
+          <Button
+            title="취소"
+            bold
+            labelSize={design.type.body}
+            onPress={onCancel}
+            textColor={theme.accent}
+            style={styles.action}
+          />
           <Button
             title="삭제"
             bold
+            labelSize={design.type.body}
             onPress={onConfirm}
-            textColor={theme.onAccent}
-            style={styles.deleteSchedulesButtonStyle2(theme)}
+            textColor={theme.red}
+            style={styles.action}
           />
         </View>
       }
     >
-      <Label muted>선택한 일정 {count}개를 삭제합니다.</Label>
+      <Label style={styles.message(theme)}>선택한 일정 {count}개를 삭제합니다.</Label>
     </Dialog>
   );
 }

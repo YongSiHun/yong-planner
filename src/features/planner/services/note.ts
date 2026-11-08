@@ -33,6 +33,7 @@ export function applyDailyNote(
   date: string,
   text: string,
   createId: () => string,
+  replaceTimes = false,
 ): PlannerData {
   const existing = dailyNoteItems(data, date);
   const parsed = splitNote(text).map(parseScheduleTimePrefix);
@@ -40,7 +41,7 @@ export function applyDailyNote(
   const isUnchanged =
     contents.length === existing.length &&
     contents.every((content, index) =>
-      matchesSavedNote(existing[index]!, content, parsed[index]!.time),
+      matchesSavedNote(existing[index]!, content, parsed[index]!.time, replaceTimes),
     );
 
   if (isUnchanged) {
@@ -54,7 +55,7 @@ export function applyDailyNote(
     id: preserved[index]?.id ?? createId(),
     date,
     content,
-    ...parsedTime(parsed[index]!.time),
+    ...parsedTime(parsed[index]!.time, replaceTimes),
     createdAt: preserved[index]?.createdAt ?? new Date(latest + index + 1).toISOString(),
   }));
   const previousOrder = data.dailyPlanOrders.find((order) => order.date === date)?.itemIds ?? [];
@@ -305,23 +306,28 @@ function existingNoteForIndex(
   return canReuse ? existing[index] : undefined;
 }
 
-export function notePartTime(
-  times: readonly (string | null)[],
-  edit: NoteEdit,
-  index: number,
-): string | null {
-  const isDraft = edit.draftSlot === true && index === edit.index;
-
-  return isDraft ? null : (times[storedNoteIndex(edit, index)] ?? null);
-}
-
-function matchesSavedNote(item: DailyPlanItem, content: string, time: string | undefined): boolean {
-  const unchangedTime = time === undefined || time === item.time;
+function matchesSavedNote(
+  item: DailyPlanItem,
+  content: string,
+  time: string | undefined,
+  replaceTimes: boolean,
+): boolean {
+  const unchangedTime = replaceTimes
+    ? (time ?? null) === (item.time ?? null)
+    : time === undefined || time === item.time;
 
   return item.content === content && unchangedTime;
 }
 
-function parsedTime(time: string | undefined): { time?: string } {
+function parsedTime(
+  time: string | undefined,
+  replaceTimes: boolean,
+): { time?: string | null; alarm?: undefined } {
+  const clearTime = replaceTimes && time === undefined;
+
+  if (clearTime) {
+    return { time: null, alarm: undefined };
+  }
   const hasTime = time !== undefined;
 
   return hasTime ? { time } : {};
@@ -338,4 +344,16 @@ function latestForNewItems(data: PlannerData, preserved: (DailyPlanItem | undefi
     (value, item) => Math.max(value, Date.parse(item.createdAt)),
     Date.now(),
   );
+}
+
+export function noteEditText(note: string, times: readonly (string | null)[]): string {
+  return splitNote(note)
+    .map((content, index) => {
+      const time = times[index];
+      const hasPrefix = parseScheduleTimePrefix(content).time !== undefined;
+      const addTime = Boolean(time) && !hasPrefix;
+
+      return addTime ? time + ' ' + content : content;
+    })
+    .join(NOTE_SEPARATOR);
 }

@@ -25,6 +25,7 @@ export const DayRow = memo(function DayRow({
   onCopyDate,
   editingIndex,
   onSelect,
+  onOutsidePress,
   recurring,
   exceptions,
   holidayName,
@@ -67,6 +68,7 @@ export const DayRow = memo(function DayRow({
 
       return;
     }
+    onOutsidePress?.();
     Keyboard.dismiss();
   }
 
@@ -93,6 +95,8 @@ export const DayRow = memo(function DayRow({
         holidayName={holidayName}
         onInfo={() => setInfoOpen(true)}
         isToday={isToday}
+        selecting={selecting}
+        onOutsidePress={onOutsidePress}
         copying={copying}
         copyTarget={copyTarget}
         copySource={copySourceDate === date}
@@ -118,6 +122,7 @@ export const DayRow = memo(function DayRow({
         ) : (
           <DraggableSchedulePreview
             onMove={handleMove}
+            onOutsidePress={onOutsidePress}
             date={date}
             note={note}
             noteTimes={noteTimes}
@@ -182,6 +187,7 @@ function areDayRowsEqual(before: DayRowProps, after: DayRowProps): boolean {
     'onCopyDate',
     'editingIndex',
     'onSelect',
+    'onOutsidePress',
     'holidayName',
     'isToday',
     'isEditing',

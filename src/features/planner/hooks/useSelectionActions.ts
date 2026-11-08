@@ -28,10 +28,18 @@ export function useSelectionActions(
       if (!hasItem) {
         return;
       }
+      const selected = toggled(ui.getState().selected, item.id, begin);
+      const hasSelection = selected.size > 0;
+
+      if (!hasSelection) {
+        clear();
+
+        return;
+      }
       onBegin();
-      ui.setState({ active: true, selected: toggled(ui.getState().selected, item.id, begin) });
+      ui.setState({ active: true, selected });
     },
-    [onBegin],
+    [clear, onBegin],
   );
   const editSelected = useCallback(() => {
     const data = usePlanner.getState().data;

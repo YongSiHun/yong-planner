@@ -2,7 +2,7 @@ import Feather from '@expo/vector-icons/Feather';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../../../components/ui';
 import { useScheduleInputState } from '../hooks/useScheduleInputState';
-import { NOTE_SEPARATOR, noteInputValue, notePartTime, storedNoteIndex } from '../services/note';
+import { NOTE_SEPARATOR, noteInputValue, storedNoteIndex } from '../services/note';
 import { formatScheduleContent, parseScheduleTimePrefix } from '../services/time';
 import type { TimeFormat } from '../types';
 import type { ScheduleInputProps, SchedulePreviewProps } from '../types/presentation';
@@ -115,7 +115,6 @@ export function ScheduleInput({
     edit,
     parts,
     content,
-    activeTime,
     input,
     availableWidth,
     requestedSelection,
@@ -152,7 +151,6 @@ export function ScheduleInput({
         important={
           noteImportant[storedNoteIndex(edit, index)] && !(edit.draftSlot && index === edit.index)
         }
-        time={notePartTime(noteTimes, edit, index)}
         timeFormat={timeFormat}
         onLongPress={() => handleLongPress(index)}
         onBefore={() => insertAt(index)}
@@ -180,8 +178,7 @@ export function ScheduleInput({
         {content || ' '}
       </Text>
       {parts.slice(0, edit.index).map(renderChip)}
-      <ActiveTimeLabel label={activeTime} />
-      {/* Keep one native input mounted while chips and the active part change. */}
+      {/* Native 입력 유지: 칩 전환 시 재마운트 방지. */}
       <TextInput
         ref={input}
         multiline
@@ -218,6 +215,7 @@ export function SchedulePreview({
   date,
   onEdit,
   onArm,
+  onOutsidePress,
   onChipLayout,
   draggingIndex,
   overlay,
@@ -228,12 +226,19 @@ export function SchedulePreview({
 }: SchedulePreviewProps) {
   const hasContent = note.split(NOTE_SEPARATOR).some((part) => part.trim().length > 0);
 
+  function handleBlankPress() {
+    if (selecting) {
+      onOutsidePress?.();
+
+      return;
+    }
+    onEdit(hasContent ? undefined : 0);
+  }
+
   if (!hasContent) {
     return (
       <Pressable
-        disabled={selecting}
-        accessibilityState={{ disabled: selecting }}
-        onPress={() => onEdit(0)}
+        onPress={handleBlankPress}
         accessibilityRole="button"
         accessibilityLabel={date + ', 일정 입력'}
         style={styles.emptyPreview}
@@ -242,17 +247,7 @@ export function SchedulePreview({
   }
 
   return (
-    <Pressable
-      accessible={false}
-      onPress={() => {
-        const canEdit = !selecting;
-
-        if (canEdit) {
-          onEdit();
-        }
-      }}
-      style={styles.preview}
-    >
+    <Pressable accessible={false} onPress={handleBlankPress} style={styles.preview}>
       {note.split(NOTE_SEPARATOR).map((part, index) => (
         <View
           key={index}
@@ -313,17 +308,6 @@ function ChipEdges({
       />
     </>
   );
-}
-
-function ActiveTimeLabel({ label }: { label: string }) {
-  const theme = useTheme();
-  const hasTime = label.length > 0;
-
-  if (!hasTime) {
-    return null;
-  }
-
-  return <Text style={styles.activeTime(theme)}>{label}</Text>;
 }
 
 function chipAccessibilityLabel(label: string, important: boolean): string {

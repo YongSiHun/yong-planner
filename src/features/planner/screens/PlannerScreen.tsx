@@ -1,6 +1,6 @@
 import { useNotificationDate } from '../hooks/useNotificationDate';
 import { useCallback, useMemo, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, report, showDialog, useTheme } from '../../../components/ui';
 import { type ExportFormat } from '../../../services/export/files';
@@ -61,6 +61,12 @@ export default function PlannerScreen() {
     [showDate],
   );
   const selection = useNoteSelection(beginSelection, editSelection);
+  const { active: isSelecting, clear: clearSelection } = selection;
+  const dismissSelection = useCallback(() => {
+    if (isSelecting) {
+      clearSelection();
+    }
+  }, [isSelecting, clearSelection]);
   const handleEditDate = useCallback((date: string) => {
     setEditingIndex(undefined);
     setEditingDate(date);
@@ -99,89 +105,104 @@ export default function PlannerScreen() {
       style={styles.plannerScreenKeyboardAvoidingViewStyle(theme)}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <SafeAreaView
-        style={styles.plannerScreenSafeAreaViewStyle(theme)}
-        edges={['top', 'left', 'right', 'bottom']}
-      >
-        <PlannerHeader
-          month={month}
-          onMonth={handleMonthChange}
-          onChooseMonth={() => setMonthPickerOpen(true)}
-          onMenu={() => setMenu('menu')}
-          onGuide={guide.openGuide}
-        />
-        {error ? (
-          <Button compact title="저장 실패 · 다시 저장" danger onPress={handleRetrySave} />
-        ) : null}
-        <ScrollView
-          key={month.slice(0, 7)}
-          ref={scrollRef}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          bounces={false}
-          overScrollMode="never"
-          onLayout={handleViewportLayout}
-          onScroll={handleKeyboardScroll}
-          scrollEventThrottle={16}
-          contentContainerStyle={styles.plannerScreenScrollViewContentContainerStyle(
-            selection.active,
-            selection.copySource !== undefined,
-          )}
-          onContentSizeChange={(width, height) => {
-            handleContentSizeChange(width, height);
-            scheduleReveal();
-          }}
+      <Pressable accessible={false} onPress={dismissSelection} style={styles.surface}>
+        <SafeAreaView
+          style={styles.plannerScreenSafeAreaViewStyle(theme)}
+          edges={['top', 'left', 'right', 'bottom']}
         >
-          {dates.map((date) => (
-            <PlannerDay
-              key={date}
-              date={date}
-              holidays={holidays}
-              timeFormat={timeFormat}
-              isToday={date === currentDate}
-              isEditing={editingDate === date}
-              editingIndex={editingDate === date ? editingIndex : undefined}
-              selectedIds={selection.selected}
-              selecting={selection.active}
-              copying={selection.copySource !== undefined}
-              copyTarget={selection.copyDates.has(date)}
-              copySourceDate={selection.copySourceDate}
-              onCopyDate={selection.toggleCopyDate}
-              onSelect={selection.toggle}
-              onEdit={handleEditDate}
-              onFinish={finishEditing}
-              onMeasure={handleMeasure}
-              onInputFocus={handleInputFocus}
-              onInputLayout={scheduleReveal}
-            />
-          ))}
-        </ScrollView>
-        <PlannerFooter
-          selection={selection}
-          keyboardVisible={keyboardVisible}
-          onToday={handleToday}
-        />
-        <PlannerDialogs
-          guide={guide}
-          selection={selection}
-          timeFormat={timeFormat}
-          monthPickerOpen={monthPickerOpen}
-          month={month}
-          menu={menu}
-          onCloseMonth={() => setMonthPickerOpen(false)}
-          onChooseMonth={(date) => {
-            Keyboard.dismiss();
-            setEditingDate(null);
-            setMonthPickerOpen(false);
-            showDate(date);
-          }}
-          onCloseMenu={() => setMenu(null)}
-          onShowExport={() => setMenu('export')}
-          onExport={(format) => {
-            void handleExport(format);
-          }}
-        />
-      </SafeAreaView>
+          <PlannerHeader
+            month={month}
+            onMonth={(amount) => {
+              dismissSelection();
+              handleMonthChange(amount);
+            }}
+            onChooseMonth={() => {
+              dismissSelection();
+              setMonthPickerOpen(true);
+            }}
+            onMenu={() => {
+              dismissSelection();
+              setMenu('menu');
+            }}
+            onGuide={() => {
+              dismissSelection();
+              guide.openGuide();
+            }}
+          />
+          {error ? (
+            <Button compact title="저장 실패 · 다시 저장" danger onPress={handleRetrySave} />
+          ) : null}
+          <ScrollView
+            key={month.slice(0, 7)}
+            ref={scrollRef}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            bounces={false}
+            overScrollMode="never"
+            onLayout={handleViewportLayout}
+            onScroll={handleKeyboardScroll}
+            scrollEventThrottle={16}
+            contentContainerStyle={styles.plannerScreenScrollViewContentContainerStyle(
+              selection.active,
+              selection.copySource !== undefined,
+            )}
+            onContentSizeChange={(width, height) => {
+              handleContentSizeChange(width, height);
+              scheduleReveal();
+            }}
+          >
+            {dates.map((date) => (
+              <PlannerDay
+                key={date}
+                date={date}
+                holidays={holidays}
+                timeFormat={timeFormat}
+                isToday={date === currentDate}
+                isEditing={editingDate === date}
+                editingIndex={editingDate === date ? editingIndex : undefined}
+                selectedIds={selection.selected}
+                selecting={selection.active}
+                copying={selection.copySource !== undefined}
+                copyTarget={selection.copyDates.has(date)}
+                copySourceDate={selection.copySourceDate}
+                onCopyDate={selection.toggleCopyDate}
+                onSelect={selection.toggle}
+                onOutsidePress={dismissSelection}
+                onEdit={handleEditDate}
+                onFinish={finishEditing}
+                onMeasure={handleMeasure}
+                onInputFocus={handleInputFocus}
+                onInputLayout={scheduleReveal}
+              />
+            ))}
+          </ScrollView>
+          <PlannerFooter
+            selection={selection}
+            keyboardVisible={keyboardVisible}
+            onToday={handleToday}
+          />
+          <PlannerDialogs
+            guide={guide}
+            selection={selection}
+            timeFormat={timeFormat}
+            monthPickerOpen={monthPickerOpen}
+            month={month}
+            menu={menu}
+            onCloseMonth={() => setMonthPickerOpen(false)}
+            onChooseMonth={(date) => {
+              Keyboard.dismiss();
+              setEditingDate(null);
+              setMonthPickerOpen(false);
+              showDate(date);
+            }}
+            onCloseMenu={() => setMenu(null)}
+            onShowExport={() => setMenu('export')}
+            onExport={(format) => {
+              void handleExport(format);
+            }}
+          />
+        </SafeAreaView>
+      </Pressable>
     </KeyboardAvoidingView>
   );
 }

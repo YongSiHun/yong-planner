@@ -117,16 +117,6 @@ export function chipWrapper(draggingIndex: number | null | undefined, index: num
   return { maxWidth: '100%', flexShrink: 1, opacity: draggingIndex === index ? 0.35 : 1 } as const;
 }
 
-export function activeTime(theme: Theme) {
-  return {
-    fontFamily: design.font.medium,
-    color: theme.accent,
-    fontSize: design.type.small,
-    lineHeight: design.lineHeight,
-    paddingVertical: 4,
-  } as const;
-}
-
 function noteFontSize(text: string): number {
   return text.length === 0 ? design.type.small : design.type.body;
 }

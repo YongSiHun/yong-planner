@@ -73,10 +73,13 @@ export function copyNotesToDates(
   const ordersByDate = new Map(data.dailyPlanOrders.map((order) => [order.date, order]));
   const orders = [...addedByDate].map(([date, ids]) => {
     const existing = ordersByDate.get(date);
-    const itemIds =
-      existing?.itemIds ?? dailyNoteItems(data, date).map((note) => 'daily:' + note.id);
+    const itemIds = existing?.itemIds ?? [];
+    const orderedIds = new Set(itemIds);
+    const missingIds = dailyNoteItems(data, date)
+      .map((note) => 'daily:' + note.id)
+      .filter((id) => !orderedIds.has(id));
 
-    return { date, itemIds: [...itemIds, ...ids] };
+    return { date, itemIds: [...itemIds, ...missingIds, ...ids] };
   });
 
   return {

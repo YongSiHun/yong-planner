@@ -44,7 +44,10 @@ test('new backups retain times and legacy backups remain readable', () => {
   let data = applyDailyNote(legacy, '2026-11-07', '식사', () => 'meal');
   data.dailyPlanItems[0].time = '13:00';
   data.settings.timeFormat = '12h';
-  assert.deepEqual(parseBackup(createBackup(data)), data);
+  assert.deepEqual(
+    parseBackup(createBackup(data)),
+    require('../src/services/backup/validation.ts').validateData(data),
+  );
 });
 
 test('leading Korean and colon times become structured times without duplicating the prefix', () => {
@@ -96,4 +99,36 @@ test('comma-separated time input preserves IDs, overrides time, and survives res
   data = parseBackup(createBackup(data));
   data = copyNoteToDates(data, ids[0], ['2026-11-08'], nextId);
   assert.equal(dailyNoteItems(data, '2026-11-08')[0].time, '14:20');
+});
+
+test('inline time deletion clears the stored time and alarm without touching other chips', () => {
+  const { noteEditText } = require('../src/features/planner/services/note.ts');
+  let id = 0;
+  const nextId = () => 'time-' + ++id;
+  const date = '2026-11-08';
+  let data = applyDailyNote(emptyData(), date, '회의,운동', nextId);
+  data.dailyPlanItems[0] = {
+    ...data.dailyPlanItems[0],
+    time: '13:10',
+    alarm: true,
+    important: true,
+  };
+  data.dailyPlanItems[1].time = '18:00';
+  const originalIds = data.dailyPlanItems.map((item) => item.id);
+  assert.equal(noteEditText('회의,운동', ['13:10', '18:00']), '13:10 회의,18:00 운동');
+  data = applyDailyNote(data, date, '회의,18:00 운동', nextId, true);
+  assert.deepEqual(
+    data.dailyPlanItems.map((item) => item.id),
+    originalIds,
+  );
+  assert.equal(data.dailyPlanItems[0].time, null);
+  assert.equal(data.dailyPlanItems[0].alarm, undefined);
+  assert.equal(data.dailyPlanItems[0].important, true);
+  assert.equal(data.dailyPlanItems[1].time, '18:00');
+  data = applyDailyNote(data, date, '14:20 회의,18:00 운동', nextId, true);
+  assert.equal(data.dailyPlanItems[0].time, '14:20');
+  assert.deepEqual(
+    parseBackup(createBackup(data)),
+    require('../src/services/backup/validation.ts').validateData(data),
+  );
 });

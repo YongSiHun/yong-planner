@@ -14,15 +14,13 @@ import {
   NOTE_SEPARATOR,
   noteInputCaret,
   noteInputValue,
-  notePartTime,
+  noteEditText,
   selectNotePart,
   startNoteEdit,
   storedNoteIndex,
   type NoteEdit,
 } from '../services/note';
 import { NoteInputEvents } from '../services/noteInputEvents';
-import { formatScheduleTime, parseScheduleTimePrefix } from '../services/time';
-import type { TimeFormat } from '../types';
 import type { ScheduleInputProps } from '../types/presentation';
 import { usePlannerActions } from './usePlannerActions';
 
@@ -31,7 +29,6 @@ export function useScheduleInputState({
   note,
   initialIndex,
   noteTimes = [],
-  timeFormat = '24h',
   initialSlot,
   onSelect = () => {},
   onBlur,
@@ -44,7 +41,7 @@ export function useScheduleInputState({
   const maximumHeight = Math.max(80, Math.min(240, windowHeight * 0.32));
   const minimumHeight = Math.max(design.rowMinHeight, design.lineHeight * (fontScale ?? 1) + 8);
   const [edit, setEdit] = useState<NoteEdit>(() =>
-    initialNoteEdit(note, initialIndex, initialSlot),
+    initialNoteEdit(noteEditText(note, noteTimes), initialIndex, initialSlot),
   );
   const [height, setHeight] = useState<number>(minimumHeight);
   const [availableWidth, setAvailableWidth] = useState(Math.max(30, windowWidth - 68));
@@ -55,11 +52,6 @@ export function useScheduleInputState({
   const selectionRequest = useRef<{ edit: NoteEdit; applied: boolean } | null>(null);
   const parts = edit.text.split(NOTE_SEPARATOR);
   const content = parts[edit.index]!;
-  const activeTime = activeTimeLabel(
-    content,
-    notePartTime(noteTimes, edit, edit.index),
-    timeFormat,
-  );
   const estimatedWidth = estimateInputWidth(content, fontScale ?? 1);
   const measuredWidth = Math.max(estimatedWidth, textWidth.width);
   const inputWidth =
@@ -124,7 +116,7 @@ export function useScheduleInputState({
     currentEdit.current = next;
     setEdit(next);
     if (persist) {
-      saveDailyNote(date, next.text);
+      saveDailyNote(date, next.text, true);
     }
   }
 
@@ -224,7 +216,6 @@ export function useScheduleInputState({
     edit,
     parts,
     content,
-    activeTime,
     input,
     availableWidth,
     requestedSelection,
@@ -248,12 +239,6 @@ function estimateInputWidth(text: string, scale: number): number {
     .reduce((maximum, line) => Math.max(maximum, line.replace(/[^\x00-\x7F]/g, 'xx').length), 0);
 
   return units * design.type.body * scale * 0.5;
-}
-
-function activeTimeLabel(content: string, time: string | null, format: TimeFormat): string {
-  const includesTime = parseScheduleTimePrefix(content).time !== undefined;
-
-  return includesTime ? '' : formatScheduleTime(time, format);
 }
 
 function initialNoteEdit(

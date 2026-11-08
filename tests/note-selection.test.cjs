@@ -61,3 +61,18 @@ test('copy validates all destination dates before updating any schedule', () => 
   assert.equal(data.dailyPlanItems.length, 1);
   assert.equal(copyNoteToDates(data, 'missing', ['2026-11-08'], id), data);
 });
+
+test('copy appends after every existing chip even when custom order omits items', () => {
+  let data = applyDailyNote(emptyData(), '2026-11-07', '복사 원본', id);
+  data = applyDailyNote(data, '2026-12-01', '첫째,둘째,셋째', id);
+  const source = data.dailyPlanItems[0];
+  const target = dailyNoteItems(data, '2026-12-01');
+  data.dailyPlanOrders = [
+    { date: '2026-12-01', itemIds: ['daily:' + target[2].id, 'daily:' + target[0].id] },
+  ];
+  const copied = copyNoteToDates(data, source.id, ['2026-12-01'], id);
+  assert.deepEqual(
+    dailyNoteItems(copied, '2026-12-01').map((item) => item.content),
+    ['셋째', '첫째', '둘째', '복사 원본'],
+  );
+});
