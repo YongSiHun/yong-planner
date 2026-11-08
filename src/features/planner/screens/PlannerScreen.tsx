@@ -1,3 +1,4 @@
+import { useNotificationDate } from '../hooks/useNotificationDate';
 import { useCallback, useMemo, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,6 +38,8 @@ export default function PlannerScreen() {
     handleMeasure,
     handleViewportLayout,
   } = useMonthNavigation();
+
+  useNotificationDate(showDate);
   const { keyboardVisible, handleInputFocus, scheduleReveal, handleKeyboardScroll } =
     useInlineKeyboard(scrollRef, month.slice(0, 7));
   const guide = usePlannerGuide();

@@ -15,15 +15,31 @@
       "softwareKeyboardLayoutMode": "resize",
       "allowBackup": false,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon-dragon.png",
+        "foregroundImage": "./assets/mark-dragon.png",
         "backgroundColor": "#F7FBFF"
-      }
+      },
+      "permissions": ["android.permission.SCHEDULE_EXACT_ALARM"],
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.VIBRATE"
+      ]
     },
     "plugins": [
       "expo-router",
       "expo-sqlite",
       "expo-document-picker",
-      "./plugins/with-dragon-splash.cjs"
+      "./plugins/with-dragon-splash.cjs",
+      "./plugins/with-planner-notifications.cjs",
+      [
+        "expo-notifications",
+        {
+          "color": "#1F6EAC",
+          "enableRemoteNotifications": false,
+          "enableBackgroundRemoteNotifications": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

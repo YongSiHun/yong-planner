@@ -6,11 +6,14 @@ const {
   initialSchema,
   addDailyTime,
   addDailyImportance,
+  addDailyAlarm,
 } = require('../src/database/migrations/index.ts');
 const { replaceRows } = require('../src/database/repositories/transactions.ts');
 const { emptyData } = require('../src/features/planner/types/index.ts');
 const sqlite = new DatabaseSync(':memory:');
-sqlite.exec('PRAGMA foreign_keys = ON;' + initialSchema + addDailyTime + addDailyImportance);
+sqlite.exec(
+  'PRAGMA foreign_keys = ON;' + initialSchema + addDailyTime + addDailyImportance + addDailyAlarm,
+);
 const statements = [];
 let failNextWrite = false;
 const database = {
@@ -172,4 +175,35 @@ test('important flags persist and can be cleared in SQLite', async () => {
     sqlite.prepare('SELECT important FROM daily_plan_items WHERE id = ?').get('star').important,
     0,
   );
+});
+
+test('per-chip alarm flags survive writes and restore and can be disabled independently', async () => {
+  const data = await seed();
+  const item = {
+    id: 'alarm',
+    date: '2026-11-09',
+    content: '회의',
+    time: '13:10',
+    alarm: true,
+    createdAt: '2026-11-01T00:00:00.000Z',
+  };
+  const next = { ...data, dailyPlanItems: [item, { ...item, id: 'silent', alarm: undefined }] };
+  await persistData(next);
+  assert.deepEqual(
+    sqlite
+      .prepare('SELECT alarm FROM daily_plan_items ORDER BY id')
+      .all()
+      .map((row) => row.alarm),
+    [1, 0],
+  );
+  await restoreData(next);
+  assert.equal(
+    sqlite.prepare('SELECT alarm FROM daily_plan_items WHERE id = ?').get('alarm').alarm,
+    1,
+  );
+  await persistData({
+    ...next,
+    dailyPlanItems: next.dailyPlanItems.map((p) => ({ ...p, alarm: false })),
+  });
+  assert.equal(sqlite.prepare('SELECT SUM(alarm) AS n FROM daily_plan_items').get().n, 0);
 });

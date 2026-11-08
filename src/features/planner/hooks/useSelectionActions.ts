@@ -1,4 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
+import { report } from '../../../components/ui';
+import { authorizeScheduleAlarm } from '../../notifications/controllers/notifications';
 import { emptySelection, useNoteSelectionStore as ui } from '../../../stores/noteSelection';
 import { usePlanner } from '../../../stores/planner';
 import { dailyNoteItems } from '../services/note';
@@ -8,8 +10,15 @@ export function useSelectionActions(
   onBegin: () => void,
   onEdit: (date: string, index: number) => void,
 ) {
-  const { copyDailyNotes, deleteDailyNotes, saveDailyTimes, saveDailyContents, setDailyImportant } =
-    usePlannerActions();
+  const {
+    copyDailyNotes,
+    deleteDailyNotes,
+    saveDailyTimes,
+    saveDailyContents,
+    setDailyImportant,
+    setDailyAlarms,
+  } = usePlannerActions();
+  const savingAlarm = useRef(false);
   const clear = useCallback(() => ui.setState(emptySelection()), []);
   const toggle = useCallback(
     (date: string, index: number, begin = false) => {
@@ -89,8 +98,37 @@ export function useSelectionActions(
     }
     ui.setState({ copyDates: toggled(state.copyDates, date, false) });
   }, []);
+  const saveAlarm = useCallback(
+    async (time: string | null) => {
+      const unavailable = !time || savingAlarm.current;
+
+      if (unavailable) {
+        return;
+      }
+      const selected = new Set(ui.getState().selected);
+
+      savingAlarm.current = true;
+      try {
+        await authorizeScheduleAlarm();
+        setDailyAlarms(selected, true, time);
+        clear();
+      } catch (error) {
+        report(error);
+      } finally {
+        savingAlarm.current = false;
+      }
+    },
+    [clear, setDailyAlarms],
+  );
   const saveTime = useCallback(
     (time: string | null) => {
+      const alarmSetting = ui.getState().alarmSetting;
+
+      if (alarmSetting) {
+        void saveAlarm(time);
+
+        return;
+      }
       const id = ui.getState().timeId;
       const hasItem = id !== null;
 
@@ -99,7 +137,7 @@ export function useSelectionActions(
       }
       clear();
     },
-    [clear, saveDailyTimes],
+    [clear, saveDailyTimes, saveAlarm],
   );
 
   return {
@@ -136,10 +174,31 @@ export function useSelectionActions(
     ),
     cancelDelete: useCallback(() => ui.setState({ deleteIds: null }), []),
     openTime: useCallback(
-      () => ui.setState({ timeId: [...ui.getState().selected][0] ?? null }),
+      () => ui.setState({ timeId: [...ui.getState().selected][0] ?? null, alarmSetting: false }),
       [],
     ),
-    closeTime: useCallback(() => ui.setState({ timeId: null }), []),
+    toggleAlarm: useCallback(() => {
+      const selected = ui.getState().selected;
+      const items = usePlanner
+        .getState()
+        .data.dailyPlanItems.filter((item) => selected.has(item.id));
+
+      const empty = items.length === 0;
+
+      if (empty) {
+        return;
+      }
+      const allAlarm = items.every((item) => item.alarm);
+
+      if (allAlarm) {
+        setDailyAlarms(selected, false);
+        clear();
+
+        return;
+      }
+      ui.setState({ timeId: items[0]!.id, alarmSetting: true });
+    }, [clear, setDailyAlarms]),
+    closeTime: useCallback(() => ui.setState({ timeId: null, alarmSetting: false }), []),
   };
 }
 

@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Button, design, Label, useTheme } from '../../../components/ui';
 import * as styles from './SelectionBar.styles';
 
@@ -9,6 +9,8 @@ export function SelectionBar({
   allImportant = false,
   onCopy,
   onTime,
+  onAlarm,
+  allAlarm = false,
   onDelete,
   onCancel,
 }: {
@@ -18,6 +20,8 @@ export function SelectionBar({
   allImportant?: boolean;
   onCopy(): void;
   onTime(): void;
+  onAlarm(): void;
+  allAlarm?: boolean;
   onDelete(): void;
   onCancel(): void;
 }) {
@@ -26,51 +30,64 @@ export function SelectionBar({
 
   return (
     <View style={styles.container(theme)}>
-      <View style={styles.summary}>
+      <ScrollView
+        horizontal
+        style={styles.viewport}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.actions}
+      >
         <Label style={styles.count}>{count}개 선택</Label>
-        <Button compact title="선택 해제" onPress={onCancel} />
-      </View>
-      <View style={styles.actions}>
         <Button
-          labelSize={design.type.action}
+          labelSize={design.type.body}
+          style={styles.action}
+          compact
+          bold
+          title="선택 해제"
+          onPress={onCancel}
+        />
+        <Button
+          labelSize={design.type.body}
           style={styles.action}
           compact
           bold
           title={allImportant ? '중요 일정 해제' : '중요 일정으로 설정'}
           onPress={onImportant}
         />
-        {hasSelection ? (
-          <Button
-            labelSize={design.type.action}
-            style={styles.action}
-            compact
-            bold
-            title="수정하기"
-            onPress={onEdit}
-          />
-        ) : null}
-        {hasSelection ? (
-          <Button
-            labelSize={design.type.action}
-            style={styles.action}
-            compact
-            bold
-            title="시간 설정"
-            onPress={onTime}
-          />
-        ) : null}
-        {hasSelection ? (
-          <Button
-            labelSize={design.type.action}
-            style={styles.action}
-            compact
-            bold
-            title="일정 복사"
-            onPress={onCopy}
-          />
-        ) : null}
         <Button
-          labelSize={design.type.action}
+          labelSize={design.type.body}
+          style={styles.action}
+          compact
+          bold
+          title="수정하기"
+          onPress={onEdit}
+        />
+        <Button
+          labelSize={design.type.body}
+          style={styles.action}
+          compact
+          bold
+          title="시간 설정"
+          onPress={onTime}
+        />
+        <Button
+          labelSize={design.type.body}
+          style={styles.action}
+          compact
+          bold
+          title="일정 복사"
+          onPress={onCopy}
+        />
+        <Button
+          labelSize={design.type.body}
+          style={styles.action}
+          compact
+          bold
+          title={allAlarm ? '알람 해제' : '알람 설정'}
+          disabled={!hasSelection}
+          onPress={onAlarm}
+        />
+        <Button
+          labelSize={design.type.body}
           style={styles.action}
           compact
           bold
@@ -79,7 +96,7 @@ export function SelectionBar({
           disabled={count === 0}
           onPress={onDelete}
         />
-      </View>
+      </ScrollView>
     </View>
   );
 }

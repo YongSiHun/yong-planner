@@ -1,3 +1,4 @@
+import { useNotificationLifecycle } from '../features/notifications/hooks/useNotificationLifecycle';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -56,6 +57,7 @@ function RootNavigation() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="recurring" options={{ title: '반복 일정' }} />
       <Stack.Screen name="settings" options={{ title: '설정' }} />
+      <Stack.Screen name="notifications" options={{ title: '알림' }} />
     </Stack>
   );
 }
@@ -69,6 +71,7 @@ export default function RootLayout() {
   const theme = isDarkTheme ? dark : light;
 
   usePlannerInit();
+  useNotificationLifecycle();
 
   return (
     <SafeAreaProvider>

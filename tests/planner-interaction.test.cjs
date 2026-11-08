@@ -14,6 +14,7 @@ let nativeEventCount;
 let plannerData;
 let dimensions;
 let toasts = [];
+let alarmPermissionRequests = 0;
 const { emptyData } = require('../src/features/planner/types/index.ts');
 const { applyDailyNote } = require('../src/features/planner/services/note.ts');
 const {
@@ -84,6 +85,7 @@ cacheMock('react-native', {
   Alert: { alert: (title, message, buttons) => alerts.push({ title, message, buttons }) },
   Keyboard: { dismiss() {} },
   View: 'View',
+  ScrollView: 'ScrollView',
   Pressable: 'Pressable',
   Text: 'Text',
   TextInput: 'TextInput',
@@ -109,7 +111,20 @@ cacheMock('../src/components/ui/index.tsx', {
 });
 const plannerStore = (selector) => selector({ data: plannerData });
 plannerStore.getState = () => ({ data: plannerData });
+cacheMock('../src/features/notifications/controllers/notifications.ts', {
+  authorizeScheduleAlarm: async () => {
+    alarmPermissionRequests++;
+  },
+});
 const plannerActions = {
+  setDailyAlarms: (ids, alarm, time) => {
+    plannerData = require('../src/features/planner/services/alarms.ts').updateDailyAlarms(
+      plannerData,
+      ids,
+      alarm,
+      time,
+    );
+  },
   saveDailyNote: (date, text) => saved.push(text),
   setDailyImportant: (ids, important) => {
     plannerData = {
@@ -172,6 +187,7 @@ cacheMock('../src/stores/noteSelection.ts', {
     selected: new Set(),
     deleteIds: null,
     timeId: null,
+    alarmSetting: false,
     copyId: null,
     copyDates: new Set(),
   }),
@@ -226,6 +242,7 @@ function renderGuide() {
 }
 beforeEach(() => {
   slots = [];
+  alarmPermissionRequests = 0;
   cursor = 0;
   saved = [];
   focused = 0;
@@ -240,6 +257,7 @@ beforeEach(() => {
     selected: new Set(),
     deleteIds: null,
     timeId: null,
+    alarmSetting: false,
     copyId: null,
     copyDates: new Set(),
   };
@@ -470,6 +488,7 @@ test('single and multiple selections offer the same actions', () => {
     '수정하기',
     '시간 설정',
     '일정 복사',
+    '알람 설정',
     '삭제하기',
   ]);
   selection.toggle('2026-11-07', 1);
@@ -481,6 +500,7 @@ test('single and multiple selections offer the same actions', () => {
     '수정하기',
     '시간 설정',
     '일정 복사',
+    '알람 설정',
     '삭제하기',
   ]);
   selection.requestDelete();
@@ -1004,7 +1024,11 @@ test('important chip shows its star, sky background and accessible label', () =>
   assert.equal(button.props.style({ pressed: false }).backgroundColor, '#E4F2FF');
   assert.equal(button.props.accessibilityLabel, '회의, 중요 일정');
   const mark = find(button, (node) => node.type?.name === 'ImportantMark');
-  assert.equal(mark.type(mark.props).props.name, 'star');
+  const badge = mark.type(mark.props);
+  assert.equal(badge.props.children.props.name, 'star');
+  assert.equal(badge.props.children.props.size, 10);
+  assert.equal(badge.props.style.position, 'absolute');
+  assert.equal(badge.props.style.left, 2);
 });
 
 test('12-hour time picker selects AM/PM for all selected schedules and clamps invalid values', () => {
@@ -1033,4 +1057,38 @@ test('12-hour time picker selects AM/PM for all selected schedules and clamps in
   find(picker, (node) => node.type === 'Button' && node.props.title === '오전').props.onPress();
   render().props.footer.props.onPress();
   assert.deepEqual(savedTimes, ['12:59', '00:59']);
+});
+
+test('selected chips authorize alarms, save their own time and can be disabled together', async () => {
+  let id = 0;
+  plannerData = applyDailyNote(plannerData, '2026-11-08', '회의,식사,운동', () => 'alarm-' + ++id);
+  let selection = renderSelection([]);
+  selection.toggle('2026-11-08', 0, true);
+  selection.toggle('2026-11-08', 1);
+  renderSelection([]).toggleAlarm();
+  selection = renderSelection([]);
+  assert.equal(selection.alarmSetting, true);
+  assert.equal(selection.timeSource.id, 'alarm-1');
+  selection.saveTime('13:10');
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(alarmPermissionRequests, 1);
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => Boolean(item.alarm)),
+    [true, true, false],
+  );
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => item.time ?? null),
+    ['13:10', '13:10', null],
+  );
+  selection = renderSelection([]);
+  selection.toggle('2026-11-08', 0, true);
+  selection.toggle('2026-11-08', 1);
+  selection = renderSelection([]);
+  assert.equal(selection.allAlarm, true);
+  selection.toggleAlarm();
+  assert.equal(
+    plannerData.dailyPlanItems.some((item) => item.alarm),
+    false,
+  );
+  assert.equal(alarmPermissionRequests, 1);
 });

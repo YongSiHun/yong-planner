@@ -12,6 +12,9 @@ export interface NoteSelectionModel {
   copySourceDate: string | undefined;
   hasSelectedTime: boolean;
   allImportant: boolean;
+  allAlarm: boolean;
+  alarmSetting: boolean;
+  toggleAlarm(): void;
   toggleImportant(): void;
   timeSource: DailyPlanItem | undefined;
   copyDates: ReadonlySet<string>;

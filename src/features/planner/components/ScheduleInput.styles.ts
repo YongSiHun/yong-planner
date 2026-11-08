@@ -19,6 +19,20 @@ export function chip(selected: boolean, theme: Theme, important = false) {
     }) as const;
 }
 
+export function importantMark(selected: boolean, theme: Theme) {
+  return {
+    position: 'absolute',
+    top: -4,
+    left: 2,
+    width: 12,
+    height: 12,
+    borderRadius: design.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: chipBackground(selected, true, theme),
+  } as const;
+}
+
 export function chipLabel(selected: boolean, theme: Theme) {
   return {
     color: selected ? theme.onAccent : theme.text,

@@ -3,6 +3,7 @@ export interface DailyPlanItem {
   date: string;
   content: string;
   important?: boolean;
+  alarm?: boolean;
   time?: string | null;
   createdAt: string;
 }
@@ -45,6 +46,7 @@ export interface PlannerData {
   holidayOverrides: HolidayOverride[];
 }
 export interface PlanEntry {
+  alarm?: boolean;
   important?: boolean;
   id: string;
   sourceId: string;

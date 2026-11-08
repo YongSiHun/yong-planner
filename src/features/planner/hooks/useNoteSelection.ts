@@ -26,11 +26,15 @@ export function useNoteSelection(
   const hasSelectedTime = items.some((item) => Boolean(item.time));
   const sameDate = items.every((item) => item.date === items[0]?.date);
   const copySourceDate = sameDate ? items[0]?.date : undefined;
+  const alarmSetting = useNoteSelectionStore((state) => state.alarmSetting);
+  const allAlarm = items.length > 0 && items.every((item) => item.alarm);
   const allImportant = items.every((item) => item.important);
   const actions = useSelectionActions(onBegin, onEdit);
 
   return {
     editSources,
+    alarmSetting,
+    allAlarm,
     hasSelectedTime,
     allImportant,
     copySourceDate,

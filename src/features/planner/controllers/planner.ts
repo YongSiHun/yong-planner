@@ -5,6 +5,7 @@ import { loadData } from '../../../database/repositories/planner';
 import { validateData } from '../../../services/backup';
 import { usePlanner } from '../../../stores/planner';
 import { parseDate, validTime } from '../../../utils/date';
+import { updateDailyAlarms } from '../services/alarms';
 import { editDailyContents } from '../services/noteEditing';
 import { applyDailyNote } from '../services/note';
 import { moveDailyNote as reorderDailyNote } from '../services/noteMove';
@@ -192,7 +193,7 @@ export function saveDailyTime(id: string, time: string | null) {
     (data) => ({
       ...data,
       dailyPlanItems: data.dailyPlanItems.map((item) =>
-        item.id === id ? { ...item, time } : item,
+        item.id === id ? { ...item, time, alarm: time ? item.alarm : undefined } : item,
       ),
     }),
     true,
@@ -256,7 +257,7 @@ export function saveDailyTimes(ids: ReadonlySet<string>, time: string | null) {
     (data) => ({
       ...data,
       dailyPlanItems: data.dailyPlanItems.map((item) =>
-        ids.has(item.id) ? { ...item, time } : item,
+        ids.has(item.id) ? { ...item, time, alarm: time ? item.alarm : undefined } : item,
       ),
     }),
     true,
@@ -277,4 +278,8 @@ export function setDailyImportant(ids: ReadonlySet<string>, important: boolean) 
     }),
     true,
   );
+}
+
+export function setDailyAlarms(ids: ReadonlySet<string>, alarm: boolean, time?: string) {
+  updatePlanner((data) => updateDailyAlarms(data, ids, alarm, time), true);
 }

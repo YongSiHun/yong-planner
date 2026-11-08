@@ -11,12 +11,14 @@ export function TimePicker({
   format,
   count = 1,
   hasExistingTime,
+  title = '시간 설정',
   onClose,
   onSave,
 }: {
   item: DailyPlanItem;
   format: TimeFormat;
   count?: number;
+  title?: string;
   hasExistingTime?: boolean;
   onClose(): void;
   onSave(time: string | null): void;
@@ -33,7 +35,7 @@ export function TimePicker({
 
   return (
     <Dialog
-      title="시간 설정"
+      title={title}
       onClose={onClose}
       footer={
         <Button

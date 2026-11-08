@@ -337,5 +337,9 @@ function ImportantMark({ important, selected }: { important: boolean; selected: 
     return null;
   }
 
-  return <Feather name="star" size={14} color={selected ? theme.onAccent : theme.accent} />;
+  return (
+    <View pointerEvents="none" style={styles.importantMark(selected, theme)}>
+      <Feather name="star" size={10} color={selected ? theme.onAccent : theme.accent} />
+    </View>
+  );
 }

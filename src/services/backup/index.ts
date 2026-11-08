@@ -12,7 +12,7 @@ export function parseBackup(json: string): PlannerData {
 
   const root = readRecord(JSON.parse(json));
   const isSupportedVersion =
-    [1, 2, 3].includes(Number(root.version)) && typeof root.version === 'number';
+    [1, 2, 3, 4].includes(Number(root.version)) && typeof root.version === 'number';
 
   ensureValid(isSupportedVersion, '지원하지 않는 백업 버전입니다.');
   readTimestamp(root.exportedAt);
@@ -21,7 +21,7 @@ export function parseBackup(json: string): PlannerData {
 }
 
 export function createBackup(data: PlannerData): string {
-  const backup = { version: 3, exportedAt: new Date().toISOString(), ...validateData(data) };
+  const backup = { version: 4, exportedAt: new Date().toISOString(), ...validateData(data) };
 
   return JSON.stringify(backup, null, 2);
 }

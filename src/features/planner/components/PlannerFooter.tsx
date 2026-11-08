@@ -39,6 +39,8 @@ export function PlannerFooter({
         allImportant={selection.allImportant}
         onCopy={selection.openCopy}
         onTime={selection.openTime}
+        onAlarm={selection.toggleAlarm}
+        allAlarm={selection.allAlarm}
         onDelete={selection.requestDelete}
         onCancel={selection.clear}
       />

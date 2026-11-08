@@ -68,16 +68,7 @@ function SelectionDialogs({
 }) {
   return (
     <>
-      {selection.timeSource ? (
-        <TimePicker
-          item={selection.timeSource}
-          count={selection.selected.size}
-          hasExistingTime={selection.hasSelectedTime}
-          format={timeFormat}
-          onClose={selection.closeTime}
-          onSave={selection.saveTime}
-        />
-      ) : null}
+      <SelectedTimePicker selection={selection} timeFormat={timeFormat} />
       {selection.editSources ? (
         <EditSchedules
           items={selection.editSources}
@@ -93,5 +84,32 @@ function SelectionDialogs({
         />
       ) : null}
     </>
+  );
+}
+
+function SelectedTimePicker({
+  selection,
+  timeFormat,
+}: {
+  selection: NoteSelectionModel;
+  timeFormat: TimeFormat;
+}) {
+  const item = selection.timeSource;
+  const hasItem = item !== undefined;
+
+  if (!hasItem) {
+    return null;
+  }
+
+  return (
+    <TimePicker
+      item={item}
+      title={selection.alarmSetting ? '알람 설정' : '시간 설정'}
+      count={selection.selected.size}
+      hasExistingTime={selection.alarmSetting ? false : selection.hasSelectedTime}
+      format={timeFormat}
+      onClose={selection.closeTime}
+      onSave={selection.saveTime}
+    />
   );
 }

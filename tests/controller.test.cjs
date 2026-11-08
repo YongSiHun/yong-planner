@@ -31,6 +31,8 @@ const {
   saveDailyNote,
   flushPlanner,
   restorePlanner,
+  setDailyAlarms,
+  saveDailyTimes,
 } = require('../src/features/planner/controllers/planner.ts');
 test('controller flush includes edits arriving while a prior save is in flight', async () => {
   await initializePlanner();
@@ -60,4 +62,17 @@ test('failed save retains in-memory input for retry and restore remains atomic',
   await restorePlanner(emptyData());
   assert.deepEqual(usePlanner.getState().data, emptyData());
   assert.equal(usePlanner.getState().restoring, false);
+});
+
+test('clearing a selected time also disables its alarm without changing another chip', async () => {
+  saveDailyNote('2026-11-08', '회의,식사');
+  const items = usePlanner.getState().data.dailyPlanItems;
+  const selected = new Set([items[0].id]);
+  assert.throws(() => setDailyAlarms(selected, true), /알람 시간/);
+  setDailyAlarms(selected, true, '13:10');
+  assert.equal(usePlanner.getState().data.dailyPlanItems[0].alarm, true);
+  assert.equal(usePlanner.getState().data.dailyPlanItems[1].alarm, undefined);
+  saveDailyTimes(selected, null);
+  assert.equal(usePlanner.getState().data.dailyPlanItems[0].alarm, undefined);
+  await flushPlanner();
 });

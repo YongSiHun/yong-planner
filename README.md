@@ -3,7 +3,7 @@
 ## 개요
 
 - Android/iOS · 오프라인 월간 플래너
-- 일정 칩 · 반복 · 시간 · 공휴일
+- 일정 칩 · 반복 · 시간 · 공휴일 · 알림/알람
 - 카톡 공유 · 복사 · TXT/CSV 출력 · JSON 백업
 - 규칙: [UI](docs/DESIGN.md) · [3-Tier](docs/3tier-code-convention.md)
 

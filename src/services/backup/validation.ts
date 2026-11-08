@@ -135,6 +135,7 @@ function readDailyItem(value: unknown): DailyPlanItem {
     createdAt: readCreatedAt(item.createdAt),
     ...optionalDailyTime(item.time),
     ...optionalDailyImportance(item.important),
+    ...optionalDailyAlarm(item.alarm),
   };
 }
 
@@ -321,4 +322,15 @@ function optionalDailyImportance(value: unknown): { important?: boolean } {
   ensureValid(valid, '중요 일정 값이 올바르지 않습니다.');
 
   return value ? { important: true } : {};
+}
+
+function optionalDailyAlarm(value: unknown): { alarm?: boolean } {
+  const omitted = value === undefined;
+
+  if (omitted) {
+    return {};
+  }
+  ensureValid(typeof value === 'boolean', '알람 값이 올바르지 않습니다.');
+
+  return value ? { alarm: true } : {};
 }

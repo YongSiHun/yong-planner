@@ -91,9 +91,9 @@ test('multi-copy keeps existing content and important flags and excludes each so
 test('important schedules survive backup round trips and old backups remain compatible', () => {
   const data = seed();
   const backup = createBackup(data);
-  assert.equal(JSON.parse(backup).version, 3);
+  assert.equal(JSON.parse(backup).version, 4);
   assert.equal(parseBackup(backup).dailyPlanItems[0].important, true);
-  for (const version of [1, 2]) {
+  for (const version of [1, 2, 3]) {
     const legacy = { ...emptyData(), version, exportedAt: new Date().toISOString() };
     assert.deepEqual(parseBackup(JSON.stringify(legacy)), emptyData());
   }
@@ -114,4 +114,14 @@ test('hour and minute input clamps to supported ranges without allowing decimals
   assert.equal(boundedClockInput('', '9', 1, 12), '');
   assert.equal(boundedClockInput('1.5', '9', 1, 12), '9');
   assert.equal(boundedClockInput('abc', '9', 1, 12), '9');
+});
+
+test('chip alarm metadata survives backup and rejects malformed flags', () => {
+  const data = seed();
+  data.dailyPlanItems[0].alarm = true;
+  const backup = createBackup(data);
+  assert.equal(parseBackup(backup).dailyPlanItems[0].alarm, true);
+  const malformed = JSON.parse(backup);
+  malformed.dailyPlanItems[0].alarm = 'true';
+  assert.throws(() => parseBackup(JSON.stringify(malformed)), /알람 값/);
 });
