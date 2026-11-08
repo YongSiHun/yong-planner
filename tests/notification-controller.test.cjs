@@ -284,17 +284,19 @@ test('malformed device preferences fall back safely and cannot enable exact alar
   });
 });
 
-test('app startup requests alert and sound once without exact access or enabling display', async () => {
+test('Android startup requests notifications before exact alarms once without enabling display', async () => {
   await Promise.all([
     requestStartupNotificationPermission(),
     requestStartupNotificationPermission(),
   ]);
   assert.equal(events.filter((event) => event.type === 'permission').length, 1);
   assert.equal(events.find((event) => event.type === 'permission').request.ios.allowSound, true);
-  assert.equal(
-    events.some((event) => event.type === 'exact'),
-    false,
+  assert.equal(events.filter((event) => event.type === 'exact').length, 1);
+  assert.ok(
+    events.findIndex((event) => event.type === 'exact') >
+      events.findIndex((event) => event.type === 'permission'),
   );
+  assert.equal(useNotificationStore.getState().preferences.alarms, false);
   assert.equal(useNotificationStore.getState().preferences.summary, false);
 });
 
@@ -324,4 +326,49 @@ test('alarm channels use the SDK default instead of resolving a custom default s
   const summary = channels.find((event) => event.id.includes('-summary-'));
   assert.equal(Object.hasOwn(alarm.config, 'sound'), false);
   assert.equal(summary.config.sound, null);
+});
+
+function freshStartupRequest() {
+  const filename = require.resolve('../src/features/notifications/controllers/notifications.ts');
+  delete require.cache[filename];
+  return require(filename).requestStartupNotificationPermission;
+}
+
+test('iOS startup requests alerts and sound without Android exact alarm access', async () => {
+  platform.OS = 'ios';
+  await freshStartupRequest()();
+  assert.equal(events.filter((event) => event.type === 'permission').length, 1);
+  assert.equal(events.find((event) => event.type === 'permission').request.ios.allowSound, true);
+  assert.equal(
+    events.some((event) => event.type === 'exact'),
+    false,
+  );
+  assert.equal(useNotificationStore.getState().preferences.alarms, false);
+});
+
+test('startup skips granted permissions and stops exact access after notification denial', async () => {
+  granted = true;
+  exact = true;
+  sound = true;
+  await freshStartupRequest()();
+  assert.equal(
+    events.some((event) => ['permission', 'exact'].includes(event.type)),
+    false,
+  );
+  granted = false;
+  allowPrompt = false;
+  await assert.rejects(freshStartupRequest()(), /알림 권한/);
+  assert.equal(
+    events.some((event) => event.type === 'exact'),
+    false,
+  );
+});
+
+test('denied exact alarm access on startup keeps settings disabled without failing startup', async () => {
+  allowExact = false;
+  await freshStartupRequest()();
+  assert.equal(useNotificationStore.getState().permission.granted, true);
+  assert.equal(useNotificationStore.getState().permission.exact, false);
+  assert.equal(useNotificationStore.getState().preferences.exact, false);
+  assert.equal(useNotificationStore.getState().preferences.alarms, false);
 });
