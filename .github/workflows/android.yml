@@ -52,6 +52,14 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: cache-gradle-wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-wrapper-
+
       - name: install-dependencies
         run: |
           npm install -g eas-cli@27.2.0

@@ -28,6 +28,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/with-gradle-download-timeout.cjs",
       "expo-sqlite",
       "expo-document-picker",
       "./plugins/with-dragon-splash.cjs",
