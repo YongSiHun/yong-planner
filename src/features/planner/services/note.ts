@@ -1,3 +1,4 @@
+import { normalizeNoteSeparators } from '../../../services/schedule';
 import type { DailyPlanItem, PlannerData } from '../types';
 import { reconcileOrder } from './order';
 import { dailyItemsForDate } from './plans';
@@ -168,7 +169,7 @@ export function noteInputValue(edit: NoteEdit): string {
 export function changeNoteInput(edit: NoteEdit, value: string): NoteEdit {
   const hasBoundary = edit.index > 0;
   const keepsBoundary = value.startsWith(NOTE_INPUT_BOUNDARY);
-  const content = value.replaceAll(NOTE_INPUT_BOUNDARY, '');
+  const content = normalizeNoteSeparators(value.replaceAll(NOTE_INPUT_BOUNDARY, ''));
 
   if (!hasBoundary) {
     return replaceNotePart(edit.text, edit.index, content);

@@ -8,7 +8,7 @@ import type { TimeFormat } from '../types';
 import type { ScheduleInputProps, SchedulePreviewProps } from '../types/presentation';
 import * as styles from './ScheduleInput.styles';
 
-const PLACEHOLDER = '일정을 입력하세요. 쉼표(,)로 나눌 수 있어요.';
+const PLACEHOLDER = '일정을 입력하세요. 쉼표(,)나 엔터로 나눌 수 있어요.';
 
 export function ScheduleChip({
   content,
@@ -191,7 +191,7 @@ export function ScheduleInput({
         onBlur={handleBlur}
         onLayout={onInputLayout}
         accessibilityLabel={date + ' 일정 입력'}
-        accessibilityHint="쉼표를 입력하면 일정이 나뉘어요."
+        accessibilityHint="쉼표나 엔터를 입력하면 일정이 나뉘어요."
         placeholder={edit.text.length === 0 ? PLACEHOLDER : undefined}
         placeholderTextColor={theme.muted}
         selectionColor={theme.accent}

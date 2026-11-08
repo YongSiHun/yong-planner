@@ -38,7 +38,7 @@ export function PlannerGuide({
           일정 칸이나 칩을 눌러 수정하세요. 자동으로 저장돼요.
         </Label>
       </GuideStep>
-      <GuideStep title="2. 쉼표(,)로 나누기">
+      <GuideStep title="2. 쉼표(,)나 엔터로 나누기">
         <SplitExample />
         <Label muted style={styles.plannerGuideLabelStyle}>
           백스페이스를 입력하면 칩의 내용을 수정할 수 있어요.

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { Button, Input, Label, showToast } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
-import { noteLengthError } from '../../../services/schedule';
+import { normalizeNoteSeparators, noteLengthError } from '../../../services/schedule';
 import type { DailyPlanItem } from '../types';
 import * as styles from './EditSchedules.styles';
 
@@ -20,14 +20,15 @@ export function EditSchedules({
   );
 
   function change(id: string, value: string) {
-    const error = noteLengthError(value);
+    const normalized = normalizeNoteSeparators(value);
+    const error = noteLengthError(normalized);
 
     if (error) {
       showToast(error);
 
       return;
     }
-    setChanges((previous) => new Map(previous).set(id, value));
+    setChanges((previous) => new Map(previous).set(id, normalized));
   }
 
   return (

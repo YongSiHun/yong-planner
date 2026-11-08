@@ -89,3 +89,31 @@ test('backspace at a later chip keeps the native boundary while deleting restore
   assert.equal(edit.text, '회의,밥먹');
   assert.equal(edit.index, 1);
 });
+
+test('enter and pasted line endings behave exactly like commas in the middle of a chip', () => {
+  for (const separator of ['\n', '\r\n', '\r']) {
+    const initial = { text: '회의장보기,운동', index: 0 };
+    const actual = new NoteInputEvents().change(initial, '회의' + separator + '장보기', 1);
+    const expected = new NoteInputEvents().change(initial, '회의,장보기', 1);
+    assert.deepEqual(actual, expected);
+    assert.equal(actual.caret, 0);
+  }
+});
+
+test('fast typing after enter ignores duplicate native events and preserves each chip once', () => {
+  const events = new NoteInputEvents();
+  let edit = events.change({ text: '회의', index: 0 }, '회의\n', 1);
+  assert.equal(events.change(edit, '회의\n', 2), null);
+  edit = events.change(edit, '회의\n장보기\n운동', 3);
+  assert.equal(edit.text, '회의,장보기,운동');
+  assert.equal(edit.index, 2);
+});
+
+test('backspace after enter merges the previous chip just like comma input', () => {
+  const events = new NoteInputEvents();
+  let edit = events.change({ text: '회의', index: 0 }, '회의\n', 1);
+  events.acknowledge();
+  edit = events.change(edit, '', 2);
+  assert.equal(edit.text, '회의');
+  assert.equal(edit.index, 0);
+});

@@ -1,4 +1,4 @@
-import { noteLengthError } from '../../../services/schedule';
+import { normalizeNoteSeparators, noteLengthError } from '../../../services/schedule';
 import type { DailyPlanItem, PlannerData } from '../types';
 import { dailyNoteItems, mergeNoteOrder } from './note';
 import { parseScheduleTimePrefix } from './time';
@@ -9,7 +9,7 @@ export function editDailyContents(
   createId: () => string,
 ): PlannerData {
   changes.forEach((value) => {
-    const error = noteLengthError(value);
+    const error = noteLengthError(normalizeNoteSeparators(value));
 
     if (error) {
       throw new Error(error);
@@ -28,18 +28,20 @@ export function editDailyContents(
     if (!changed) {
       return [item];
     }
-    const replacement = text.split(',').map((part, index) => {
-      const parsed = parseScheduleTimePrefix(part);
-      const first = index === 0;
+    const replacement = normalizeNoteSeparators(text)
+      .split(',')
+      .map((part, index) => {
+        const parsed = parseScheduleTimePrefix(part);
+        const first = index === 0;
 
-      return {
-        ...item,
-        id: first ? item.id : createId(),
-        content: parsed.content,
-        time: parsed.time ?? item.time,
-        createdAt: first ? item.createdAt : new Date(++sequence).toISOString(),
-      };
-    });
+        return {
+          ...item,
+          id: first ? item.id : createId(),
+          content: parsed.content,
+          time: parsed.time ?? item.time,
+          createdAt: first ? item.createdAt : new Date(++sequence).toISOString(),
+        };
+      });
 
     replacements.set(item.id, replacement);
     dates.add(item.date);

@@ -125,3 +125,20 @@ test('chip alarm metadata survives backup and rejects malformed flags', () => {
   malformed.dailyPlanItems[0].alarm = 'true';
   assert.throws(() => parseBackup(JSON.stringify(malformed)), /알람 값/);
 });
+
+test('batch edits split pasted line endings like commas and validate each resulting schedule', () => {
+  const data = seed();
+  for (const separator of ['\n', '\r\n', '\r']) {
+    const text = '가'.repeat(255) + separator + '나'.repeat(255);
+    const actual = editDailyContents(data, new Map([['2', text]]), () => 'split');
+    const expected = editDailyContents(
+      data,
+      new Map([['2', text.replace(separator, ',')]]),
+      () => 'split',
+    );
+    assert.deepEqual(
+      dailyNoteItems(actual, '2026-11-08').map(({ id, content }) => ({ id, content })),
+      dailyNoteItems(expected, '2026-11-08').map(({ id, content }) => ({ id, content })),
+    );
+  }
+});

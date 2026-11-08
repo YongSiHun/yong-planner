@@ -825,9 +825,9 @@ test('programmatic boundary caret releases even if native selection acknowledgme
   assert.deepEqual(saved, []);
 });
 
-test('native content-size changes cannot undo measured explicit line breaks', () => {
+test('native content-size changes cannot undo measured wrapped lines', () => {
   let editor = renderInput('회의', 0);
-  changeInput(editor.input, '회의\n두 번째 줄');
+  changeInput(editor.input, '회의 내용이 길어서 자동으로 줄이 나뉘는 일정');
   editor = renderInput('회의', 0);
   find(editor.tree, (node) => node.type === 'Text' && node.props.onTextLayout).props.onTextLayout({
     nativeEvent: { lines: [{ width: 40 }, { width: 80 }] },
@@ -836,7 +836,7 @@ test('native content-size changes cannot undo measured explicit line breaks', ()
   const height = editor.input.props.style.height;
   editor.input.props.onContentSizeChange({ nativeEvent: { contentSize: { height: 22 } } });
   editor = renderInput('회의', 0);
-  assert.equal(editor.input.props.value, '회의\n두 번째 줄');
+  assert.equal(editor.input.props.value, '회의 내용이 길어서 자동으로 줄이 나뉘는 일정');
   assert.equal(editor.input.props.style.height, height);
   assert.ok(height >= 52);
 });
@@ -1223,4 +1223,16 @@ test('select all targets the displayed month, stays selected on repeat and clear
   assert.equal(renderSelection([]).selected.size, 0);
   assert.equal(renderSelection([]).active, false);
   assert.equal(plannerData.dailyPlanItems.length, 10);
+});
+
+test('enter creates the next chip without a newline and keeps the editor available', () => {
+  let editor = renderInput('회의', 0);
+  changeInput(editor.input, '회의\n');
+  editor = renderInput('회의', 0);
+  assert.equal(saved.at(-1), '회의,');
+  assert.equal(editor.input.props.value, boundary);
+  changeInput(editor.input, boundary + '운동');
+  editor = renderInput('회의', 0);
+  assert.equal(saved.at(-1), '회의,운동');
+  assert.equal(editor.input.props.value, boundary + '운동');
 });
