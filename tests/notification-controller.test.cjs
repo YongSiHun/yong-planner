@@ -331,6 +331,9 @@ test('alarm channels use the SDK default instead of resolving a custom default s
 function freshStartupRequest() {
   const filename = require.resolve('../src/features/notifications/controllers/notifications.ts');
   delete require.cache[filename];
+  delete require.cache[
+    require.resolve('../src/features/notifications/controllers/notificationPermissions.ts')
+  ];
   return require(filename).requestStartupNotificationPermission;
 }
 

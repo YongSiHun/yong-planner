@@ -1,53 +1,6 @@
 import type { Theme } from '../../../components/ui/palette';
 import { design } from '../../../components/ui/tokens';
 
-export function chip(selected: boolean, theme: Theme, important = false) {
-  return ({ pressed }: import('react-native').PressableStateCallbackType) =>
-    ({
-      backgroundColor: chipBackground(selected, important, theme),
-      borderColor: selected ? theme.accent : theme.line,
-      borderWidth: 1,
-      borderRadius: design.radius.pill,
-      paddingHorizontal: design.space.sm,
-      paddingVertical: 3,
-      minHeight: 30,
-      maxWidth: '100%',
-      opacity: pressed ? 0.75 : 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-    }) as const;
-}
-
-export function importantMark(selected: boolean, theme: Theme) {
-  return {
-    position: 'absolute',
-    top: -4,
-    left: 2,
-    width: 12,
-    height: 12,
-    borderRadius: design.radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: chipBackground(selected, true, theme),
-  } as const;
-}
-
-export function chipLabel(selected: boolean, theme: Theme) {
-  return {
-    color: selected ? theme.onAccent : theme.text,
-    fontFamily: design.font.regular,
-    includeFontPadding: false,
-    fontSize: design.type.body,
-    lineHeight: design.lineHeight,
-    flexShrink: 1,
-  } as const;
-}
-
-export function chipEdge(side: 'left' | 'right') {
-  return { position: 'absolute', [side]: 0, top: 0, bottom: 0, width: 8 } as const;
-}
-
 export function field(theme: Theme) {
   return {
     flexDirection: 'row',
@@ -69,22 +22,18 @@ export function measurement(availableWidth: number) {
     position: 'absolute',
     opacity: 0,
     maxWidth: Math.max(1, availableWidth - 18),
+    includeFontPadding: false,
     fontFamily: design.font.regular,
     fontSize: design.type.body,
     lineHeight: design.lineHeight,
   } as const;
 }
 
-export function input(
-  editText: string,
-  theme: Theme,
-  height: number,
-  maximumHeight: number,
-  inputWidth: number,
-) {
+export function input(theme: Theme, height: number, maximumHeight: number, inputWidth: number) {
   return {
     fontFamily: design.font.regular,
-    fontSize: noteFontSize(editText),
+    fontSize: design.type.body,
+    includeFontPadding: false,
     lineHeight: design.lineHeight,
     color: theme.text,
     paddingHorizontal: 8,
@@ -98,33 +47,5 @@ export function input(
     flexShrink: 1,
   } as const;
 }
-
-export const emptyPreview = {
-  minHeight: design.rowMinHeight,
-  justifyContent: 'center',
-  paddingVertical: 7,
-} as const;
-
-export const preview = {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  gap: 6,
-  paddingVertical: 4,
-  minHeight: design.rowMinHeight,
-} as const;
-
-export function chipWrapper(draggingIndex: number | null | undefined, index: number) {
-  return { maxWidth: '100%', flexShrink: 1, opacity: draggingIndex === index ? 0.35 : 1 } as const;
-}
-
-function noteFontSize(text: string): number {
-  return text.length === 0 ? design.type.small : design.type.body;
-}
-
-function chipBackground(selected: boolean, important: boolean, theme: Theme): string {
-  if (selected) {
-    return theme.accent;
-  }
-
-  return important ? theme.selected : theme.bg;
-}
+export { chip, importantMark, chipLabel, chipEdge } from './ScheduleChip.styles';
+export { emptyPreview, preview, chipWrapper } from './SchedulePreview.styles';

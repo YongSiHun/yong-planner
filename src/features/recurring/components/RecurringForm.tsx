@@ -10,90 +10,19 @@ import {
   showDialog,
   useTheme,
 } from '../../../components/ui';
-import { weekdays } from '../../../utils/date';
 import { Calendar } from '../../planner/components/Calendar';
 import { usePlannerActions } from '../../planner/hooks/usePlannerActions';
 import type { RecurringPlan } from '../../planner/types';
-import { toggleWeekday } from '../services/presentation';
 import * as styles from './RecurringForm.styles';
+import { WeekdaySelector } from './WeekdaySelector';
+import { DateFields } from './RecurringDateFields';
+import { type CalendarField } from '../types';
 
 const holidayPolicies = [
   { value: 'include', label: '관계없음' },
   { value: 'exclude', label: '공휴일 제외' },
   { value: 'only', label: '공휴일만' },
 ] as const;
-const weekdayPresets = [
-  { label: '매일', days: [0, 1, 2, 3, 4, 5, 6] },
-  { label: '평일', days: [1, 2, 3, 4, 5] },
-  { label: '주말', days: [0, 6] },
-];
-
-type CalendarField = 'startDate' | 'endDate';
-type ChangePlan = (patch: Partial<RecurringPlan>) => void;
-
-function WeekdaySelector({ plan, onChange }: { plan: RecurringPlan; onChange: ChangePlan }) {
-  const usesHolidaysOnly = plan.holidayPolicy === 'only';
-
-  if (usesHolidaysOnly) {
-    return <Label muted>요일과 관계없이 대한민국 공휴일에 반복합니다.</Label>;
-  }
-
-  return (
-    <>
-      <Label>반복 요일</Label>
-      <View style={layoutStyles.row}>
-        {weekdayPresets.map((preset) => (
-          <Button
-            key={preset.label}
-            title={preset.label}
-            onPress={() => onChange({ weekdays: preset.days })}
-          />
-        ))}
-      </View>
-
-      <View style={layoutStyles.row}>
-        {weekdays.map((label, day) => (
-          <Button
-            key={day}
-            title={label}
-            selected={plan.weekdays.includes(day)}
-            onPress={() => onChange({ weekdays: toggleWeekday(plan.weekdays, day) })}
-          />
-        ))}
-      </View>
-    </>
-  );
-}
-
-function DateFields({
-  plan,
-  onChange,
-  onSelect,
-}: {
-  plan: RecurringPlan;
-  onChange: ChangePlan;
-  onSelect(field: CalendarField): void;
-}) {
-  const hasEndDate = plan.endDate !== null;
-  const endDateTitle = hasEndDate ? plan.endDate + ' ▾' : '종료일 선택';
-
-  return (
-    <>
-      <Label>시작일</Label>
-      <Button title={plan.startDate + ' ▾'} onPress={() => onSelect('startDate')} />
-
-      <Label>종료일 · 해당 날짜 포함</Label>
-      <View style={layoutStyles.row}>
-        <Button title={endDateTitle} onPress={() => onSelect('endDate')} />
-        <Button
-          title="종료일 없음"
-          selected={!hasEndDate}
-          onPress={() => onChange({ endDate: null })}
-        />
-      </View>
-    </>
-  );
-}
 
 export function RecurringForm({
   initial,

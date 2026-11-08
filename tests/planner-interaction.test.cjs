@@ -415,7 +415,8 @@ test('editing a chip uses its measured text width and leaves room for following 
   const measurement = find(editor.tree, (node) => node.type === 'Text' && node.props.onTextLayout);
   measurement.props.onTextLayout({ nativeEvent: { lines: [{ width: 48 }] } });
   editor = renderInput('회의,장보기,운동', 1);
-  assert.equal(editor.input.props.style.width, 66);
+  assert.ok(editor.input.props.style.width >= 48 + 16);
+  assert.ok(editor.input.props.style.width < dimensions.width - 68);
   assert.ok(
     find(
       editor.tree,
@@ -1235,4 +1236,63 @@ test('enter creates the next chip without a newline and keeps the editor availab
   editor = renderInput('회의', 0);
   assert.equal(saved.at(-1), '회의,운동');
   assert.equal(editor.input.props.value, boundary + '운동');
+});
+
+test('the first keystroke keeps the empty editor width and font stable', () => {
+  let editor = renderInput('', 0);
+  const before = editor.input.props.style;
+  changeInput(editor.input, 'ㅎ');
+  editor = renderInput('', 0);
+  assert.equal(editor.input.props.style.width, before.width);
+  assert.equal(editor.input.props.style.fontSize, before.fontSize);
+  assert.equal(editor.input.props.style.lineHeight, before.lineHeight);
+});
+
+test('Korean composition and delayed width measurements do not shrink or resize the editor per syllable', () => {
+  let editor = renderInput('회의,장보기,운동', 1);
+  flushFrames();
+  flushFrames();
+  editor = renderInput('회의,장보기,운동', 1);
+  const before = editor.input.props.style.width;
+  selections = [];
+  for (const [text, width] of [
+    ['장보ㄱ', 44],
+    ['장보기', 45],
+    ['장보', 30],
+    ['장보기', 43],
+  ]) {
+    changeInput(editor.input, boundary + text);
+    editor = renderInput('회의,장보기,운동', 1);
+    find(editor.tree, (node) => node.type === 'Text' && node.props.onTextLayout).props.onTextLayout(
+      {
+        nativeEvent: { lines: [{ width }] },
+      },
+    );
+    editor = renderInput('회의,장보기,운동', 1);
+    assert.equal(editor.input.props.style.width, before);
+    assert.equal(editor.input.props.value, boundary + text);
+  }
+  flushFrames();
+  assert.deepEqual(selections, []);
+});
+
+test('ordinary caret movement does not request page measurement or reset the native selection', () => {
+  let reveals = 0;
+  const options = { onInputLayout: () => reveals++ };
+  let editor = renderInput('회의', 0, () => {}, options);
+  flushFrames();
+  flushFrames();
+  editor = renderInput('회의', 0, () => {}, options);
+  reveals = 0;
+  selections = [];
+  changeInput(editor.input, '회의하기');
+  editor = renderInput('회의', 0, () => {}, options);
+  for (const position of [4, 3, 2, 1]) {
+    editor.input.props.onSelectionChange({
+      nativeEvent: { selection: { start: position, end: position } },
+    });
+  }
+  flushFrames();
+  assert.equal(reveals, 0);
+  assert.deepEqual(selections, []);
 });

@@ -9,6 +9,7 @@ import * as styles from './DayRow.styles';
 import { DraggableSchedulePreview } from './DraggableSchedulePreview';
 import { RecurringNote } from './RecurringNote';
 import { ScheduleInput } from './ScheduleInput';
+import { areDayRowsEqual } from '../services/dayRowComparison';
 
 export const DayRow = memo(function DayRow({
   date,
@@ -166,63 +167,6 @@ export const DayRow = memo(function DayRow({
     </Pressable>
   );
 }, areDayRowsEqual);
-
-function sameItems<T>(before: T[], after: T[], keys: (keyof T)[]): boolean {
-  return (
-    before.length === after.length &&
-    before.every((item, index) => keys.every((key) => item[key] === after[index]![key]))
-  );
-}
-
-function areDayRowsEqual(before: DayRowProps, after: DayRowProps): boolean {
-  const keys = [
-    'date',
-    'note',
-    'timeFormat',
-    'selectedIds',
-    'selecting',
-    'copying',
-    'copyTarget',
-    'copySourceDate',
-    'onCopyDate',
-    'editingIndex',
-    'onSelect',
-    'onOutsidePress',
-    'holidayName',
-    'isToday',
-    'isEditing',
-    'onEdit',
-    'onFinish',
-    'onMeasure',
-    'onInputFocus',
-    'onInputLayout',
-  ] as const;
-  const sameValues = keys.every((key) => before[key] === after[key]);
-  const sameRecurring = sameItems(before.recurring, after.recurring, [
-    'id',
-    'sourceId',
-    'content',
-    'time',
-  ]);
-  const sameExceptions = sameItems(before.exceptions, after.exceptions, [
-    'recurringPlanId',
-    'date',
-    'cancelled',
-    'title',
-    'time',
-  ]);
-
-  const sameNoteIds =
-    before.noteIds.length === after.noteIds.length &&
-    before.noteIds.every(
-      (id, index) =>
-        id === after.noteIds[index] &&
-        before.noteTimes[index] === after.noteTimes[index] &&
-        before.noteImportant?.[index] === after.noteImportant?.[index],
-    );
-
-  return sameValues && sameRecurring && sameExceptions && sameNoteIds;
-}
 
 function getInitialSlot(editingIndex: number | undefined, initialSlot: number | undefined) {
   return editingIndex === undefined ? initialSlot : undefined;
