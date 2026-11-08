@@ -15,6 +15,7 @@ export const DayRow = memo(function DayRow({
   note,
   noteIds,
   noteTimes = [],
+  noteImportant = [],
   timeFormat = '24h',
   selectedIds,
   selecting,
@@ -104,6 +105,7 @@ export const DayRow = memo(function DayRow({
             date={date}
             note={note}
             noteTimes={noteTimes}
+            noteImportant={noteImportant}
             timeFormat={timeFormat}
             initialIndex={editingIndex ?? initialIndex}
             initialSlot={getInitialSlot(editingIndex, initialSlot)}
@@ -119,6 +121,7 @@ export const DayRow = memo(function DayRow({
             date={date}
             note={note}
             noteTimes={noteTimes}
+            noteImportant={noteImportant}
             timeFormat={timeFormat}
             onEdit={startEditing}
             onInsert={startInsertion}
@@ -207,7 +210,9 @@ function areDayRowsEqual(before: DayRowProps, after: DayRowProps): boolean {
     before.noteIds.length === after.noteIds.length &&
     before.noteIds.every(
       (id, index) =>
-        id === after.noteIds[index] && before.noteTimes[index] === after.noteTimes[index],
+        id === after.noteIds[index] &&
+        before.noteTimes[index] === after.noteTimes[index] &&
+        before.noteImportant?.[index] === after.noteImportant?.[index],
     );
 
   return sameValues && sameRecurring && sameExceptions && sameNoteIds;

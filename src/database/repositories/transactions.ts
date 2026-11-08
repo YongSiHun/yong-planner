@@ -40,12 +40,13 @@ async function insertDailyRows(
 ): Promise<void> {
   for (const p of items) {
     await tx.runAsync(
-      'INSERT INTO daily_plan_items (id, date, content, createdAt, time) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO daily_plan_items (id, date, content, createdAt, time, important) VALUES (?, ?, ?, ?, ?, ?)',
       p.id,
       p.date,
       p.content,
       p.createdAt,
       p.time ?? null,
+      Number(Boolean(p.important)),
     );
   }
 }

@@ -1,3 +1,4 @@
+import { showToast } from '../../../components/ui';
 import { useLayoutEffect, useRef, useState, type ComponentRef } from 'react';
 import {
   useWindowDimensions,
@@ -50,7 +51,7 @@ export function useScheduleInputState({
   const [textWidth, setTextWidth] = useState({ text: '', width: 0 });
   const input = useRef<ComponentRef<typeof TextInput>>(null);
   const currentEdit = useRef(edit);
-  const inputEvents = useRef(new NoteInputEvents());
+  const inputEvents = useRef(new NoteInputEvents(showToast));
   const selectionRequest = useRef<{ edit: NoteEdit; applied: boolean } | null>(null);
   const parts = edit.text.split(NOTE_SEPARATOR);
   const content = parts[edit.index]!;

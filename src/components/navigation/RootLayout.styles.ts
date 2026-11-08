@@ -2,7 +2,13 @@ import type { Theme } from '../ui/palette';
 import { design } from '../ui/tokens';
 
 export function loadingScreenViewStyle(theme: Theme) {
-  return { flex: 1, justifyContent: 'center', padding: 32, backgroundColor: theme.bg } as const;
+  return {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+    backgroundColor: theme.bg,
+  } as const;
 }
 
 export function rootNavigationStackScreenOptions(theme: Theme) {
@@ -23,6 +29,4 @@ export function rootLayoutStatusBarStyle(isDarkTheme: boolean) {
   return isDarkTheme ? 'light' : 'dark';
 }
 
-export function rootLayoutViewStyle(theme: Theme) {
-  return { flex: 1, backgroundColor: theme.bg } as const;
-}
+export const splashImage = { width: 240, maxWidth: '100%', height: 240 } as const;

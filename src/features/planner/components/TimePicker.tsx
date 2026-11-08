@@ -2,18 +2,22 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { Button, Input, Label, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
-import { formatScheduleContent, timeFromFields } from '../services/time';
+import { boundedClockInput, formatScheduleContent, timeFromFields } from '../services/time';
 import type { DailyPlanItem, TimeFormat } from '../types';
 import * as styles from './TimePicker.styles';
 
 export function TimePicker({
   item,
   format,
+  count = 1,
+  hasExistingTime,
   onClose,
   onSave,
 }: {
   item: DailyPlanItem;
   format: TimeFormat;
+  count?: number;
+  hasExistingTime?: boolean;
   onClose(): void;
   onSave(time: string | null): void;
 }) {
@@ -25,7 +29,7 @@ export function TimePicker({
   );
   const time = timeFromFields(hour, minute, period, format);
   const is12 = format === '12h';
-  const hasTime = Boolean(item.time);
+  const hasTime = hasExistingTime ?? Boolean(item.time);
 
   return (
     <Dialog
@@ -42,7 +46,9 @@ export function TimePicker({
         />
       }
     >
-      <Label>{formatScheduleContent(item.content, time, format)}</Label>
+      <Label>
+        {count > 1 ? count + '개 일정에 적용' : formatScheduleContent(item.content, time, format)}
+      </Label>
       {is12 ? (
         <View style={styles.timePickerViewStyle}>
           <Button title="오전" selected={period === 'am'} onPress={() => setPeriod('am')} />
@@ -54,9 +60,10 @@ export function TimePicker({
           <Input
             accessibilityLabel="시"
             value={hour}
-            onChangeText={(value) => setHour(value.replace(/\D/g, '').slice(0, 2))}
+            onChangeText={(value) =>
+              setHour(boundedClockInput(value, hour, is12 ? 1 : 0, is12 ? 12 : 23))
+            }
             keyboardType="number-pad"
-            maxLength={2}
             style={styles.timePickerInputStyle}
           />
         </View>
@@ -65,9 +72,8 @@ export function TimePicker({
           <Input
             accessibilityLabel="분"
             value={minute}
-            onChangeText={(value) => setMinute(value.replace(/\D/g, '').slice(0, 2))}
+            onChangeText={(value) => setMinute(boundedClockInput(value, minute, 0, 59))}
             keyboardType="number-pad"
-            maxLength={2}
             style={styles.timePickerInputStyle}
           />
         </View>

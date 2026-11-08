@@ -5,9 +5,10 @@ import { loadData } from '../../../database/repositories/planner';
 import { validateData } from '../../../services/backup';
 import { usePlanner } from '../../../stores/planner';
 import { parseDate, validTime } from '../../../utils/date';
+import { editDailyContents } from '../services/noteEditing';
 import { applyDailyNote } from '../services/note';
 import { moveDailyNote as reorderDailyNote } from '../services/noteMove';
-import { copyNoteToDates, deleteSelectedNotes } from '../services/noteSelection';
+import { copyNoteToDates, copyNotesToDates, deleteSelectedNotes } from '../services/noteSelection';
 import { type PlannerData, type RecurringPlan, type RecurringPlanException } from '../types';
 import { WriteQueue } from './WriteQueue';
 
@@ -236,6 +237,43 @@ export function saveHolidayOverride(date: string, name: string): void {
         ...data.holidayOverrides.filter((override) => override.date !== date),
         { date, name: name || null },
       ],
+    }),
+    true,
+  );
+}
+
+export function copyDailyNotes(ids: ReadonlySet<string>, dates: string[]) {
+  updatePlanner((data) => copyNotesToDates(data, ids, dates, randomUUID), true);
+}
+
+export function saveDailyTimes(ids: ReadonlySet<string>, time: string | null) {
+  const valid = validTime(time);
+
+  if (!valid) {
+    throw new Error('시간을 확인해 주세요.');
+  }
+  updatePlanner(
+    (data) => ({
+      ...data,
+      dailyPlanItems: data.dailyPlanItems.map((item) =>
+        ids.has(item.id) ? { ...item, time } : item,
+      ),
+    }),
+    true,
+  );
+}
+
+export function saveDailyContents(changes: ReadonlyMap<string, string>) {
+  updatePlanner((data) => editDailyContents(data, changes, randomUUID), true);
+}
+
+export function setDailyImportant(ids: ReadonlySet<string>, important: boolean) {
+  updatePlanner(
+    (data) => ({
+      ...data,
+      dailyPlanItems: data.dailyPlanItems.map((item) =>
+        ids.has(item.id) ? { ...item, important: important || undefined } : item,
+      ),
     }),
     true,
   );

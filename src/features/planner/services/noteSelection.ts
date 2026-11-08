@@ -24,45 +24,66 @@ export function copyNoteToDates(
   dates: string[],
   createId: () => string,
 ): PlannerData {
-  const source = data.dailyPlanItems.find((item) => item.id === sourceId);
-  const hasSource = source !== undefined;
+  return copyNotesToDates(data, new Set([sourceId]), dates, createId);
+}
 
-  if (!hasSource) {
-    return data;
-  }
-  const targets = [...new Set(dates)].filter((date) => date !== source.date);
+export function copyNotesToDates(
+  data: PlannerData,
+  ids: ReadonlySet<string>,
+  dates: string[],
+  createId: () => string,
+): PlannerData {
+  const sourceDates = [
+    ...new Set(data.dailyPlanItems.filter((item) => ids.has(item.id)).map((item) => item.date)),
+  ].sort();
+  const sources = sourceDates.flatMap((date) =>
+    dailyNoteItems(data, date).filter((item) => ids.has(item.id)),
+  );
+  const targets = [...new Set(dates)];
 
   targets.forEach(parseDate);
-  const hasTargets = targets.length > 0;
-
-  if (!hasTargets) {
-    return data;
-  }
-  const latest = data.dailyPlanItems.reduce(
-    (value, item) => Math.max(value, Date.parse(item.createdAt)),
+  let sequence = data.dailyPlanItems.reduce(
+    (latest, item) => Math.max(latest, Date.parse(item.createdAt)),
     Date.now(),
   );
-  const copies = targets.map((date, index) => ({
-    ...source,
-    id: createId(),
-    date,
-    createdAt: new Date(latest + index + 1).toISOString(),
-  }));
-  const targetSet = new Set(targets);
-  const ordersByDate = new Map(data.dailyPlanOrders.map((order) => [order.date, order]));
-  const orders = copies.map((item) => {
-    const existing = ordersByDate.get(item.date);
-    const itemIds =
-      existing?.itemIds ?? dailyNoteItems(data, item.date).map((note) => 'daily:' + note.id);
+  const copies = targets.flatMap((date) =>
+    sources
+      .filter((source) => source.date !== date)
+      .map((source) => ({
+        ...source,
+        id: createId(),
+        date,
+        createdAt: new Date(++sequence).toISOString(),
+      })),
+  );
 
-    return { date: item.date, itemIds: [...itemIds, 'daily:' + item.id] };
+  const noCopies = copies.length === 0;
+
+  if (noCopies) {
+    return data;
+  }
+  const addedByDate = new Map<string, string[]>();
+
+  copies.forEach((item) => {
+    const ids = addedByDate.get(item.date) ?? [];
+
+    ids.push('daily:' + item.id);
+    addedByDate.set(item.date, ids);
+  });
+  const ordersByDate = new Map(data.dailyPlanOrders.map((order) => [order.date, order]));
+  const orders = [...addedByDate].map(([date, ids]) => {
+    const existing = ordersByDate.get(date);
+    const itemIds =
+      existing?.itemIds ?? dailyNoteItems(data, date).map((note) => 'daily:' + note.id);
+
+    return { date, itemIds: [...itemIds, ...ids] };
   });
 
   return {
     ...data,
     dailyPlanItems: [...data.dailyPlanItems, ...copies],
     dailyPlanOrders: [
-      ...data.dailyPlanOrders.filter((order) => !targetSet.has(order.date)),
+      ...data.dailyPlanOrders.filter((order) => !addedByDate.has(order.date)),
       ...orders,
     ],
   };

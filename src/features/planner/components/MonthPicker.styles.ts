@@ -10,6 +10,6 @@ export const monthPickerViewStyle2 = { flex: 1 } as const;
 
 export const monthPickerInputStyle = { textAlign: 'center' } as const;
 
-export const monthPickerViewStyle3 = { flexDirection: 'row', flexWrap: 'wrap' } as const;
-
-export const monthPickerButtonStyle2 = { width: '25%' } as const;
+export function validation(theme: Theme) {
+  return { color: theme.red, fontSize: 13, marginTop: 4 } as const;
+}

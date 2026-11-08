@@ -13,6 +13,7 @@ let alerts;
 let nativeEventCount;
 let plannerData;
 let dimensions;
+let toasts = [];
 const { emptyData } = require('../src/features/planner/types/index.ts');
 const { applyDailyNote } = require('../src/features/planner/services/note.ts');
 const {
@@ -45,6 +46,7 @@ function cacheMock(id, exports) {
 cacheMock('react', {
   ...React,
   useCallback: (callback) => callback,
+  useMemo: (factory) => factory(),
   useState(initial) {
     const index = cursor++;
     if (!(index in slots)) slots[index] = typeof initial === 'function' ? initial() : initial;
@@ -89,6 +91,7 @@ cacheMock('react-native', {
 });
 cacheMock('../src/components/ui/index.tsx', {
   design: require('../src/components/ui/tokens.ts').design,
+  showToast: (message) => toasts.push(message),
   Button: 'Button',
   Label: 'Label',
   Input: 'Input',
@@ -108,6 +111,37 @@ const plannerStore = (selector) => selector({ data: plannerData });
 plannerStore.getState = () => ({ data: plannerData });
 const plannerActions = {
   saveDailyNote: (date, text) => saved.push(text),
+  setDailyImportant: (ids, important) => {
+    plannerData = {
+      ...plannerData,
+      dailyPlanItems: plannerData.dailyPlanItems.map((item) =>
+        ids.has(item.id) ? { ...item, important: important || undefined } : item,
+      ),
+    };
+  },
+  saveDailyTimes: (ids, time) => {
+    plannerData = {
+      ...plannerData,
+      dailyPlanItems: plannerData.dailyPlanItems.map((item) =>
+        ids.has(item.id) ? { ...item, time } : item,
+      ),
+    };
+  },
+  saveDailyContents: (changes) => {
+    plannerData = require('../src/features/planner/services/noteEditing.ts').editDailyContents(
+      plannerData,
+      changes,
+      () => 'edit-' + nativeEventCount++,
+    );
+  },
+  copyDailyNotes: (ids, dates) => {
+    plannerData = require('../src/features/planner/services/noteSelection.ts').copyNotesToDates(
+      plannerData,
+      ids,
+      dates,
+      () => 'copy-' + nativeEventCount++,
+    );
+  },
   saveDailyTime: (id, time) => {
     plannerData = {
       ...plannerData,
@@ -134,6 +168,7 @@ cacheMock('../src/stores/noteSelection.ts', {
   useNoteSelectionStore: selectionStore,
   emptySelection: () => ({
     active: false,
+    editing: false,
     selected: new Set(),
     deleteIds: null,
     timeId: null,
@@ -416,7 +451,7 @@ function buttonTitles(node) {
   return buttonTitles(node.props?.children);
 }
 
-test('one selected schedule offers edit, copy and delete; several offer only delete', () => {
+test('single and multiple selections offer the same actions', () => {
   plannerData = applyDailyNote(
     plannerData,
     '2026-11-07',
@@ -431,6 +466,7 @@ test('one selected schedule offers edit, copy and delete; several offer only del
   let bar = SelectionBar({ count: 1, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
   assert.deepEqual(buttonTitles(bar), [
     '선택 해제',
+    '중요 일정으로 설정',
     '수정하기',
     '시간 설정',
     '일정 복사',
@@ -439,7 +475,14 @@ test('one selected schedule offers edit, copy and delete; several offer only del
   selection.toggle('2026-11-07', 1);
   selection = renderSelection(edits);
   bar = SelectionBar({ count: 2, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
-  assert.deepEqual(buttonTitles(bar), ['선택 해제', '삭제하기']);
+  assert.deepEqual(buttonTitles(bar), [
+    '선택 해제',
+    '중요 일정으로 설정',
+    '수정하기',
+    '시간 설정',
+    '일정 복사',
+    '삭제하기',
+  ]);
   selection.requestDelete();
   assert.equal(plannerData.dailyPlanItems.length, 2);
   selection = renderSelection(edits);
@@ -463,7 +506,7 @@ test('a selected schedule opens editing at its own date and index', () => {
   assert.equal(renderSelection(edits).active, false);
 });
 
-test('year and month dialog chooses the exact month and disables invalid years', () => {
+test('year and month dialog uses matching steppers and blocks invalid values', () => {
   const choices = [];
   const render = () => {
     cursor = 0;
@@ -473,14 +516,35 @@ test('year and month dialog chooses the exact month and disables invalid years',
       onChoose: (date) => choices.push(date),
     });
   };
+  const field = (picker, unit) => {
+    const node = find(
+      picker,
+      (node) => node.type?.name === 'NumberField' && node.props.unit === unit,
+    );
+    return node.type(node.props);
+  };
   let picker = render();
-  find(picker, (node) => node.type === 'Input').props.onChangeText('2030');
+  find(field(picker, '년'), (node) => node.type === 'Input').props.onChangeText('2030');
   picker = render();
-  find(picker, (node) => node.type === 'Button' && node.props.title === '2월').props.onPress();
+  find(field(picker, '월'), (node) => node.type === 'Input').props.onChangeText('2');
   picker = render();
   picker.props.footer.props.onPress();
   assert.deepEqual(choices, ['2030-02-01']);
-  find(picker, (node) => node.type === 'Input').props.onChangeText('0');
+  find(field(picker, '월'), (node) => node.props?.accessibilityLabel === '다음 월').props.onPress();
+  picker = render();
+  assert.equal(find(field(picker, '월'), (node) => node.type === 'Input').props.value, '3');
+  find(field(picker, '월'), (node) => node.type === 'Input').props.onChangeText('13');
+  picker = render();
+  assert.equal(picker.props.footer.props.disabled, true);
+  assert.ok(
+    find(
+      field(picker, '월'),
+      (node) => node.type === 'Label' && node.props.children?.includes?.('1~12'),
+    ),
+  );
+  picker.props.footer.props.onPress();
+  assert.equal(choices.length, 1);
+  find(field(picker, '년'), (node) => node.type === 'Input').props.onChangeText('0');
   assert.equal(render().props.footer.props.disabled, true);
 });
 
@@ -786,4 +850,187 @@ test('large font line measurements keep enough height for every explicit line', 
   });
   editor = renderInput('회의\n운동', 0);
   assert.equal(editor.input.props.style.height, 96);
+});
+
+test('long pressing either edge of the first chip arms dragging without inserting text', () => {
+  const armed = [];
+  const selected = [];
+  const tree = SchedulePreview({
+    note: '밥먹기,운동',
+    date: '2026-11-07',
+    onEdit: () => assert.fail('unexpected edit'),
+    onInsert: () => assert.fail('unexpected insertion'),
+    onArm: (index) => armed.push(index),
+    onSelect: (...args) => selected.push(args),
+  });
+  const first = find(tree, (node) => node.type === ScheduleChip);
+  cursor = 0;
+  const button = ScheduleChip(first.props);
+  const edgeGroup = find(button, (node) => node.type?.name === 'ChipEdges');
+  const edges = edgeGroup.type(edgeGroup.props).props.children;
+  for (const edge of edges) {
+    edge.type(edge.props).props.onLongPress();
+  }
+  assert.deepEqual(armed, [0, 0]);
+  assert.deepEqual(selected, [
+    [0, true],
+    [0, true],
+  ]);
+});
+
+test('selection keeps chip edges mounted and tapping them toggles selection', () => {
+  let toggles = 0;
+  cursor = 0;
+  const button = ScheduleChip({
+    content: '밥먹기',
+    selecting: true,
+    selected: true,
+    onPress: () => toggles++,
+    onLongPress() {},
+    onBefore: () => assert.fail('unexpected insertion'),
+    onAfter: () => assert.fail('unexpected insertion'),
+  });
+  const group = find(button, (node) => node.type?.name === 'ChipEdges');
+  const edges = group.type(group.props).props.children;
+  assert.equal(edges.length, 2);
+  for (const edge of edges) {
+    edge.type(edge.props).props.onPress();
+  }
+  assert.equal(toggles, 2);
+});
+
+test('multi-selection sets and clears time on every selected chip', () => {
+  let id = 0;
+  plannerData = applyDailyNote(
+    plannerData,
+    '2026-11-08',
+    '회의,밥먹기,운동',
+    () => 'multi-' + ++id,
+  );
+  let selection = renderSelection([]);
+  selection.toggle('2026-11-08', 0, true);
+  selection.toggle('2026-11-08', 1);
+  selection = renderSelection([]);
+  selection.openTime();
+  selection = renderSelection([]);
+  selection.saveTime('13:10');
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => item.time ?? null),
+    ['13:10', '13:10', null],
+  );
+  selection = renderSelection([]);
+  selection.toggle('2026-11-08', 0, true);
+  selection.toggle('2026-11-08', 1);
+  selection = renderSelection([]);
+  selection.openTime();
+  renderSelection([]).saveTime(null);
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => item.time ?? null),
+    [null, null, null],
+  );
+});
+
+test('multi-selection opens batch editing and saves every chosen content together', () => {
+  let id = 0;
+  plannerData = applyDailyNote(plannerData, '2026-11-08', '회의,밥먹기,운동', () => 'edit-' + ++id);
+  let selection = renderSelection([]);
+  selection.toggle('2026-11-08', 0, true);
+  selection.toggle('2026-11-08', 1);
+  selection = renderSelection([]);
+  selection.editSelected();
+  selection = renderSelection([]);
+  assert.equal(selection.editSources.length, 2);
+  selection.saveContents(
+    new Map([
+      ['edit-1', '팀 회의'],
+      ['edit-2', '저녁'],
+    ]),
+  );
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => item.content),
+    ['팀 회의', '저녁', '운동'],
+  );
+  assert.equal(renderSelection([]).active, false);
+});
+
+test('multi-selection copies every selected chip to dates chosen on the page', () => {
+  let id = 0;
+  plannerData = applyDailyNote(plannerData, '2026-11-08', '회의,운동', () => 'source-' + ++id);
+  let selection = renderSelection([]);
+  selection.toggle('2026-11-08', 0, true);
+  selection.toggle('2026-11-08', 1);
+  selection = renderSelection([]);
+  selection.openCopy();
+  selection = renderSelection([]);
+  selection.toggleCopyDate('2026-11-09');
+  selection.toggleCopyDate('2026-11-10');
+  renderSelection([]).copySelected();
+  assert.equal(plannerData.dailyPlanItems.length, 6);
+  assert.deepEqual(
+    plannerData.dailyPlanItems
+      .filter((item) => item.date === '2026-11-09')
+      .map((item) => item.content),
+    ['회의', '운동'],
+  );
+});
+
+test('marking selected schedules important affects only those chips and supports clearing', () => {
+  let id = 0;
+  plannerData = applyDailyNote(plannerData, '2026-11-08', '회의,밥먹기,운동', () => 'star-' + ++id);
+  let selection = renderSelection([]);
+  selection.toggle('2026-11-08', 0, true);
+  selection.toggle('2026-11-08', 1);
+  selection = renderSelection([]);
+  selection.toggleImportant();
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => Boolean(item.important)),
+    [true, true, false],
+  );
+  selection = renderSelection([]);
+  selection.toggle('2026-11-08', 0, true);
+  selection.toggle('2026-11-08', 1);
+  selection = renderSelection([]);
+  assert.equal(selection.allImportant, true);
+  selection.toggleImportant();
+  assert.equal(
+    plannerData.dailyPlanItems.some((item) => item.important),
+    false,
+  );
+});
+
+test('important chip shows its star, sky background and accessible label', () => {
+  cursor = 0;
+  const button = ScheduleChip({ content: '회의', important: true, onPress() {}, onLongPress() {} });
+  assert.equal(button.props.style({ pressed: false }).backgroundColor, '#E4F2FF');
+  assert.equal(button.props.accessibilityLabel, '회의, 중요 일정');
+  const mark = find(button, (node) => node.type?.name === 'ImportantMark');
+  assert.equal(mark.type(mark.props).props.name, 'star');
+});
+
+test('12-hour time picker selects AM/PM for all selected schedules and clamps invalid values', () => {
+  const { TimePicker } = require('../src/features/planner/components/TimePicker.tsx');
+  const savedTimes = [];
+  const render = () => {
+    cursor = 0;
+    return TimePicker({
+      item: { id: 'a', content: '회의', time: '09:00' },
+      count: 2,
+      format: '12h',
+      onClose() {},
+      onSave: (time) => savedTimes.push(time),
+    });
+  };
+  let picker = render();
+  find(picker, (node) => node.type === 'Button' && node.props.title === '오후').props.onPress();
+  picker = render();
+  find(picker, (node) => node.props?.accessibilityLabel === '시').props.onChangeText('13');
+  picker = render();
+  assert.equal(find(picker, (node) => node.props?.accessibilityLabel === '시').props.value, '12');
+  find(picker, (node) => node.props?.accessibilityLabel === '분').props.onChangeText('60');
+  picker = render();
+  picker.props.footer.props.onPress();
+  assert.deepEqual(savedTimes, ['12:59']);
+  find(picker, (node) => node.type === 'Button' && node.props.title === '오전').props.onPress();
+  render().props.footer.props.onPress();
+  assert.deepEqual(savedTimes, ['12:59', '00:59']);
 });

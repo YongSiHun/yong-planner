@@ -8,7 +8,8 @@ export function useSelectionActions(
   onBegin: () => void,
   onEdit: (date: string, index: number) => void,
 ) {
-  const { copyDailyNote, deleteDailyNotes, saveDailyTime } = usePlannerActions();
+  const { copyDailyNotes, deleteDailyNotes, saveDailyTimes, saveDailyContents, setDailyImportant } =
+    usePlannerActions();
   const clear = useCallback(() => ui.setState(emptySelection()), []);
   const toggle = useCallback(
     (date: string, index: number, begin = false) => {
@@ -27,6 +28,13 @@ export function useSelectionActions(
     const data = usePlanner.getState().data;
     const selected = ui.getState().selected;
     const item = data.dailyPlanItems.find((note) => selected.has(note.id));
+    const multiple = selected.size > 1;
+
+    if (multiple) {
+      ui.setState({ editing: true });
+
+      return;
+    }
     const hasSingle = item !== undefined && selected.size === 1;
 
     if (!hasSingle) {
@@ -52,15 +60,15 @@ export function useSelectionActions(
     const hasSource = copyId !== null;
 
     if (hasSource) {
-      copyDailyNote(copyId, [...copyDates].sort());
+      copyDailyNotes(ui.getState().selected, [...copyDates].sort());
     }
     clear();
-  }, [clear, copyDailyNote]);
+  }, [clear, copyDailyNotes]);
   const openCopy = useCallback(() => {
     const selected = ui.getState().selected;
-    const isSingle = selected.size === 1;
+    const hasSelection = selected.size > 0;
 
-    if (!isSingle) {
+    if (!hasSelection) {
       return;
     }
     ui.setState({ copyId: [...selected][0]!, copyDates: new Set(), active: false });
@@ -72,10 +80,9 @@ export function useSelectionActions(
   );
   const toggleCopyDate = useCallback((date: string) => {
     const state = ui.getState();
-    const source = usePlanner
+    const canCopy = usePlanner
       .getState()
-      .data.dailyPlanItems.find((item) => item.id === state.copyId);
-    const canCopy = source !== undefined && date !== source.date;
+      .data.dailyPlanItems.some((item) => state.selected.has(item.id) && item.date !== date);
 
     if (!canCopy) {
       return;
@@ -88,15 +95,33 @@ export function useSelectionActions(
       const hasItem = id !== null;
 
       if (hasItem) {
-        saveDailyTime(id, time);
+        saveDailyTimes(ui.getState().selected, time);
       }
       clear();
     },
-    [clear, saveDailyTime],
+    [clear, saveDailyTimes],
   );
 
   return {
     clear,
+    toggleImportant: useCallback(() => {
+      const selected = ui.getState().selected;
+      const items = usePlanner
+        .getState()
+        .data.dailyPlanItems.filter((item) => selected.has(item.id));
+      const important = items.some((item) => !item.important);
+
+      setDailyImportant(selected, important);
+      clear();
+    }, [clear, setDailyImportant]),
+    closeEdit: useCallback(() => ui.setState({ editing: false }), []),
+    saveContents: useCallback(
+      (changes: ReadonlyMap<string, string>) => {
+        saveDailyContents(changes);
+        clear();
+      },
+      [clear, saveDailyContents],
+    ),
     toggle,
     editSelected,
     deleteSelected,

@@ -5,6 +5,8 @@ import * as styles from './SelectionBar.styles';
 export function SelectionBar({
   count,
   onEdit,
+  onImportant,
+  allImportant = false,
   onCopy,
   onTime,
   onDelete,
@@ -12,13 +14,15 @@ export function SelectionBar({
 }: {
   count: number;
   onEdit(): void;
+  onImportant(): void;
+  allImportant?: boolean;
   onCopy(): void;
   onTime(): void;
   onDelete(): void;
   onCancel(): void;
 }) {
   const theme = useTheme();
-  const isSingle = count === 1;
+  const hasSelection = count > 0;
 
   return (
     <View style={styles.container(theme)}>
@@ -27,7 +31,15 @@ export function SelectionBar({
         <Button compact title="선택 해제" onPress={onCancel} />
       </View>
       <View style={styles.actions}>
-        {isSingle ? (
+        <Button
+          labelSize={design.type.action}
+          style={styles.action}
+          compact
+          bold
+          title={allImportant ? '중요 일정 해제' : '중요 일정으로 설정'}
+          onPress={onImportant}
+        />
+        {hasSelection ? (
           <Button
             labelSize={design.type.action}
             style={styles.action}
@@ -37,7 +49,7 @@ export function SelectionBar({
             onPress={onEdit}
           />
         ) : null}
-        {isSingle ? (
+        {hasSelection ? (
           <Button
             labelSize={design.type.action}
             style={styles.action}
@@ -47,7 +59,7 @@ export function SelectionBar({
             onPress={onTime}
           />
         ) : null}
-        {isSingle ? (
+        {hasSelection ? (
           <Button
             labelSize={design.type.action}
             style={styles.action}

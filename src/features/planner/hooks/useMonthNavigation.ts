@@ -1,6 +1,7 @@
+import { showToast } from '../../../components/ui';
 import { useCallback, useRef, useState, type ComponentRef } from 'react';
 import type { LayoutChangeEvent, ScrollView } from 'react-native';
-import { shiftMonth, today } from '../../../utils/date';
+import { safeShiftMonth, today } from '../../../utils/date';
 import { centeredDateOffset } from '../services/navigation';
 
 interface RowPosition {
@@ -62,10 +63,17 @@ export function useMonthNavigation() {
   }
 
   function handleMonthChange(amount: number) {
+    const next = safeShiftMonth(month.slice(0, 7) + '-01', amount);
+
+    if (!next) {
+      showToast('연도는 1~9999 범위에서 이동할 수 있어요.');
+
+      return;
+    }
     positions.current.clear();
     contentHeight.current = 0;
     pendingDate.current = null;
-    setMonth(shiftMonth(month.slice(0, 7) + '-01', amount));
+    setMonth(next);
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   }
 

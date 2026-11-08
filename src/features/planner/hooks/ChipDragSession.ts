@@ -1,19 +1,22 @@
 import { Animated, PanResponder, type LayoutChangeEvent } from 'react-native';
-import { dropBoundary, type ChipBounds } from '../services/dragGeometry';
+import { dropTarget, type ChipBounds, type ChipDropTarget } from '../services/dragGeometry';
 
 export type ChipDragSnapshot = { index: number; box: ChipBounds } | null;
 
 export class ChipDragSession {
   readonly offset = new Animated.ValueXY();
+  readonly markerOffset = new Animated.ValueXY();
+  readonly markerHeight = new Animated.Value(0);
+  private target: ChipDropTarget | null = null;
   readonly boxes = new Map<number, ChipBounds>();
   onMove?: (from: number, boundary: number) => void;
   private armed: number | null = null;
   private moving: number | null = null;
   readonly pan = PanResponder.create({
-    onMoveShouldSetPanResponderCapture: (_, gesture) =>
-      this.armed !== null && Math.hypot(gesture.dx, gesture.dy) > 8,
+    // Long press 후 첫 이동부터 캡처: ScrollView 선점 방지.
+    onMoveShouldSetPanResponderCapture: () => this.armed !== null,
     onPanResponderGrant: () => this.begin(),
-    onPanResponderMove: (_, gesture) => this.offset.setValue({ x: gesture.dx, y: gesture.dy }),
+    onPanResponderMove: (_, gesture) => this.move(gesture.dx, gesture.dy),
     onPanResponderRelease: (_, gesture) => this.finish(gesture.dx, gesture.dy),
     onPanResponderTerminate: () => this.cancel(),
     onPanResponderTerminationRequest: () => false,
@@ -56,6 +59,7 @@ export class ChipDragSession {
     }
     this.moving = index;
     this.offset.setValue({ x: 0, y: 0 });
+    this.updateTarget(box, 0, 0);
     this.publish({ index, box });
   }
 
@@ -69,23 +73,60 @@ export class ChipDragSession {
 
       return;
     }
-    const target = dropBoundary(
-      this.boxes,
-      box.x + box.width / 2 + dx,
-      box.y + box.height / 2 + dy,
-    );
+    this.updateTarget(box, dx, dy);
+    const target = this.target;
     const hasTarget = target !== null;
 
     if (hasTarget) {
-      this.onMove?.(source, target);
+      this.onMove?.(source, target.boundary);
     }
     this.cancel();
+  }
+
+  private move(dx: number, dy: number) {
+    const box = this.moving === null ? undefined : this.boxes.get(this.moving);
+    const hasBox = box !== undefined;
+
+    if (!hasBox) {
+      return;
+    }
+    this.offset.setValue({ x: dx, y: dy });
+    this.updateTarget(box, dx, dy);
+  }
+
+  private updateTarget(box: ChipBounds, dx: number, dy: number) {
+    const next = dropTarget(this.boxes, box.x + box.width / 2 + dx, box.y + box.height / 2 + dy);
+    const unchanged = sameTarget(this.target, next);
+
+    if (unchanged) {
+      return;
+    }
+    this.target = next;
+    if (!next) {
+      this.markerHeight.setValue(0);
+
+      return;
+    }
+    // 경계 변경 시 Animated 값만 갱신.
+    this.markerOffset.setValue({ x: next.x, y: next.y });
+    this.markerHeight.setValue(next.height);
   }
 
   cancel = () => {
     this.armed = null;
     this.moving = null;
+    this.target = null;
+    this.markerHeight.setValue(0);
     this.offset.setValue({ x: 0, y: 0 });
     this.publish(null);
   };
+}
+
+function sameTarget(before: ChipDropTarget | null, after: ChipDropTarget | null): boolean {
+  return (
+    before?.boundary === after?.boundary &&
+    before?.x === after?.x &&
+    before?.y === after?.y &&
+    before?.height === after?.height
+  );
 }

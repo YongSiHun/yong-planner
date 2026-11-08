@@ -1,10 +1,10 @@
 import type { Theme } from '../../../components/ui/palette';
 import { design } from '../../../components/ui/tokens';
 
-export function chip(selected: boolean, theme: Theme) {
+export function chip(selected: boolean, theme: Theme, important = false) {
   return ({ pressed }: import('react-native').PressableStateCallbackType) =>
     ({
-      backgroundColor: selected ? theme.accent : theme.bg,
+      backgroundColor: chipBackground(selected, important, theme),
       borderColor: selected ? theme.accent : theme.line,
       borderWidth: 1,
       borderRadius: design.radius.pill,
@@ -115,4 +115,12 @@ export function activeTime(theme: Theme) {
 
 function noteFontSize(text: string): number {
   return text.length === 0 ? design.type.small : design.type.body;
+}
+
+function chipBackground(selected: boolean, important: boolean, theme: Theme): string {
+  if (selected) {
+    return theme.accent;
+  }
+
+  return important ? theme.selected : theme.bg;
 }

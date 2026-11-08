@@ -28,6 +28,14 @@ require.cache[reactPath] = {
     },
   },
 };
+const notices = [];
+const uiPath = require.resolve('../src/components/ui/index.tsx');
+require.cache[uiPath] = {
+  id: uiPath,
+  filename: uiPath,
+  loaded: true,
+  exports: { showToast: (message) => notices.push(message) },
+};
 const { useMonthNavigation } = require('../src/features/planner/hooks/useMonthNavigation.ts');
 function render() {
   cursor = 0;
@@ -89,4 +97,18 @@ test('month transitions reset old content limits and resize uses the new viewpor
   controller.handleViewportLayout({ nativeEvent: { layout: { height: 400 } } });
   controller.showDate('2027-02-28');
   assert.deepEqual(calls, [{ y: 908, animated: true }]);
+});
+
+test('header month navigation at supported year boundaries reports an error without moving', () => {
+  let view = render();
+  view.showDate('0001-01-01');
+  view = render();
+  view.handleMonthChange(-1);
+  assert.equal(render().month, '0001-01-01');
+  view = render();
+  view.showDate('9999-12-01');
+  view = render();
+  view.handleMonthChange(1);
+  assert.equal(render().month, '9999-12-01');
+  assert.equal(notices.length, 2);
 });

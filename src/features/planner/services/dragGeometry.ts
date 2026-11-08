@@ -5,12 +5,19 @@ export interface ChipBounds {
   height: number;
 }
 
-export function dropBoundary(
+export interface ChipDropTarget {
+  boundary: number;
+  x: number;
+  y: number;
+  height: number;
+}
+
+export function dropTarget(
   bounds: ReadonlyMap<number, ChipBounds>,
   x: number,
   y: number,
-): number | null {
-  let nearest: number | null = null;
+): ChipDropTarget | null {
+  let nearest: ChipDropTarget | null = null;
   let distance = Infinity;
 
   bounds.forEach((box, index) => {
@@ -23,8 +30,23 @@ export function dropBoundary(
       return;
     }
     distance = next;
-    nearest = index + Number(x >= box.x + box.width / 2);
+    const after = x >= box.x + box.width / 2;
+
+    nearest = {
+      boundary: index + Number(after),
+      x: box.x + (after ? box.width + 3 : -3),
+      y: box.y,
+      height: box.height,
+    };
   });
 
   return nearest;
+}
+
+export function dropBoundary(
+  bounds: ReadonlyMap<number, ChipBounds>,
+  x: number,
+  y: number,
+): number | null {
+  return dropTarget(bounds, x, y)?.boundary ?? null;
 }

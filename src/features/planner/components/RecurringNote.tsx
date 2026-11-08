@@ -1,3 +1,4 @@
+import { useScheduleText } from '../../../hooks/useScheduleText';
 import { router } from 'expo-router';
 import { useRef, useState, type ComponentRef } from 'react';
 import { Keyboard, Pressable, Text, TextInput, View } from 'react-native';
@@ -28,6 +29,7 @@ export function RecurringNote({
   const timeInput = useRef<ComponentRef<typeof TextInput>>(null);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
+  const changeTitle = useScheduleText(setTitle);
   const [time, setTime] = useState('');
 
   function startEditing() {
@@ -92,7 +94,7 @@ export function RecurringNote({
         cursorColor={theme.accent}
         accessibilityLabel="이 날짜 반복 일정 제목"
         value={title}
-        onChangeText={setTitle}
+        onChangeText={changeTitle}
         style={inputStyle}
         multiline
       />

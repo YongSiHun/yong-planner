@@ -42,6 +42,11 @@ export function today(): string {
 }
 
 function validatedDateKey(date: Date): string {
+  const supported = date.getFullYear() >= 1 && date.getFullYear() <= 9999;
+
+  if (!supported) {
+    throw new Error('연도는 1~9999 범위여야 합니다.');
+  }
   const key = dateKey(date);
 
   parseDate(key);
@@ -81,4 +86,12 @@ export function validTime(value: unknown): value is string | null {
   const isText = typeof value === 'string';
 
   return isText && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+export function safeShiftMonth(date: string, amount: number): string | null {
+  try {
+    return shiftMonth(date, amount);
+  } catch {
+    return null;
+  }
 }

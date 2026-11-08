@@ -2,7 +2,7 @@ import Feather from '@expo/vector-icons/Feather';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../../../components/ui';
 import { useScheduleInputState } from '../hooks/useScheduleInputState';
-import { NOTE_SEPARATOR, noteInputValue, notePartTime } from '../services/note';
+import { NOTE_SEPARATOR, noteInputValue, notePartTime, storedNoteIndex } from '../services/note';
 import { formatScheduleContent, parseScheduleTimePrefix } from '../services/time';
 import type { TimeFormat } from '../types';
 import type { ScheduleInputProps, SchedulePreviewProps } from '../types/presentation';
@@ -12,6 +12,7 @@ const PLACEHOLDER = '일정을 입력하세요. 쉼표(,)로 나눌 수 있어�
 
 export function ScheduleChip({
   content,
+  important = false,
   time,
   timeFormat = '24h',
   onPress,
@@ -22,6 +23,7 @@ export function ScheduleChip({
   selecting = false,
 }: {
   content: string;
+  important?: boolean;
   time?: string | null;
   timeFormat?: TimeFormat;
   onPress(): void;
@@ -43,16 +45,24 @@ export function ScheduleChip({
   return (
     <Pressable
       accessibilityRole={selecting ? 'checkbox' : 'button'}
-      accessibilityLabel={label + ', 일정'}
+      accessibilityLabel={chipAccessibilityLabel(label, important)}
       accessibilityState={{ selected, checked: selected }}
       accessibilityHint="길게 누르면 여러 일정을 선택할 수 있어요."
       onPress={onPress}
       onLongPress={onLongPress}
-      style={styles.chip(selected, theme)}
+      style={styles.chip(selected, theme, important)}
     >
       {selected ? <Feather name="check" size={14} color={theme.onAccent} /> : null}
+      <ImportantMark important={important} selected={selected} />
       <Text style={styles.chipLabel(selected, theme)}>{label}</Text>
-      <ChipEdges selecting={selecting} content={content} onBefore={onBefore} onAfter={onAfter} />
+      <ChipEdges
+        selecting={selecting}
+        content={content}
+        onBefore={onBefore}
+        onAfter={onAfter}
+        onLongPress={onLongPress}
+        onPress={onPress}
+      />
     </Pressable>
   );
 }
@@ -61,10 +71,12 @@ function ChipEdge({
   side,
   label,
   onPress,
+  onLongPress,
 }: {
   side: 'left' | 'right';
   label: string;
   onPress?: () => void;
+  onLongPress(): void;
 }) {
   const canPress = onPress !== undefined;
 
@@ -77,6 +89,7 @@ function ChipEdge({
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
+      onLongPress={onLongPress}
       hitSlop={2}
       style={styles.chipEdge(side)}
     />
@@ -88,6 +101,7 @@ export function ScheduleInput({
   note,
   initialIndex,
   noteTimes = [],
+  noteImportant = [],
   timeFormat = '24h',
   initialSlot,
   onSelect = () => {},
@@ -135,6 +149,9 @@ export function ScheduleInput({
       <ScheduleChip
         key={index}
         content={part}
+        important={
+          noteImportant[storedNoteIndex(edit, index)] && !(edit.draftSlot && index === edit.index)
+        }
         time={notePartTime(noteTimes, edit, index)}
         timeFormat={timeFormat}
         onLongPress={() => handleLongPress(index)}
@@ -196,6 +213,7 @@ export function ScheduleInput({
 export function SchedulePreview({
   note,
   noteTimes = [],
+  noteImportant = [],
   timeFormat = '24h',
   date,
   onEdit,
@@ -243,6 +261,7 @@ export function SchedulePreview({
         >
           <ScheduleChip
             content={part}
+            important={noteImportant[index]}
             time={noteTimes[index]}
             timeFormat={timeFormat}
             selected={selectedIndexes.has(index)}
@@ -267,20 +286,31 @@ function ChipEdges({
   content,
   onBefore,
   onAfter,
+  onLongPress,
+  onPress,
 }: {
   selecting: boolean;
   content: string;
   onBefore?: () => void;
   onAfter?: () => void;
+  onLongPress(): void;
+  onPress(): void;
 }) {
-  if (selecting) {
-    return null;
-  }
-
+  // 선택 전환 중 native 터치 대상 유지.
   return (
     <>
-      <ChipEdge side="left" label={content.trim() + ' 앞에 입력'} onPress={onBefore} />
-      <ChipEdge side="right" label={content.trim() + ' 뒤에 입력'} onPress={onAfter} />
+      <ChipEdge
+        side="left"
+        label={content.trim() + (selecting ? ' 선택' : ' 앞에 입력')}
+        onPress={selecting ? onPress : onBefore}
+        onLongPress={onLongPress}
+      />
+      <ChipEdge
+        side="right"
+        label={content.trim() + (selecting ? ' 선택' : ' 뒤에 입력')}
+        onPress={selecting ? onPress : onAfter}
+        onLongPress={onLongPress}
+      />
     </>
   );
 }
@@ -294,4 +324,18 @@ function ActiveTimeLabel({ label }: { label: string }) {
   }
 
   return <Text style={styles.activeTime(theme)}>{label}</Text>;
+}
+
+function chipAccessibilityLabel(label: string, important: boolean): string {
+  return label + (important ? ', 중요 일정' : ', 일정');
+}
+
+function ImportantMark({ important, selected }: { important: boolean; selected: boolean }) {
+  const theme = useTheme();
+
+  if (!important) {
+    return null;
+  }
+
+  return <Feather name="star" size={14} color={selected ? theme.onAccent : theme.accent} />;
 }

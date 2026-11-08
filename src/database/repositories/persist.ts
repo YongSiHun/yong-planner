@@ -53,12 +53,13 @@ export async function persistData(input: PlannerData): Promise<void> {
       (p) => db.runAsync('DELETE FROM daily_plan_items WHERE id = ?', p.id),
       (p) =>
         db.runAsync(
-          'INSERT INTO daily_plan_items (id, date, content, createdAt, time) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET date=excluded.date, content=excluded.content, createdAt=excluded.createdAt, time=excluded.time',
+          'INSERT INTO daily_plan_items (id, date, content, createdAt, time, important) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET date=excluded.date, content=excluded.content, createdAt=excluded.createdAt, time=excluded.time, important=excluded.important',
           p.id,
           p.date,
           p.content,
           p.createdAt,
           p.time ?? null,
+          Number(Boolean(p.important)),
         ),
     );
     await synchronizeRows(

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 export interface NoteSelectionState {
   active: boolean;
+  editing: boolean;
   selected: ReadonlySet<string>;
   deleteIds: ReadonlySet<string> | null;
   timeId: string | null;
@@ -12,6 +13,7 @@ export interface NoteSelectionState {
 export function emptySelection(): NoteSelectionState {
   return {
     active: false,
+    editing: false,
     selected: new Set(),
     deleteIds: null,
     timeId: null,

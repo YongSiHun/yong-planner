@@ -1,4 +1,5 @@
 import { Animated, View } from 'react-native';
+import { useTheme } from '../../../components/ui';
 import { useChipDrag } from '../hooks/useChipDrag';
 import type { SchedulePreviewProps } from '../types/presentation';
 import * as styles from './DraggableSchedulePreview.styles';
@@ -8,6 +9,7 @@ export function DraggableSchedulePreview({
   onMove,
   ...props
 }: SchedulePreviewProps & { onMove(from: number, boundary: number): void }) {
+  const theme = useTheme();
   const drag = useChipDrag(onMove, props.note.split(',').length);
   const index = drag.index;
   const box = drag.box;
@@ -22,18 +24,29 @@ export function DraggableSchedulePreview({
         draggingIndex={index}
         overlay={
           hasOverlay ? (
-            <Animated.View
-              pointerEvents="none"
-              style={styles.overlay(box, drag.offset.getTranslateTransform())}
-            >
-              <ScheduleChip
-                content={props.note.split(',')[index]!}
-                time={props.noteTimes?.[index]}
-                timeFormat={props.timeFormat}
-                onPress={noop}
-                onLongPress={noop}
+            <>
+              <Animated.View
+                pointerEvents="none"
+                style={styles.overlay(box, drag.offset.getTranslateTransform())}
+              >
+                <ScheduleChip
+                  content={props.note.split(',')[index]!}
+                  important={props.noteImportant?.[index]}
+                  time={props.noteTimes?.[index]}
+                  timeFormat={props.timeFormat}
+                  onPress={noop}
+                  onLongPress={noop}
+                />
+              </Animated.View>
+              <Animated.View
+                pointerEvents="none"
+                style={styles.marker(
+                  theme,
+                  drag.markerHeight,
+                  drag.markerOffset.getTranslateTransform(),
+                )}
               />
-            </Animated.View>
+            </>
           ) : null
         }
       />

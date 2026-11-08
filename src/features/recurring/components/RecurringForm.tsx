@@ -1,3 +1,4 @@
+import { useScheduleText } from '../../../hooks/useScheduleText';
 import { useState, type ComponentRef } from 'react';
 import { View, type TextInput } from 'react-native';
 import {
@@ -109,6 +110,7 @@ export function RecurringForm({
   const { saveRecurring, flush } = usePlannerActions();
   const [draft, setDraft] = useState(initial);
   const [calendar, setCalendar] = useState<CalendarField | null>(null);
+  const changeTitle = useScheduleText((title) => handleChange({ title }));
   const [hasChanges, setHasChanges] = useState(false);
   const hasExistingTitle = initial.title.length > 0;
   const title = hasExistingTitle ? '반복 일정 수정' : '반복 일정 추가';
@@ -167,7 +169,7 @@ export function RecurringForm({
         accessibilityLabel="반복 일정 이름"
         multiline
         value={draft.title}
-        onChangeText={(title) => handleChange({ title })}
+        onChangeText={changeTitle}
         placeholder="예: 통근 버스"
       />
 

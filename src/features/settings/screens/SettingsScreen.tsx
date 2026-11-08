@@ -50,7 +50,7 @@ function BackupSettings() {
       <Label muted>
         일정은 이 기기에 저장됩니다. 기기를 바꾸기 전에는 JSON 백업 파일을 보관해 주세요.
       </Label>
-      <Button title={backupTitle} disabled={isDisabled} selected onPress={actions.handleBackup} />
+      <Button title={backupTitle} disabled={isDisabled} onPress={actions.handleBackup} />
       <Button title="JSON 백업에서 복원" disabled={isDisabled} onPress={actions.handleRestore} />
     </>
   );

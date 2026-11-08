@@ -7,7 +7,7 @@ export function container(theme: Theme) {
     borderTopWidth: 1,
     borderTopColor: theme.line,
     paddingHorizontal: design.space.md,
-    paddingVertical: design.space.sm,
+    paddingVertical: design.space.xs,
   } as const;
 }
 
@@ -22,11 +22,11 @@ export const count = { fontSize: design.type.small } as const;
 export const actions = {
   flexDirection: 'row',
   flexWrap: 'wrap',
-  gap: design.space.sm,
+  gap: design.space.xs,
 } as const;
 
 export const action = {
-  minHeight: 48,
+  minHeight: design.touchTarget,
   flexGrow: 1,
   flexBasis: 128,
   paddingHorizontal: design.space.md,

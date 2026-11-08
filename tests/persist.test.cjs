@@ -2,11 +2,15 @@ require('./register.cjs');
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { DatabaseSync } = require('node:sqlite');
-const { initialSchema, addDailyTime } = require('../src/database/migrations/index.ts');
+const {
+  initialSchema,
+  addDailyTime,
+  addDailyImportance,
+} = require('../src/database/migrations/index.ts');
 const { replaceRows } = require('../src/database/repositories/transactions.ts');
 const { emptyData } = require('../src/features/planner/types/index.ts');
 const sqlite = new DatabaseSync(':memory:');
-sqlite.exec('PRAGMA foreign_keys = ON;' + initialSchema + addDailyTime);
+sqlite.exec('PRAGMA foreign_keys = ON;' + initialSchema + addDailyTime + addDailyImportance);
 const statements = [];
 let failNextWrite = false;
 const database = {
@@ -146,5 +150,26 @@ test('daily time and format-only settings changes persist in SQLite', async () =
   assert.equal(
     JSON.parse(sqlite.prepare('SELECT payload FROM settings').get().payload).timeFormat,
     '12h',
+  );
+});
+
+test('important flags persist and can be cleared in SQLite', async () => {
+  const data = await seed();
+  const item = {
+    id: 'star',
+    date: '2026-11-08',
+    content: '중요 일정',
+    createdAt: '2026-11-01T00:00:00.000Z',
+    important: true,
+  };
+  await persistData({ ...data, dailyPlanItems: [item] });
+  assert.equal(
+    sqlite.prepare('SELECT important FROM daily_plan_items WHERE id = ?').get('star').important,
+    1,
+  );
+  await persistData({ ...data, dailyPlanItems: [{ ...item, important: false }] });
+  assert.equal(
+    sqlite.prepare('SELECT important FROM daily_plan_items WHERE id = ?').get('star').important,
+    0,
   );
 });

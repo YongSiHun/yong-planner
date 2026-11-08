@@ -33,7 +33,7 @@ test('version 1 upgrade preserves schedules and can run repeatedly', async () =>
     const row = sqlite.prepare('SELECT * FROM daily_plan_items').get();
     assert.equal(row.content, '기존 일정');
     assert.equal(row.time, null);
-    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 3);
+    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 4);
   } finally {
     sqlite.close();
   }
@@ -48,9 +48,9 @@ test('new database is initialized and future versions are rejected', async () =>
         .all()
         .some((column) => column.name === 'time'),
     );
-    sqlite.exec('PRAGMA user_version = 4;');
+    sqlite.exec('PRAGMA user_version = 5;');
     await assert.rejects(migrate(adapter(sqlite)), /더 최신 앱/);
-    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 4);
+    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 5);
   } finally {
     sqlite.close();
   }
@@ -77,6 +77,27 @@ test('version 2 upgrade preserves assigned time and removes the startup temporar
       .join(' ');
     assert.match(plan, /daily_created_order/);
     assert.doesNotMatch(plan, /TEMP B-TREE/);
+  } finally {
+    sqlite.close();
+  }
+});
+
+test('version 3 adds important flags without recreating indexes or losing times', async () => {
+  const { addDailyTime, addReadIndexes } = require('../src/database/migrations/index.ts');
+  const sqlite = new DatabaseSync(':memory:');
+  try {
+    sqlite.exec(initialSchema + addDailyTime + addReadIndexes + 'PRAGMA user_version = 3;');
+    sqlite
+      .prepare('INSERT INTO daily_plan_items (id,date,content,createdAt,time) VALUES (?,?,?,?,?)')
+      .run('a', '2026-11-08', '회의', '2026-11-01T00:00:00.000Z', '13:10');
+    await migrate(adapter(sqlite));
+    const row = sqlite.prepare('SELECT * FROM daily_plan_items').get();
+    assert.equal(row.important, 0);
+    assert.equal(row.time, '13:10');
+    sqlite.prepare('UPDATE daily_plan_items SET important = 1').run();
+    await migrate(adapter(sqlite));
+    assert.equal(sqlite.prepare('SELECT important FROM daily_plan_items').get().important, 1);
+    assert.equal(sqlite.prepare('PRAGMA user_version').get().user_version, 4);
   } finally {
     sqlite.close();
   }

@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const initialSchema = `CREATE TABLE daily_plan_items (id TEXT PRIMARY KEY NOT NULL, date TEXT NOT NULL, content TEXT NOT NULL, createdAt TEXT NOT NULL);
 CREATE INDEX daily_date ON daily_plan_items(date, createdAt);
@@ -9,6 +9,9 @@ CREATE INDEX exception_date ON recurring_plan_exceptions(date);
 CREATE TABLE daily_plan_orders (date TEXT PRIMARY KEY NOT NULL, payload TEXT NOT NULL);
 CREATE TABLE settings (id TEXT PRIMARY KEY NOT NULL CHECK(id = 'app'), payload TEXT NOT NULL);
 CREATE TABLE holiday_overrides (date TEXT PRIMARY KEY NOT NULL, payload TEXT NOT NULL);`;
+
+export const addDailyImportance =
+  'ALTER TABLE daily_plan_items ADD COLUMN important INTEGER NOT NULL DEFAULT 0 CHECK(important IN (0, 1));';
 
 export const addDailyTime = 'ALTER TABLE daily_plan_items ADD COLUMN time TEXT;';
 export const addReadIndexes =
@@ -49,7 +52,12 @@ export async function migrate(db: MigrationDatabase): Promise<void> {
     if (needsTime) {
       await db.execAsync(addDailyTime);
     }
-    await db.execAsync(addReadIndexes);
-    await db.execAsync('PRAGMA user_version = 3;');
+    const needsReadIndexes = version < 3;
+
+    if (needsReadIndexes) {
+      await db.execAsync(addReadIndexes);
+    }
+    await db.execAsync(addDailyImportance);
+    await db.execAsync('PRAGMA user_version = 4;');
   });
 }

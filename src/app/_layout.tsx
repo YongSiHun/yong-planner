@@ -1,11 +1,12 @@
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme, View } from 'react-native';
+import { useColorScheme, View, Image } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as styles from '../components/navigation/RootLayout.styles';
 import { Button, dark, Label, light, ThemeContext, useTheme } from '../components/ui';
 import { DialogHost } from '../components/ui/DialogHost';
+import { ToastHost } from '../components/ui/ToastHost';
 import { appFonts } from '../components/ui/fonts';
 import { usePlannerActions } from '../features/planner/hooks/usePlannerActions';
 import { usePlannerInit } from '../features/planner/hooks/usePlannerInit';
@@ -15,13 +16,18 @@ function LoadingScreen() {
   const { initialize } = usePlannerActions();
   const theme = useTheme();
   const error = usePlanner((state) => state.error);
-  const message = error
-    ? '데이터를 열지 못했습니다. 기존 데이터는 유지됩니다.'
-    : '용플래너를 여는 중…';
+  const message = error ? '데이터를 열지 못했습니다. 기존 데이터는 유지됩니다.' : '';
 
   return (
     <View style={styles.loadingScreenViewStyle(theme)}>
-      <Label>{message}</Label>
+      <Image
+        source={require('../../assets/mark-dragon.png')}
+        accessibilityIgnoresInvertColors
+        accessibilityLabel="안경 쓴 청룡이 메모장에 쓰는 모습"
+        style={styles.splashImage}
+        resizeMode="contain"
+      />
+      {error ? <Label>{message}</Label> : null}
       {error ? (
         <>
           <Label muted>{error}</Label>
@@ -68,8 +74,19 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeContext.Provider value={theme}>
         <StatusBar style={styles.rootLayoutStatusBarStyle(isDarkTheme)} />
-        {canShowContent ? <RootNavigation /> : <View style={styles.rootLayoutViewStyle(theme)} />}
+        {canShowContent ? (
+          <RootNavigation />
+        ) : (
+          <View style={styles.loadingScreenViewStyle(theme)}>
+            <Image
+              source={require('../../assets/mark-dragon.png')}
+              style={styles.splashImage}
+              resizeMode="contain"
+            />
+          </View>
+        )}
         <DialogHost />
+        <ToastHost />
       </ThemeContext.Provider>
     </SafeAreaProvider>
   );

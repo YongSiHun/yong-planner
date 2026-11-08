@@ -20,6 +20,7 @@ import { showDialog } from '../../controllers/dialog';
 import * as styles from './index.styles';
 import { light } from './palette';
 import { fontForWeight } from './typography';
+export { showToast } from '../../controllers/toast';
 export { showDialog } from '../../controllers/dialog';
 export { design } from './tokens';
 

@@ -1,9 +1,16 @@
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { Button, Label, useTheme } from '../../../components/ui';
+import { Button, Label, showToast, useTheme } from '../../../components/ui';
 import type { HolidayService } from '../../../services/holiday';
 import { usePlanner } from '../../../stores/planner';
-import { monthDates, monthLabel, shiftMonth, today, weekday, weekdays } from '../../../utils/date';
+import {
+  monthDates,
+  monthLabel,
+  safeShiftMonth,
+  today,
+  weekday,
+  weekdays,
+} from '../../../utils/date';
 import { useHolidays } from '../hooks/useHolidays';
 import { hasPlansForDate } from '../services/plans';
 import { getDateColor } from '../services/presentation';
@@ -82,6 +89,17 @@ export function Calendar({ selected, onSelect }: CalendarProps) {
   const dates = useMemo(() => monthDates(month), [month]);
   const cells = [...Array<string | null>(weekday(dates[0]!)).fill(null), ...dates];
 
+  function handleMonthChange(amount: number) {
+    const next = safeShiftMonth(month, amount);
+
+    if (!next) {
+      showToast('연도는 1~9999 범위에서 이동할 수 있어요.');
+
+      return;
+    }
+    setMonth(next);
+  }
+
   function handleTodayPress() {
     const currentDate = today();
 
@@ -92,9 +110,9 @@ export function Calendar({ selected, onSelect }: CalendarProps) {
   return (
     <View>
       <View style={styles.calendarViewStyle}>
-        <Button title="이전 달" onPress={() => setMonth(shiftMonth(month, -1))} />
+        <Button title="이전 달" onPress={() => handleMonthChange(-1)} />
         <Label>{monthLabel(month)}</Label>
-        <Button title="다음 달" onPress={() => setMonth(shiftMonth(month, 1))} />
+        <Button title="다음 달" onPress={() => handleMonthChange(1)} />
       </View>
 
       <View style={styles.calendarViewStyle2}>

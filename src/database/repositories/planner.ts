@@ -39,8 +39,12 @@ export async function loadData(): Promise<PlannerData> {
   const db = await getDatabase();
   const result = emptyData();
 
-  result.dailyPlanItems = await db.getAllAsync<DailyPlanItem>(
-    'SELECT id, date, content, createdAt, time FROM daily_plan_items ORDER BY createdAt, id',
+  const dailyRows = await db.getAllAsync<Omit<DailyPlanItem, 'important'> & { important: number }>(
+    'SELECT id, date, content, createdAt, time, important FROM daily_plan_items ORDER BY createdAt, id',
+  );
+
+  result.dailyPlanItems = dailyRows.map(({ important, ...item }) =>
+    important ? { ...item, important: true } : item,
   );
   const payloads = async <T>(table: string): Promise<T[]> =>
     (await db.getAllAsync<{ payload: string }>('SELECT payload FROM ' + table)).map(

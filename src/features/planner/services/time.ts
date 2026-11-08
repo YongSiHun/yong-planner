@@ -96,3 +96,23 @@ export function parseScheduleTimePrefix(text: string): { content: string; time?:
 
   return { content: match[5]!, time: hour.padStart(2, '0') + ':' + minute.padStart(2, '0') };
 }
+
+export function boundedClockInput(
+  text: string,
+  previous: string,
+  minimum: number,
+  maximum: number,
+): string {
+  const empty = text === '';
+
+  if (empty) {
+    return '';
+  }
+  const integer = /^-?\d+$/.test(text);
+
+  if (!integer) {
+    return previous;
+  }
+
+  return String(Math.max(minimum, Math.min(maximum, Number(text))));
+}

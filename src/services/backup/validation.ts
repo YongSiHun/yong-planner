@@ -134,6 +134,7 @@ function readDailyItem(value: unknown): DailyPlanItem {
     content: readText(item.content),
     createdAt: readCreatedAt(item.createdAt),
     ...optionalDailyTime(item.time),
+    ...optionalDailyImportance(item.important),
   };
 }
 
@@ -307,4 +308,17 @@ function readTimeFormat(value: unknown): Settings['timeFormat'] {
   ensureValid(validFormat, '시간 표시 형식이 올바르지 않습니다.');
 
   return value;
+}
+
+function optionalDailyImportance(value: unknown): { important?: boolean } {
+  const omitted = value === undefined;
+
+  if (omitted) {
+    return {};
+  }
+  const valid = typeof value === 'boolean';
+
+  ensureValid(valid, '중요 일정 값이 올바르지 않습니다.');
+
+  return value ? { important: true } : {};
 }

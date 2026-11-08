@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as styles from './Dialog.styles';
+import { ToastHost } from './ToastHost';
 import { Label, useTheme } from './index';
 
 export function Dialog({
@@ -11,12 +12,14 @@ export function Dialog({
   footer,
   onClose,
   showHeader = true,
+  compact = false,
 }: {
   title: string;
   children: ReactNode;
   footer?: ReactNode;
   onClose(): void;
   showHeader?: boolean;
+  compact?: boolean;
 }) {
   const theme = useTheme();
 
@@ -34,7 +37,7 @@ export function Dialog({
               onPress={onClose}
               style={styles.dialogPressableStyle}
             />
-            <View accessibilityViewIsModal style={styles.dialogViewStyle(theme)}>
+            <View accessibilityViewIsModal style={styles.dialogViewStyle(theme, compact)}>
               <DialogHeading title={title} visible={showHeader} onClose={onClose} />
               <ScrollView
                 style={styles.dialogScrollViewStyle}
@@ -45,6 +48,7 @@ export function Dialog({
               </ScrollView>
               {footer ? <View style={styles.dialogViewStyle2}>{footer}</View> : null}
             </View>
+            <ToastHost />
           </SafeAreaView>
         </KeyboardAvoidingView>
       </SafeAreaProvider>

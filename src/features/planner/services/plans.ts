@@ -142,6 +142,7 @@ function createDailyEntry(item: DailyPlanItem): PlanEntry {
     sourceId: item.id,
     kind: 'daily',
     content: item.content,
+    ...(item.important ? { important: true } : {}),
     time: item.time ?? null,
     sortKey: item.createdAt + ':' + item.id,
   };

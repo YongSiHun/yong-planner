@@ -142,7 +142,7 @@ export default function PlannerScreen() {
               selecting={selection.active}
               copying={selection.copySource !== undefined}
               copyTarget={selection.copyDates.has(date)}
-              copySourceDate={selection.copySource?.date}
+              copySourceDate={selection.copySourceDate}
               onCopyDate={selection.toggleCopyDate}
               onSelect={selection.toggle}
               onEdit={handleEditDate}

@@ -1,5 +1,9 @@
 import {
   copyDailyNote,
+  copyDailyNotes,
+  saveDailyTimes,
+  saveDailyContents,
+  setDailyImportant,
   deleteDailyNotes,
   deleteRecurring,
   flushPlanner,
@@ -19,6 +23,10 @@ import {
 const actions = {
   initialize: initializePlanner,
   flush: flushPlanner,
+  copyDailyNotes,
+  saveDailyTimes,
+  saveDailyContents,
+  setDailyImportant,
   saveDailyNote,
   saveDailyTime,
   copyDailyNote,

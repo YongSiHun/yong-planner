@@ -4,7 +4,7 @@ const { test } = require('node:test');
 const { moveDailyNote } = require('../src/features/planner/services/noteMove.ts');
 const { applyDailyNote, dailyNoteItems } = require('../src/features/planner/services/note.ts');
 const { emptyData } = require('../src/features/planner/types/index.ts');
-const { dropBoundary } = require('../src/features/planner/services/dragGeometry.ts');
+const { dropBoundary, dropTarget } = require('../src/features/planner/services/dragGeometry.ts');
 const native = require.resolve('react-native');
 require.cache[native] = {
   id: native,
@@ -12,6 +12,14 @@ require.cache[native] = {
   loaded: true,
   exports: {
     Animated: {
+      Value: class {
+        constructor(value) {
+          this.value = value;
+        }
+        setValue(value) {
+          this.value = value;
+        }
+      },
       ValueXY: class {
         setValue(value) {
           this.value = value;
@@ -89,4 +97,60 @@ test('reordering preserves IDs, time, other dates and recurrence positions', () 
     dailyNoteItems(moved, '2026-11-08').map((item) => item.content),
     ['다른 날'],
   );
+});
+
+test('first chip captures the first small movement after long press', () => {
+  const moves = [];
+  const snapshots = [];
+  const session = new ChipDragSession((value) => snapshots.push(value));
+  session.setOnMove((...args) => moves.push(args));
+  boxes.forEach((box, index) => session.record(index, { nativeEvent: { layout: box } }));
+  const handlers = session.pan.config;
+  assert.equal(handlers.onMoveShouldSetPanResponderCapture(null, { dx: 1, dy: 0 }), false);
+  session.arm(0);
+  assert.equal(handlers.onMoveShouldSetPanResponderCapture(null, { dx: 1, dy: 0 }), true);
+  handlers.onPanResponderGrant();
+  assert.equal(snapshots[0].index, 0);
+  handlers.onPanResponderRelease(null, { dx: 110, dy: 0 });
+  assert.deepEqual(moves, [[0, 2]]);
+  assert.equal(handlers.onMoveShouldSetPanResponderCapture(null, { dx: 1, dy: 0 }), false);
+});
+
+test('drop marker follows chip halves and wrapped rows using the actual drop boundary', () => {
+  assert.deepEqual(dropTarget(boxes, 2, 15), { boundary: 0, x: -3, y: 0, height: 30 });
+  assert.deepEqual(dropTarget(boxes, 150, 15), { boundary: 2, x: 169, y: 0, height: 30 });
+  assert.deepEqual(dropTarget(boxes, 90, 50), { boundary: 3, x: 103, y: 36, height: 30 });
+  assert.equal(dropTarget(new Map(), 0, 0), null);
+});
+
+test('drag marker updates without React renders and releases at the indicated boundary', () => {
+  const snapshots = [];
+  const moves = [];
+  const session = new ChipDragSession((value) => snapshots.push(value));
+  session.setOnMove((...args) => moves.push(args));
+  boxes.forEach((box, index) => session.record(index, { nativeEvent: { layout: box } }));
+  session.arm(0);
+  const handlers = session.pan.config;
+  handlers.onPanResponderGrant();
+  handlers.onPanResponderMove(null, { dx: 110, dy: 0 });
+  assert.deepEqual(session.markerOffset.value, { x: 169, y: 0 });
+  assert.equal(session.markerHeight.value, 30);
+  handlers.onPanResponderMove(null, { dx: 50, dy: 36 });
+  assert.deepEqual(session.markerOffset.value, { x: 103, y: 36 });
+  assert.equal(snapshots.length, 1);
+  assert.equal(moves.length, 0);
+  handlers.onPanResponderRelease(null, { dx: 50, dy: 36 });
+  assert.deepEqual(moves, [[0, 3]]);
+  assert.equal(session.markerHeight.value, 0);
+  assert.equal(snapshots.at(-1), null);
+});
+
+test('cancelling a drag hides its insertion marker without changing order', () => {
+  const session = new ChipDragSession(() => {});
+  session.record(0, { nativeEvent: { layout: boxes.get(0) } });
+  session.arm(0);
+  session.pan.config.onPanResponderGrant();
+  assert.equal(session.markerHeight.value, 30);
+  session.pan.config.onPanResponderTerminate();
+  assert.equal(session.markerHeight.value, 0);
 });

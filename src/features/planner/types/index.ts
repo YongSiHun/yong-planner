@@ -2,6 +2,7 @@ export interface DailyPlanItem {
   id: string;
   date: string;
   content: string;
+  important?: boolean;
   time?: string | null;
   createdAt: string;
 }
@@ -44,6 +45,7 @@ export interface PlannerData {
   holidayOverrides: HolidayOverride[];
 }
 export interface PlanEntry {
+  important?: boolean;
   id: string;
   sourceId: string;
   kind: 'daily' | 'recurring';

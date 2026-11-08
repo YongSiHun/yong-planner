@@ -1,9 +1,12 @@
+import { noteLengthError } from '../../../services/schedule';
 import { changeNoteInput, noteInputValue, type NoteEdit } from './note';
 
 type Transition = { kind: 'split' | 'merge' | 'select'; before: string; after: string };
 
 // JS 반영 전 native 구버퍼의 후속 입력 가능.
 export class NoteInputEvents {
+  constructor(private onInvalid: (message: string) => void = () => {}) {}
+
   private eventCount = -1;
   private lastRaw: string | null = null;
   private transition: Transition | null = null;
@@ -30,8 +33,15 @@ export class NoteInputEvents {
     if (!hasValue) {
       return null;
     }
-    this.lastRaw = raw;
     const next = changeNoteInput(edit, value);
+    const error = noteLengthError(next.text);
+
+    if (error) {
+      this.onInvalid(error);
+
+      return null;
+    }
+    this.lastRaw = raw;
     const after = noteInputValue(next);
 
     this.updateTransition(edit, next, raw, value, after);
@@ -107,7 +117,8 @@ function normalizeSplit(raw: string, transition: Transition): string {
 
 function normalizeMerge(raw: string, transition: Transition): string {
   const prefix = transition.after.slice(0, transition.after.length - transition.before.length);
-  const usesNewBuffer = raw.startsWith(prefix);
+  // 변경 폭 비교: 병합 후 삭제를 구버퍼 입력과 구분.
+  const usesNewBuffer = editSpanSize(transition.after, raw) <= editSpanSize(transition.before, raw);
 
   return usesNewBuffer ? raw : prefix + raw;
 }
@@ -116,4 +127,33 @@ function normalizeSelection(raw: string, transition: Transition): string | null 
   const repeatsOldBuffer = raw === transition.before && raw !== transition.after;
 
   return repeatsOldBuffer ? null : raw;
+}
+
+function editSpanSize(before: string, after: string): number {
+  const prefix = commonPrefixLength(before, after);
+  const suffix = commonSuffixLength(before, after, prefix);
+
+  return before.length + after.length - 2 * (prefix + suffix);
+}
+
+function commonPrefixLength(before: string, after: string): number {
+  const maximum = Math.min(before.length, after.length);
+  let length = 0;
+
+  while (length < maximum && before[length] === after[length]) {
+    length++;
+  }
+
+  return length;
+}
+
+function commonSuffixLength(before: string, after: string, prefix: number): number {
+  const maximum = Math.min(before.length, after.length) - prefix;
+  let length = 0;
+
+  while (length < maximum && before.at(-length - 1) === after.at(-length - 1)) {
+    length++;
+  }
+
+  return length;
 }

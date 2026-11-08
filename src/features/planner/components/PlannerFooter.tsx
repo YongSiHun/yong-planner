@@ -21,7 +21,7 @@ export function PlannerFooter({
   if (isCopying) {
     return (
       <CopyBar
-        content={source.content}
+        content={copyLabel(selection.selected.size, source.content)}
         count={selection.copyDates.size}
         onCopy={selection.copySelected}
         onCancel={selection.closeCopy}
@@ -35,6 +35,8 @@ export function PlannerFooter({
       <SelectionBar
         count={selection.selected.size}
         onEdit={selection.editSelected}
+        onImportant={selection.toggleImportant}
+        allImportant={selection.allImportant}
         onCopy={selection.openCopy}
         onTime={selection.openTime}
         onDelete={selection.requestDelete}
@@ -65,4 +67,8 @@ function TodayButton({ onPress }: { onPress(): void }) {
       </Pressable>
     </View>
   );
+}
+
+function copyLabel(count: number, content: string): string {
+  return count > 1 ? count + '개 일정' : content;
 }

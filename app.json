@@ -8,22 +8,27 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yongplanner.app",
-      "icon": "./assets/icon-sky.png"
+      "icon": "./assets/icon-dragon.png"
     },
     "android": {
       "package": "com.yongplanner.app",
       "softwareKeyboardLayoutMode": "resize",
       "allowBackup": false,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon-sky.png",
-        "backgroundColor": "#79BDEB"
+        "foregroundImage": "./assets/adaptive-icon-dragon.png",
+        "backgroundColor": "#F7FBFF"
       }
     },
-    "plugins": ["expo-router", "expo-sqlite", "expo-document-picker"],
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-document-picker",
+      "./plugins/with-dragon-splash.cjs"
+    ],
     "experiments": {
       "typedRoutes": true
     },
-    "icon": "./assets/icon-sky.png",
+    "icon": "./assets/icon-dragon.png",
     "primaryColor": "#1F6EAC",
     "orientation": "default"
   }

@@ -20,16 +20,16 @@ export const dialogPressableStyle = {
   right: 0,
 } as const;
 
-export function dialogViewStyle(theme: Theme) {
+export function dialogViewStyle(theme: Theme, compact = false) {
   return {
     backgroundColor: theme.bg,
     borderRadius: design.radius.dialog,
     borderWidth: 1,
     borderColor: theme.line,
-    padding: design.space.lg,
+    padding: compact ? design.space.md : design.space.lg,
     maxHeight: '85%',
     width: '100%',
-    maxWidth: 480,
+    maxWidth: compact ? 360 : 480,
     alignSelf: 'center',
   } as const;
 }

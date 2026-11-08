@@ -27,37 +27,38 @@
     "test": "node --test tests/*.test.cjs"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.2",
+    "date-fns": "4.1.0",
+    "date-holidays": "3.38.0",
     "expo": "~58.0.22",
-    "expo-router": "~58.0.29",
-    "expo-sqlite": "~58.0.15",
-    "expo-file-system": "~58.0.13",
-    "expo-sharing": "~58.0.21",
     "expo-clipboard": "~58.0.4",
-    "expo-document-picker": "~58.0.4",
-    "expo-crypto": "~58.0.7",
     "expo-constants": "~58.0.14",
+    "expo-crypto": "~58.0.7",
+    "expo-dev-client": "~58.0.18",
+    "expo-document-picker": "~58.0.4",
+    "expo-file-system": "~58.0.13",
+    "expo-font": "~58.0.11",
     "expo-linking": "~58.0.15",
+    "expo-notifications": "~58.1.8",
+    "expo-router": "~58.0.29",
+    "expo-sharing": "~58.0.21",
+    "expo-sqlite": "~58.0.15",
     "expo-status-bar": "~58.0.4",
     "expo-system-ui": "~58.0.7",
     "react": "19.3.0",
     "react-native": "0.88.1",
     "react-native-safe-area-context": "~5.10.1",
     "react-native-screens": "~4.30.1",
-    "zustand": "5.0.16",
-    "date-fns": "4.1.0",
-    "date-holidays": "3.38.0",
-    "expo-dev-client": "~58.0.18",
-    "expo-font": "~58.0.11",
-    "@expo/vector-icons": "^15.0.2"
+    "zustand": "5.0.16"
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
-    "typescript": "~6.0.3",
     "eslint": "9.39.1",
     "eslint-config-expo": "~58.0.4",
-    "prettier": "3.7.4",
     "husky": "9.1.7",
-    "lint-staged": "16.2.7"
+    "lint-staged": "16.2.7",
+    "prettier": "3.7.4",
+    "typescript": "~6.0.3"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

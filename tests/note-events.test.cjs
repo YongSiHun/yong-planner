@@ -53,3 +53,39 @@ test('selecting a different chip ignores native edits from the old chip until ac
   events.acknowledge();
   assert.equal(events.change(edit, boundary + '장보기 완료', 2).text, '회의,장보기 완료');
 });
+
+test('deleting a restored chip before selection acknowledgement never copies its content', () => {
+  const events = new NoteInputEvents();
+  let edit = { text: '밥먹기,', index: 1 };
+  edit = events.change(edit, '', 1);
+  assert.equal(edit.text, '밥먹기');
+  edit = events.change(edit, '밥먹', 2);
+  assert.equal(edit.text, '밥먹');
+  edit = events.change(edit, '밥', 3);
+  edit = events.change(edit, '', 4);
+  assert.equal(edit.text, '');
+});
+
+test('deleting the start of a restored chip keeps later chips unchanged', () => {
+  const events = new NoteInputEvents();
+  let edit = events.change({ text: '밥먹기,,운동', index: 1 }, '', 1);
+  edit = events.change(edit, '먹기', 2);
+  assert.equal(edit.text, '먹기,운동');
+});
+
+test('old native buffer edits after a merge retain the preceding chip exactly once', () => {
+  const events = new NoteInputEvents();
+  let edit = events.change({ text: '밥먹기,운동', index: 1 }, '운동', 1);
+  edit = events.change(edit, '운', 2);
+  assert.equal(edit.text, '밥먹기운');
+  edit = events.change(edit, '밥먹기', 3);
+  assert.equal(edit.text, '밥먹기');
+});
+
+test('backspace at a later chip keeps the native boundary while deleting restored text', () => {
+  const events = new NoteInputEvents();
+  let edit = events.change({ text: '회의,밥먹기,', index: 2 }, '', 1);
+  edit = events.change(edit, boundary + '밥먹', 2);
+  assert.equal(edit.text, '회의,밥먹');
+  assert.equal(edit.index, 1);
+});

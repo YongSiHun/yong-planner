@@ -4,8 +4,15 @@ import type { DailyPlanItem, PlanEntry, RecurringPlanException, TimeFormat } fro
 
 export interface NoteSelectionModel {
   active: boolean;
+  editSources: DailyPlanItem[] | undefined;
+  saveContents(changes: ReadonlyMap<string, string>): void;
+  closeEdit(): void;
   selected: ReadonlySet<string>;
   copySource: DailyPlanItem | undefined;
+  copySourceDate: string | undefined;
+  hasSelectedTime: boolean;
+  allImportant: boolean;
+  toggleImportant(): void;
   timeSource: DailyPlanItem | undefined;
   copyDates: ReadonlySet<string>;
   deleteCount: number;
@@ -37,6 +44,7 @@ export interface DayRowProps {
   note: string;
   noteIds: string[];
   noteTimes: (string | null)[];
+  noteImportant?: readonly boolean[];
   timeFormat: TimeFormat;
   selectedIds: ReadonlySet<string>;
   selecting: boolean;
@@ -63,6 +71,7 @@ export interface ScheduleInputProps {
   note: string;
   initialIndex?: number;
   noteTimes?: readonly (string | null)[];
+  noteImportant?: readonly boolean[];
   timeFormat?: TimeFormat;
   initialSlot?: number;
   onSelect?(index: number, begin?: boolean): void;
@@ -75,6 +84,7 @@ export interface ScheduleInputProps {
 export interface SchedulePreviewProps {
   note: string;
   noteTimes?: readonly (string | null)[];
+  noteImportant?: readonly boolean[];
   timeFormat?: TimeFormat;
   date: string;
   onEdit(index?: number): void;

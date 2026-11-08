@@ -63,6 +63,8 @@ Pretendard Regular·Medium·SemiBold·Bold를 앱에 번들한다. 합성 굵기
 
 가이드는 X로 닫으며 “다시 보지 않음”을 선택한 경우에만 자동 표시를 끈다. 쉼표 예시는 한 줄로 보여주고 좁은 화면에서 가로 스크롤한다. 헤더의 Feather help-circle로 다시 연다.
 
-앱 아이콘은 assets/icon-sky.png, Android 전경은 adaptive-icon-sky.png, 마크는 mark-sky.png다. 차가운 흰 메모지·파란 체크 표시를 사용한다. 글꼴 라이선스는 assets/fonts에 보관하고 설정에서 연다.
+앱 아이콘은 assets/icon-dragon.png, Android 전경은 assets/adaptive-icon-dragon.png, 시작 화면 마크는 assets/mark-dragon.png다. 안경 쓴 청룡이 메모장에 연필로 쓰는 도안을 사용한다. 글꼴 라이선스는 assets/fonts에 보관하고 설정에서 연다.
 
 코드 계층과 스타일 분리 규칙은 [3계층 컨벤션](3tier-code-convention.md)을 따른다.
+
+중요 일정은 별표와 theme.selected 배경으로 구분한다. 드래그 삽입 위치는 3px theme.accent 세로선으로 표시하며, 이동 중 React 상태 대신 Animated 값만 갱신한다. 일정 길이는 칩별 Unicode 코드 포인트 255자이며 초과 입력은 토스트로 안내한다.

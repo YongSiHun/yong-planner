@@ -17,6 +17,8 @@ export function useChipDrag(onMove: (from: number, boundary: number) => void, co
     index: snapshot?.index ?? null,
     box: snapshot?.box,
     offset: session.offset,
+    markerOffset: session.markerOffset,
+    markerHeight: session.markerHeight,
     handlers: session.pan.panHandlers,
     record: session.record,
     arm: session.arm,
