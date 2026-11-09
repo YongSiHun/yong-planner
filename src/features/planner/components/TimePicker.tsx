@@ -4,7 +4,7 @@ import { Button, Input, Label, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
 import type { Theme } from '../../../components/ui/palette';
 import { timeChangeClearsAlarm } from '../services/alarms';
-import { boundedClockInput, formatScheduleContent, timeFromFields } from '../services/time';
+import { boundedClockInput, formatSchedulePreview, timeFromFields } from '../services/time';
 import type { DailyPlanItem, TimeFormat } from '../types';
 import * as styles from './TimePicker.styles';
 
@@ -80,9 +80,7 @@ export function TimePicker({
           style={styles.previewScroll}
           contentContainerStyle={styles.previewContent}
         >
-          {items.map((entry) => (
-            <Label key={entry.id}>{formatScheduleContent(entry.content, entry.time, format)}</Label>
-          ))}
+          <Label>{formatSchedulePreview(items, format)}</Label>
         </ScrollView>
       </View>
       <View style={styles.timePickerViewStyle2}>

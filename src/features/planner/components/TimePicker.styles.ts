@@ -44,15 +44,13 @@ export function preview(theme: Theme) {
 }
 
 export const previewScroll = {
-  height:
-    design.lineHeights.body * design.layout.previewRows +
-    design.space.sm * (design.layout.previewRows - 1),
+  height: design.lineHeights.body * design.layout.previewRows,
   flexShrink: 1,
   minHeight: 0,
   flexGrow: 0,
 } as const;
 
-export const previewContent = { gap: design.space.sm, paddingRight: design.space.sm } as const;
+export const previewContent = { paddingRight: design.space.sm } as const;
 
 export function alarmNotice(theme: Theme) {
   return {

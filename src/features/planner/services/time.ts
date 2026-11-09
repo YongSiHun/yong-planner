@@ -1,4 +1,4 @@
-import type { PlanEntry, TimeFormat } from '../types';
+import type { DailyPlanItem, PlanEntry, TimeFormat } from '../types';
 
 export function formatScheduleTime(
   time: string | null | undefined,
@@ -34,6 +34,22 @@ export function formatScheduleContent(
   const label = formatScheduleTime(time, format);
 
   return label ? label + ' ' + content : content;
+}
+
+// 모달 미리보기에서는 빈 항목과 빈 줄을 제외하고 한 줄 간격으로 연결한다.
+export function formatSchedulePreview(
+  items: readonly Pick<DailyPlanItem, 'content' | 'time'>[],
+  format: TimeFormat = '24h',
+): string {
+  return items
+    .filter((item) => item.content.trim().length > 0)
+    .flatMap((item) =>
+      formatScheduleContent(item.content.trim(), item.time, format)
+        .split(/\r\n?|\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0),
+    )
+    .join('\n');
 }
 
 export function displayPlanEntry(entry: PlanEntry, format: TimeFormat = '24h'): string {

@@ -147,3 +147,19 @@ test('hour and minute input clamps to supported ranges without allowing decimals
   assert.equal(boundedClockInput('1.5', '9', 1, 12), '9');
   assert.equal(boundedClockInput('abc', '9', 1, 12), '9');
 });
+
+test('modal preview keeps one newline between dates and removes empty rows without changing content', () => {
+  const { formatSchedulePreview } = require('../src/features/planner/services/time.ts');
+  const items = [
+    { date: '2026-11-08', content: '회의\n\n', time: '09:00' },
+    { date: '2026-11-08', content: '  ', time: null },
+    { date: '2026-11-09', content: '\r\n운동\r\n\r\n장보기\n', time: null },
+    { date: '2026-11-10', content: '', time: '10:00' },
+    { date: '2026-11-11', content: '식사', time: '13:00' },
+  ];
+  const original = structuredClone(items);
+  assert.equal(formatSchedulePreview(items), '9시 회의\n운동\n장보기\n13시 식사');
+  assert.equal(formatSchedulePreview(items, '12h'), '오전 9시 회의\n운동\n장보기\n오후 1시 식사');
+  assert.equal(formatSchedulePreview([]), '');
+  assert.deepEqual(items, original);
+});
