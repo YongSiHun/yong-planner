@@ -55,6 +55,7 @@ export function PlannerHeader({
     <View style={styles.header(theme)}>
       <View style={styles.navigation}>
         <HeaderIcon
+          edge="left"
           label="이전 달"
           disabled={month.startsWith('0001-01')}
           onPress={() => onMonth(-1)}
@@ -91,7 +92,7 @@ export function PlannerHeader({
       <HeaderIcon edge="right" label="사용 가이드 열기" onPress={onGuide}>
         <Feather name="help-circle" size={22} color={theme.accent} />
       </HeaderIcon>
-      <HeaderIcon edge="left" label="메뉴 열기" onPress={onMenu}>
+      <HeaderIcon edge="right" label="메뉴 열기" onPress={onMenu}>
         <View style={styles.menuLines}>
           {[0, 1, 2].map((line) => (
             <View key={line} style={styles.menuLine(theme)} />

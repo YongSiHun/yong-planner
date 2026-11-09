@@ -8,7 +8,7 @@ export function container(theme: Theme) {
     borderTopColor: theme.line,
     width: '100%',
     flexShrink: 0,
-    paddingHorizontal: 0,
+    paddingHorizontal: 1,
     paddingVertical: 0,
   } as const;
 }
