@@ -25,6 +25,7 @@ export function todayButtonTextStyle(theme: Theme) {
   return {
     color: theme.onAccent,
     fontSize: design.type.small,
-    fontFamily: design.font.semibold,
+    lineHeight: design.lineHeights.small,
+    fontFamily: design.font.medium,
   } as const;
 }

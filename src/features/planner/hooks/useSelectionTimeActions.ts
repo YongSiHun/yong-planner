@@ -58,25 +58,19 @@ export function useSelectionTimeActions(clear: () => void) {
     ),
     toggleAlarm: useCallback(() => {
       const selected = ui.getState().selected;
-      const items = usePlanner
-        .getState()
-        .data.dailyPlanItems.filter((item) => selected.has(item.id));
+      const items = selectedItems(selected);
 
       const empty = items.length === 0;
 
       if (empty) {
         return;
       }
-      const allAlarm = items.every((item) => item.alarm);
-
-      if (allAlarm) {
-        setDailyAlarms(selected, false);
-        clear();
-
-        return;
-      }
       ui.setState({ timeId: items[0]!.id, alarmSetting: true });
-    }, [clear, setDailyAlarms]),
+    }, []),
     closeTime: useCallback(() => ui.setState({ timeId: null, alarmSetting: false }), []),
   };
+}
+
+function selectedItems(ids = ui.getState().selected) {
+  return usePlanner.getState().data.dailyPlanItems.filter((item) => ids.has(item.id));
 }

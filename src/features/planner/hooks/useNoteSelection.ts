@@ -22,13 +22,13 @@ export function useNoteSelection(onBegin: () => void) {
   const sameDate = items.every((item) => item.date === items[0]?.date);
   const copySourceDate = sameDate ? items[0]?.date : undefined;
   const alarmSetting = useNoteSelectionStore((state) => state.alarmSetting);
-  const allAlarm = items.length > 0 && items.every((item) => item.alarm);
+  const hasSelectedAlarm = items.some((item) => Boolean(item.alarm));
   const allImportant = items.every((item) => item.important);
   const actions = useSelectionActions(onBegin);
 
   return {
     alarmSetting,
-    allAlarm,
+    hasSelectedAlarm,
     hasSelectedTime,
     allImportant,
     copySourceDate,

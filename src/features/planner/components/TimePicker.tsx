@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { Button, Input, Label, useTheme } from '../../../components/ui';
+import { Button, Input, Label } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
 import { boundedClockInput, formatScheduleContent, timeFromFields } from '../services/time';
 import type { DailyPlanItem, TimeFormat } from '../types';
@@ -11,6 +11,7 @@ export function TimePicker({
   format,
   count = 1,
   hasExistingTime,
+  overwriteMessage,
   title = '시간 설정',
   onClose,
   onSave,
@@ -20,10 +21,10 @@ export function TimePicker({
   count?: number;
   title?: string;
   hasExistingTime?: boolean;
+  overwriteMessage?: string;
   onClose(): void;
   onSave(time: string | null): void;
 }) {
-  const theme = useTheme();
   const [hour, setHour] = useState(() => initialHour(item.time, format));
   const [minute, setMinute] = useState(item.time?.slice(3) ?? '00');
   const [period, setPeriod] = useState<'am' | 'pm'>(() =>
@@ -40,14 +41,14 @@ export function TimePicker({
       footer={
         <Button
           bold
-          title="적용"
+          title={overwriteMessage ? '덮어쓰기' : '적용'}
           disabled={time === null}
           onPress={() => onSave(time)}
-          textColor={theme.onAccent}
-          style={styles.primaryAction(theme)}
+          style={styles.action}
         />
       }
     >
+      {renderOverwriteNotice(overwriteMessage)}
       <Label>
         {count > 1 ? count + '개 일정에 적용' : formatScheduleContent(item.content, time, format)}
       </Label>
@@ -90,4 +91,10 @@ function initialHour(time: string | null | undefined, format: TimeFormat): strin
   const hour = Number(time?.slice(0, 2) ?? 9);
 
   return String(format === '12h' ? hour % 12 || 12 : hour);
+}
+
+function renderOverwriteNotice(message: string | undefined) {
+  const visible = message !== undefined;
+
+  return visible ? <Label>{message}</Label> : null;
 }

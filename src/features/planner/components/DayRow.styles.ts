@@ -24,6 +24,7 @@ export function screenTextStyle(theme: Theme) {
   return {
     fontFamily: design.font.regular,
     fontSize: design.type.caption,
+    lineHeight: design.lineHeights.caption,
     color: theme.muted,
   } as const;
 }

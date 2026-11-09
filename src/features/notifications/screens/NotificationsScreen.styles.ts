@@ -22,8 +22,9 @@ export const title = {
   flex: 1,
   fontFamily: design.font.medium,
   fontSize: design.type.body,
+  lineHeight: design.lineHeights.body,
 } as const;
-export const heading = { fontFamily: design.font.bold, fontSize: design.type.title } as const;
+export const heading = { fontFamily: design.font.bold, fontSize: design.type.body } as const;
 export const error = { gap: design.space.sm } as const;
 export function track(theme: Theme) {
   return { false: theme.line, true: theme.accent };

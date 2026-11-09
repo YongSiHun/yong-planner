@@ -1,9 +1,10 @@
 import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import type { Theme } from './/palette';
-import { design } from './/tokens';
+import { design, lineHeightForSize } from './tokens';
 
 export function label(
   fontFamily: string,
+  fontSize: number,
   muted: boolean,
   theme: Theme,
   style: StyleProp<TextStyle> | undefined,
@@ -11,8 +12,8 @@ export function label(
   return [
     {
       color: muted ? theme.muted : theme.text,
-      fontSize: design.type.body,
-      lineHeight: design.lineHeight,
+      fontSize,
+      lineHeight: lineHeightForSize(fontSize),
     } as const,
     style,
     { fontFamily, fontWeight: 'normal' } as const,
@@ -30,13 +31,13 @@ export function button(
   return ({ pressed }: import('react-native').PressableStateCallbackType) =>
     [
       {
-        minHeight: 44,
-        minWidth: 44,
+        minHeight: design.touchTarget,
+        minWidth: design.touchTarget,
         paddingHorizontal: compact ? design.space.sm : design.space.md,
         paddingVertical: compact ? design.space.xs : 10,
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 10,
+        borderRadius: design.radius.medium,
         backgroundColor: selected ? theme.selected : 'transparent',
         opacity: getButtonOpacity(disabled, pressed),
       } as const,
@@ -53,9 +54,12 @@ export function buttonLabel(
   selected: boolean,
   bold: boolean,
 ) {
+  const fontSize = labelSize ?? (compact ? design.type.small : design.type.body);
+
   return {
     color: textColor ?? (danger ? theme.red : theme.accent),
-    fontSize: labelSize ?? (compact ? design.type.small : design.type.body),
+    fontSize,
+    lineHeight: lineHeightForSize(fontSize),
     fontFamily: selected || bold ? design.font.bold : design.font.medium,
   } as const;
 }
@@ -77,6 +81,7 @@ export function input(
       minHeight: 48,
       height: propsMultiline ? contentHeight : undefined,
       fontSize: design.type.body,
+      lineHeight: design.lineHeights.body,
       fontFamily: design.font.regular,
       textAlignVertical: 'top',
     } as const,

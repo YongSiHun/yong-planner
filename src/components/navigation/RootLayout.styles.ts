@@ -19,6 +19,7 @@ export function rootNavigationStackScreenOptions(theme: Theme) {
       fontFamily: design.font.bold,
       fontWeight: 'normal',
       fontSize: design.type.title,
+      lineHeight: design.lineHeights.title,
     } as const,
     contentStyle: { backgroundColor: theme.bg } as const,
     headerShadowVisible: false,

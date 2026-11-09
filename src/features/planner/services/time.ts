@@ -116,3 +116,19 @@ export function boundedClockInput(
 
   return String(Math.max(minimum, Math.min(maximum, Number(text))));
 }
+
+export function timeOverwriteMessage(
+  alarm: boolean,
+  hasTime: boolean,
+  hasAlarm: boolean,
+): string | undefined {
+  const hasExistingValues = alarm ? hasTime || hasAlarm : hasTime;
+
+  if (!hasExistingValues) {
+    return undefined;
+  }
+
+  return alarm
+    ? '이미 시간 또는 알람이 설정된 일정이 있습니다. 선택한 모든 일정의 시간과 알람을 지정한 알람 시간으로 덮어쓰시겠어요?'
+    : '이미 시간이 설정된 일정이 있습니다. 덮어쓰시겠어요?';
+}

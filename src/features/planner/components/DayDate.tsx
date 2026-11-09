@@ -32,7 +32,7 @@ export function DayDate({
   const theme = useTheme();
   const hasName = holidayName !== null;
   const color = copyTarget ? theme.onAccent : getDateColor(date, hasName, theme, theme.muted);
-  const disabled = copying && copySource;
+  const mutedSource = copying && copySource;
 
   function handlePress() {
     if (copying) {
@@ -57,9 +57,8 @@ export function DayDate({
       onPress={handlePress}
       accessibilityRole={copying ? 'checkbox' : 'button'}
       accessibilityLabel={dateLabel(date, copying, holidayName)}
-      accessibilityState={{ checked: copyTarget, disabled }}
-      disabled={disabled}
-      style={styles.dayDatePressableStyle(copyTarget, theme, disabled)}
+      accessibilityState={{ checked: copyTarget }}
+      style={styles.dayDatePressableStyle(copyTarget, theme, mutedSource)}
     >
       <DateDot visible={hasName} />
       <Text maxFontSizeMultiplier={1.4} style={styles.dayDateTextStyle(color, isToday)}>

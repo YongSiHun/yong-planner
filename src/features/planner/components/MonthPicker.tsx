@@ -14,7 +14,6 @@ export function MonthPicker({
   onClose(): void;
   onChoose(date: string): void;
 }) {
-  const theme = useTheme();
   const [year, setYear] = useState(month.slice(0, 4));
   const [selectedMonth, setSelectedMonth] = useState(String(Number(month.slice(5, 7))));
   const validation = monthSelection(year, selectedMonth);
@@ -35,10 +34,10 @@ export function MonthPicker({
       footer={
         <Button
           title="이동하기"
+          bold
           disabled={validation.date === null}
           onPress={choose}
-          textColor={theme.onAccent}
-          style={styles.monthPickerButtonStyle(theme)}
+          style={styles.action}
         />
       }
     >

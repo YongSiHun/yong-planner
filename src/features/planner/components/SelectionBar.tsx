@@ -9,7 +9,6 @@ export function SelectionBar({
   onCopy,
   onTime,
   onAlarm,
-  allAlarm = false,
   onDelete,
   onCancel,
   onSelectAll,
@@ -20,7 +19,6 @@ export function SelectionBar({
   onCopy(): void;
   onTime(): void;
   onAlarm(): void;
-  allAlarm?: boolean;
   onDelete(): void;
   onCancel(): void;
   onSelectAll(): void;
@@ -88,6 +86,8 @@ export function SelectionBar({
           bold
           title="일정 복사"
           accessibilityLabel="일정 복사"
+          disabled={count !== 1}
+          onDisabledPress={onCopy}
           onPress={onCopy}
         />
         <Button
@@ -95,9 +95,8 @@ export function SelectionBar({
           style={styles.action}
           compact
           bold
-          title={allAlarm ? '알람 해제' : '알람 설정'}
-          accessibilityLabel={allAlarm ? '알람 해제' : '알람 설정'}
-          selected={allAlarm}
+          title="알람 설정"
+          accessibilityLabel="알람 설정"
           disabled={!hasSelection}
           onPress={onAlarm}
         />

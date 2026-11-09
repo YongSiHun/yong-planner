@@ -7,7 +7,7 @@ export const recurringFormViewStyle = {
 } as const;
 
 export function recurringFormLabelStyle(theme: Theme) {
-  return { flex: 1, color: theme.accent, fontWeight: '700' } as const;
+  return { flex: 1, color: theme.accent, fontFamily: design.font.bold } as const;
 }
 
 export const recurringFormViewStyle2 = { gap: design.space.xs } as const;

@@ -880,7 +880,7 @@ test('selection keeps chip edges mounted and tapping them toggles selection', ()
   assert.equal(toggles, 2);
 });
 
-test('multi-selection sets and clears time on every selected chip', () => {
+test('multi-selection sets, overwrites and clears time on selected chips', () => {
   let id = 0;
   plannerData = applyDailyNote(
     plannerData,
@@ -904,31 +904,54 @@ test('multi-selection sets and clears time on every selected chip', () => {
   selection.toggle('2026-11-08', 1);
   selection = renderSelection([]);
   selection.openTime();
-  renderSelection([]).saveTime(null);
+  renderSelection().saveTime('14:20');
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => item.time ?? null),
+    ['14:20', '14:20', null],
+  );
+  renderSelection().toggle('2026-11-08', 0, true);
+  renderSelection().toggle('2026-11-08', 1);
+  renderSelection().openTime();
+  renderSelection().saveTime(null);
   assert.deepEqual(
     plannerData.dailyPlanItems.map((item) => item.time ?? null),
     [null, null, null],
   );
 });
 
-test('multi-selection copies every selected chip to dates chosen on the page', () => {
+test('multiple selected schedules show a disabled copy button with a toast on tap', () => {
   let id = 0;
   plannerData = applyDailyNote(plannerData, '2026-11-08', '회의,운동', () => 'source-' + ++id);
-  let selection = renderSelection([]);
-  selection.toggle('2026-11-08', 0, true);
+  renderSelection().toggle('2026-11-08', 0, true);
+  renderSelection().toggle('2026-11-08', 1);
+  let selection = renderSelection();
+  const bar = SelectionBar({ count: 2, onCopy: selection.openCopy });
+  const copy = find(bar, (node) => node.type === 'Button' && node.props.title === '일정 복사');
+  assert.equal(copy.props.disabled, true);
+  copy.props.onDisabledPress();
+  selection = renderSelection();
+  assert.match(toasts.at(-1), /일정 복사는 하나만 가능해요/);
+  assert.equal(selection.copySource, undefined);
+  assert.equal(selection.active, true);
+  assert.equal(plannerData.dailyPlanItems.length, 2);
   selection.toggle('2026-11-08', 1);
-  selection = renderSelection([]);
-  selection.openCopy();
-  selection = renderSelection([]);
-  selection.toggleCopyDate('2026-11-09');
-  selection.toggleCopyDate('2026-11-10');
-  renderSelection([]).copySelected();
-  assert.equal(plannerData.dailyPlanItems.length, 6);
+  selection = renderSelection();
+  const singleBar = SelectionBar({ count: 1, onCopy: selection.openCopy });
+  const enabledCopy = find(
+    singleBar,
+    (node) => node.type === 'Button' && node.props.title === '일정 복사',
+  );
+  assert.equal(enabledCopy.props.disabled, false);
+  enabledCopy.props.onPress();
+  renderSelection().toggleCopyDate('2026-11-09');
+  renderSelection().toggleCopyDate('2026-11-10');
+  renderSelection().copySelected();
+  assert.equal(plannerData.dailyPlanItems.length, 4);
   assert.deepEqual(
     plannerData.dailyPlanItems
-      .filter((item) => item.date === '2026-11-09')
+      .filter((item) => item.date !== '2026-11-08')
       .map((item) => item.content),
-    ['회의', '운동'],
+    ['회의', '회의'],
   );
 });
 
@@ -984,7 +1007,7 @@ test('12-hour time picker selects AM/PM for all selected schedules and clamps in
   assert.deepEqual(savedTimes, ['12:59', '00:59']);
 });
 
-test('selected chips authorize alarms, save their own time and can be disabled together', async () => {
+test('selected chips can overwrite their existing alarm times together', async () => {
   let id = 0;
   plannerData = applyDailyNote(plannerData, '2026-11-08', '회의,식사,운동', () => 'alarm-' + ++id);
   let selection = renderSelection([]);
@@ -1009,13 +1032,20 @@ test('selected chips authorize alarms, save their own time and can be disabled t
   selection.toggle('2026-11-08', 0, true);
   selection.toggle('2026-11-08', 1);
   selection = renderSelection([]);
-  assert.equal(selection.allAlarm, true);
+  assert.equal(selection.hasSelectedAlarm, true);
   selection.toggleAlarm();
-  assert.equal(
-    plannerData.dailyPlanItems.some((item) => item.alarm),
-    false,
+  assert.equal(renderSelection().alarmSetting, true);
+  renderSelection().saveTime('15:30');
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => item.time ?? null),
+    ['15:30', '15:30', null],
   );
-  assert.equal(alarmPermissionRequests, 1);
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => Boolean(item.alarm)),
+    [true, true, false],
+  );
+  assert.equal(alarmPermissionRequests, 2);
 });
 
 test('saved times are editable native input text and cannot remain as undeletable labels', () => {
@@ -1218,4 +1248,148 @@ test('ordinary caret movement does not request page measurement or reset the nat
   flushFrames();
   assert.equal(reveals, 0);
   assert.deepEqual(selections, []);
+});
+
+test('copying to a date that already includes the schedule shows a toast and does not select it', () => {
+  let id = 0;
+  plannerData = applyDailyNote(plannerData, '2026-11-08', '회의', () => 'duplicate-' + ++id);
+  plannerData = applyDailyNote(plannerData, '2026-11-09', '회의', () => 'duplicate-' + ++id);
+  renderSelection().toggle('2026-11-08', 0, true);
+  renderSelection().openCopy();
+  const before = toasts.length;
+  const { DayDate } = require('../src/features/planner/components/DayDate.tsx');
+  const sourceDate = DayDate({
+    date: '2026-11-08',
+    holidayName: null,
+    isToday: false,
+    copying: true,
+    copyTarget: false,
+    copySource: true,
+    onCopyDate: renderSelection().toggleCopyDate,
+    onFinish() {},
+    onInfo() {},
+  });
+  assert.notEqual(sourceDate.props.disabled, true);
+  sourceDate.props.onPress();
+  renderSelection().toggleCopyDate('2026-11-09');
+  assert.equal(renderSelection().copyDates.size, 0);
+  assert.equal(toasts.length, before + 2);
+  assert.match(toasts.at(-1), /이미 같은 일정/);
+});
+
+test('copy rechecks changed targets before saving and preserves the selection on conflict', () => {
+  let id = 0;
+  plannerData = applyDailyNote(plannerData, '2026-11-08', '회의', () => 'changed-' + ++id);
+  renderSelection().toggle('2026-11-08', 0, true);
+  renderSelection().openCopy();
+  renderSelection().toggleCopyDate('2026-11-09');
+  plannerData = applyDailyNote(plannerData, '2026-11-09', '회의', () => 'changed-' + ++id);
+  renderSelection().copySelected();
+  assert.equal(plannerData.dailyPlanItems.length, 2);
+  assert.match(toasts.at(-1), /이미 같은 일정/);
+  assert.equal(renderSelection().copyDates.has('2026-11-09'), true);
+  renderSelection().toggleCopyDate('2026-11-09');
+  assert.equal(renderSelection().copyDates.size, 0);
+});
+
+test('time overwrite modal confirms before updating mixed selected times', () => {
+  const { TimePicker } = require('../src/features/planner/components/TimePicker.tsx');
+  const { timeOverwriteMessage } = require('../src/features/planner/services/time.ts');
+  let id = 0;
+  plannerData = applyDailyNote(
+    plannerData,
+    '2026-11-08',
+    '13:00 회의,14:00 운동,독서',
+    () => 'overwrite-' + ++id,
+  );
+  renderSelection().toggle('2026-11-08', 0, true);
+  renderSelection().toggle('2026-11-08', 1);
+  renderSelection().openTime();
+  const selection = renderSelection();
+  const bar = SelectionBar({ count: 2, onTime: selection.openTime });
+  const timeButton = find(
+    bar,
+    (node) => node.type === 'Button' && node.props.title === '시간 설정',
+  );
+  assert.notEqual(timeButton.props.disabled, true);
+  const message = timeOverwriteMessage(
+    false,
+    selection.hasSelectedTime,
+    selection.hasSelectedAlarm,
+  );
+  assert.equal(message, '이미 시간이 설정된 일정이 있습니다. 덮어쓰시겠어요?');
+  slots = [];
+  cursor = 0;
+  const dialog = TimePicker({
+    item: selection.timeSource,
+    format: '24h',
+    count: 2,
+    hasExistingTime: true,
+    overwriteMessage: message,
+    onClose: selection.closeTime,
+    onSave: selection.saveTime,
+  });
+  assert.ok(find(dialog, (node) => node.type === 'Label' && node.props.children === message));
+  assert.equal(dialog.props.footer.props.title, '덮어쓰기');
+  assert.equal(plannerData.dailyPlanItems[1].time, '14:00');
+  dialog.props.footer.props.onPress();
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => item.time ?? null),
+    ['13:00', '13:00', null],
+  );
+});
+
+test('alarm overwrite modal confirms and aligns all selected schedule times', async () => {
+  const { TimePicker } = require('../src/features/planner/components/TimePicker.tsx');
+  const { timeOverwriteMessage } = require('../src/features/planner/services/time.ts');
+  let id = 0;
+  plannerData = applyDailyNote(
+    plannerData,
+    '2026-11-08',
+    '13:00 회의,14:00 운동,독서,18:00 식사',
+    () => 'alarm-overwrite-' + ++id,
+  );
+  plannerData = {
+    ...plannerData,
+    dailyPlanItems: plannerData.dailyPlanItems.map((item, index) =>
+      index === 1 ? { ...item, alarm: true } : item,
+    ),
+  };
+  for (const index of [0, 1, 2]) renderSelection().toggle('2026-11-08', index, index === 0);
+  const selection = renderSelection();
+  const bar = SelectionBar({ count: 3, onAlarm: selection.toggleAlarm });
+  const alarmButton = find(
+    bar,
+    (node) => node.type === 'Button' && node.props.title === '알람 설정',
+  );
+  assert.equal(alarmButton.props.disabled, false);
+  alarmButton.props.onPress();
+  const opened = renderSelection();
+  assert.equal(opened.alarmSetting, true);
+  const message = timeOverwriteMessage(true, opened.hasSelectedTime, opened.hasSelectedAlarm);
+  assert.match(message, /선택한 모든 일정의 시간과 알람/);
+  slots = [];
+  cursor = 0;
+  const dialog = TimePicker({
+    item: opened.timeSource,
+    format: '24h',
+    count: 3,
+    hasExistingTime: false,
+    overwriteMessage: message,
+    onClose: opened.closeTime,
+    onSave: opened.saveTime,
+  });
+  assert.equal(dialog.props.footer.props.title, '덮어쓰기');
+  assert.equal(plannerData.dailyPlanItems[1].time, '14:00');
+  assert.equal(alarmPermissionRequests, 0);
+  dialog.props.footer.props.onPress();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => item.time ?? null),
+    ['13:00', '13:00', '13:00', '18:00'],
+  );
+  assert.deepEqual(
+    plannerData.dailyPlanItems.map((item) => Boolean(item.alarm)),
+    [true, true, true, false],
+  );
 });

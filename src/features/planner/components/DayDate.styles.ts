@@ -29,6 +29,7 @@ export function dayDateTextStyle(
   return {
     color,
     fontSize: design.type.date,
+    lineHeight: design.lineHeights.body,
     fontFamily: dateFont(isToday),
     fontVariant: ['tabular-nums'] as const,
     textAlign: 'right',
@@ -41,6 +42,7 @@ export function dayDateTextStyle2(color: string) {
     color,
     fontFamily: design.font.regular,
     fontSize: design.type.caption,
+    lineHeight: design.lineHeights.caption,
     paddingTop: 1,
   } as const;
 }

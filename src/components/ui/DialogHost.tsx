@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { useDialogStore, type DialogAction } from '../../stores/dialog';
 import { Dialog } from './Dialog';
-import * as styles from './DialogHost.styles';
+import * as styles from './Dialog.styles';
 import { Button, Label } from './index';
 
 export function DialogHost() {

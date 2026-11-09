@@ -47,7 +47,11 @@ export function HolidayOverrides() {
       />
 
       {isEditorOpen ? (
-        <Dialog title="공휴일 보정" onClose={() => setEditorOpen(false)}>
+        <Dialog
+          title="공휴일 보정"
+          onClose={() => setEditorOpen(false)}
+          footer={<Button title="저장" bold style={styles.action} onPress={handleSave} />}
+        >
           <Input
             accessibilityLabel="보정 날짜"
             value={date}
@@ -60,7 +64,6 @@ export function HolidayOverrides() {
             onChangeText={setName}
             placeholder="임시공휴일 이름 · 비우면 공휴일 해제"
           />
-          <Button title="저장" selected onPress={handleSave} />
         </Dialog>
       ) : null}
     </>

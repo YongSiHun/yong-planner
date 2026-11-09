@@ -21,6 +21,7 @@ export function recurringNoteInput(theme: Theme) {
     color: theme.text,
     fontFamily: design.font.regular,
     fontSize: design.type.body,
+    lineHeight: design.lineHeights.body,
     padding: design.space.xs,
     borderBottomWidth: 1,
     borderBottomColor: theme.line,

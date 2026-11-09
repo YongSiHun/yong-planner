@@ -20,16 +20,16 @@ export const dialogPressableStyle = {
   right: 0,
 } as const;
 
-export function dialogViewStyle(theme: Theme, compact = false) {
+export function dialogViewStyle(theme: Theme) {
   return {
     backgroundColor: theme.bg,
     borderRadius: design.radius.dialog,
     borderWidth: 1,
     borderColor: theme.line,
-    padding: compact ? design.space.md : design.space.lg,
+    padding: design.space.lg,
     maxHeight: '85%',
     width: '100%',
-    maxWidth: compact ? 360 : 480,
+    maxWidth: 480,
     alignSelf: 'center',
   } as const;
 }
@@ -49,6 +49,7 @@ export const dialogHeadingViewStyle = {
 export const dialogHeadingLabelStyle = {
   flex: 1,
   fontSize: design.type.title,
+  lineHeight: design.lineHeights.title,
   fontFamily: design.font.bold,
 } as const;
 
@@ -57,4 +58,19 @@ export const dialogHeadingPressableStyle = {
   height: design.touchTarget,
   alignItems: 'center',
   justifyContent: 'center',
+} as const;
+
+export const actions = {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  justifyContent: 'flex-end',
+  gap: design.space.sm,
+} as const;
+
+export const action = {
+  alignSelf: 'flex-end',
+  minHeight: design.touchTarget,
+  paddingHorizontal: design.space.md,
+  paddingVertical: design.space.sm,
+  backgroundColor: 'transparent',
 } as const;

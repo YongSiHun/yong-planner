@@ -36,6 +36,7 @@ export const navigation = {
 export function monthArrow(theme: Theme) {
   return {
     fontSize: design.type.display,
+    lineHeight: design.lineHeights.display,
     fontFamily: design.font.bold,
     color: theme.muted,
   } as const;
@@ -52,6 +53,7 @@ export function monthTitle(theme: Theme) {
   return {
     color: theme.accent,
     fontSize: design.type.title,
+    lineHeight: design.lineHeights.title,
     fontFamily: design.font.bold,
     textAlign: 'center',
     fontVariant: ['tabular-nums'] as const,
@@ -61,7 +63,8 @@ export function monthTitle(theme: Theme) {
 export function plannerHeaderTextStyle3(theme: Theme) {
   return {
     fontSize: design.type.display,
-    fontFamily: design.font.regular,
+    lineHeight: design.lineHeights.display,
+    fontFamily: design.font.bold,
     color: theme.muted,
   } as const;
 }

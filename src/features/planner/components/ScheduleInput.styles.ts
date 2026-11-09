@@ -33,8 +33,8 @@ export function input(theme: Theme, height: number, maximumHeight: number, input
   return {
     fontFamily: design.font.regular,
     fontSize: design.type.body,
+    lineHeight: design.lineHeights.body,
     includeFontPadding: false,
-    lineHeight: design.lineHeight,
     color: theme.text,
     paddingHorizontal: 8,
     paddingVertical: 4,

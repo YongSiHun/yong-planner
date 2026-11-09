@@ -92,7 +92,7 @@ function GuideFooter({
   const theme = useTheme();
 
   return (
-    <View style={styles.guideFooterViewStyle(theme)}>
+    <View style={styles.guideFooterViewStyle}>
       <Pressable
         accessibilityRole="checkbox"
         accessibilityLabel="다시 보지 않음"
@@ -103,12 +103,7 @@ function GuideFooter({
         <Feather name={checked ? 'check-square' : 'square'} size={22} color={theme.accent} />
         <Label style={styles.plannerGuideLabelStyle}>다시 보지 않음</Label>
       </Pressable>
-      <Button
-        title="일정 작성하기"
-        onPress={onClose}
-        textColor={theme.onAccent}
-        style={styles.guideFooterButtonStyle(theme)}
-      />
+      <Button title="일정 작성하기" bold onPress={onClose} style={styles.action} />
     </View>
   );
 }

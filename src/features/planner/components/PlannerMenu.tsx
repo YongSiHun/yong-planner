@@ -26,27 +26,27 @@ export function PlannerMenu({ type, month, onClose, onShowExport, onExport }: Pl
   }
 
   return (
-    <Dialog compact title={title} onClose={onClose} showHeader={false}>
+    <Dialog title={title} onClose={onClose} showHeader={false}>
       <View style={styles.plannerMenuViewStyle}>
         {isNavigationMenu ? (
           <>
             <Button
               bold
-              labelSize={design.type.body + 1}
+              labelSize={design.type.body}
               style={styles.plannerMenuButtonStyle}
               title="내보내기"
               onPress={onShowExport}
             />
             <Button
               bold
-              labelSize={design.type.body + 1}
+              labelSize={design.type.body}
               style={styles.plannerMenuButtonStyle}
               title="알림"
               onPress={() => handleNavigate('/notifications')}
             />
             <Button
               bold
-              labelSize={design.type.body + 1}
+              labelSize={design.type.body}
               style={styles.plannerMenuButtonStyle}
               title="설정"
               onPress={() => handleNavigate('/settings')}
@@ -56,28 +56,28 @@ export function PlannerMenu({ type, month, onClose, onShowExport, onExport }: Pl
           <>
             <Button
               bold
-              labelSize={design.type.body + 1}
+              labelSize={design.type.body}
               style={styles.plannerMenuButtonStyle}
               title="내용 복사"
               onPress={() => onExport('clipboard')}
             />
             <Button
               bold
-              labelSize={design.type.body + 1}
+              labelSize={design.type.body}
               style={styles.plannerMenuButtonStyle}
               title="TXT 파일 공유"
               onPress={() => onExport('txt')}
             />
             <Button
               bold
-              labelSize={design.type.body + 1}
+              labelSize={design.type.body}
               style={styles.plannerMenuButtonStyle}
               title="JSON 파일 공유"
               onPress={() => onExport('json')}
             />
             <Button
               bold
-              labelSize={design.type.body + 1}
+              labelSize={design.type.body}
               style={styles.plannerMenuButtonStyle}
               title="CSV 파일 공유"
               onPress={() => onExport('csv')}

@@ -12,7 +12,6 @@ export function Dialog({
   footer,
   onClose,
   showHeader = true,
-  compact = false,
   dismissOnPress = false,
 }: {
   title: string;
@@ -20,7 +19,6 @@ export function Dialog({
   footer?: ReactNode;
   onClose(): void;
   showHeader?: boolean;
-  compact?: boolean;
   dismissOnPress?: boolean;
 }) {
   const theme = useTheme();
@@ -44,7 +42,7 @@ export function Dialog({
               accessibilityViewIsModal
               accessible={false}
               onPress={dismissOnPress ? onClose : undefined}
-              style={styles.dialogViewStyle(theme, compact)}
+              style={styles.dialogViewStyle(theme)}
             >
               <DialogHeading
                 title={title}

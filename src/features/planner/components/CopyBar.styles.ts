@@ -20,10 +20,14 @@ export function copyBarTextStyle(theme: Theme) {
     fontFamily: design.font.medium,
     color: theme.text,
     fontSize: design.type.small,
+    lineHeight: design.lineHeights.small,
   } as const;
 }
 
-export const copyBarLabelStyle = { fontSize: design.type.small, lineHeight: 18 } as const;
+export const copyBarLabelStyle = {
+  fontSize: design.type.small,
+  lineHeight: design.lineHeights.small,
+} as const;
 
 export function copyBarButtonStyle(theme: Theme) {
   return { backgroundColor: theme.accent } as const;
