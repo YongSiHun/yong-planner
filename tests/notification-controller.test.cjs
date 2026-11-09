@@ -102,7 +102,7 @@ beforeEach(() => {
   useNotificationStore.setState({
     ready: true,
     busy: false,
-    preferences: { ...defaultNotificationPreferences },
+    preferences: { ...defaultNotificationPreferences, summary: false },
     permission: null,
     error: null,
     count: 0,
@@ -113,7 +113,8 @@ test('initialization never requests notification or exact alarm permission', asy
   useNotificationStore.setState({ ready: false });
   await initializeNotifications();
   assert.equal(events.length, 0);
-  assert.equal(useNotificationStore.getState().preferences.summary, false);
+  assert.equal(useNotificationStore.getState().preferences.summary, true);
+  assert.equal(useNotificationStore.getState().preferences.lockScreen, false);
 });
 test('enabling today summary creates channels before requesting only alert permission', async () => {
   await changeNotificationPreference('summary', true);
@@ -164,7 +165,7 @@ test('iOS requests sound only when alarms are enabled and never requests exact a
 test('Android exact alarms require real approval and denied access is not saved as enabled', async () => {
   granted = true;
   useNotificationStore.setState({
-    preferences: { ...defaultNotificationPreferences, alarms: true },
+    preferences: { ...defaultNotificationPreferences, summary: false, alarms: true },
   });
   allowExact = false;
   await assert.rejects(changeNotificationPreference('exact', true), /정확한 알람 권한/);
@@ -244,7 +245,7 @@ test('native alarm requests use canonical times and fall back when exact access 
   granted = true;
   exact = true;
   useNotificationStore.setState({
-    preferences: { ...defaultNotificationPreferences, alarms: true, exact: true },
+    preferences: { ...defaultNotificationPreferences, summary: false, alarms: true, exact: true },
   });
   await syncNotifications();
   let request = [...pending.values()][0];
@@ -374,4 +375,92 @@ test('denied exact alarm access on startup keeps settings disabled without faili
   assert.equal(useNotificationStore.getState().permission.exact, false);
   assert.equal(useNotificationStore.getState().preferences.exact, false);
   assert.equal(useNotificationStore.getState().preferences.alarms, false);
+});
+
+test('saved display choices survive new defaults and missing choices use new defaults', async () => {
+  const {
+    loadNotificationPreferences,
+  } = require('../src/features/notifications/data/preferences.ts');
+  storedPreferences = JSON.stringify({ summary: false, lockScreen: true });
+  const saved = await loadNotificationPreferences();
+  assert.equal(saved.summary, false);
+  assert.equal(saved.lockScreen, true);
+  storedPreferences = '{}';
+  assert.deepEqual(await loadNotificationPreferences(), defaultNotificationPreferences);
+});
+
+test('concurrent display changes are saved in order without dropping either choice', async () => {
+  await Promise.all([
+    changeNotificationPreference('summary', true),
+    changeNotificationPreference('lockScreen', true),
+  ]);
+  const preferences = useNotificationStore.getState().preferences;
+  assert.equal(preferences.summary, true);
+  assert.equal(preferences.lockScreen, true);
+  assert.deepEqual(JSON.parse(storedPreferences), preferences);
+  assert.equal(useNotificationStore.getState().busy, false);
+});
+
+test('startup permission can retry after a rejected request in the same session', async () => {
+  const request = freshStartupRequest();
+  allowPrompt = false;
+  await assert.rejects(request(), /알림 권한/);
+  allowPrompt = true;
+  await request();
+  assert.equal(useNotificationStore.getState().permission.granted, true);
+  assert.equal(useNotificationStore.getState().error, null);
+});
+
+test('stopping sync before initialization settles leaves no delayed synchronization', async (context) => {
+  context.mock.timers.enable({ apis: ['setTimeout', 'setInterval'] });
+  useNotificationStore.setState({ preferences: { ...defaultNotificationPreferences } });
+  granted = true;
+  const stop = startNotificationSync();
+  stop();
+  await new Promise((resolve) => setImmediate(resolve));
+  context.mock.timers.tick(2000);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(events.length, 0);
+  context.mock.timers.reset();
+});
+
+test('a failed queued change does not discard the next setting', async () => {
+  allowPrompt = false;
+  const denied = assert.rejects(changeNotificationPreference('summary', true), /알림 권한/);
+  const next = changeNotificationPreference('lockScreen', true);
+  await Promise.all([denied, next]);
+  assert.equal(useNotificationStore.getState().preferences.summary, false);
+  assert.equal(useNotificationStore.getState().preferences.lockScreen, true);
+  assert.equal(useNotificationStore.getState().busy, false);
+  assert.equal(useNotificationStore.getState().error, null);
+});
+
+test('alarm authorization and display changes share the same persistence queue', async () => {
+  const storage = require('expo-sqlite/kv-store');
+  const save = storage.setItem;
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  let writes = 0;
+  storage.setItem = async (...args) => {
+    if (++writes === 1) await gate;
+    await save(...args);
+  };
+  try {
+    const alarm = authorizeScheduleAlarm();
+    await new Promise((resolve) => setImmediate(resolve));
+    const display = changeNotificationPreference('lockScreen', true);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(writes, 1);
+    release();
+    await Promise.all([alarm, display]);
+    const preferences = useNotificationStore.getState().preferences;
+    assert.equal(preferences.alarms, true);
+    assert.equal(preferences.lockScreen, true);
+    assert.deepEqual(JSON.parse(storedPreferences), preferences);
+  } finally {
+    release();
+    storage.setItem = save;
+  }
 });

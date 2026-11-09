@@ -7,7 +7,8 @@ import {
 } from '../data/native';
 import { saveNotificationPreferences } from '../data/preferences';
 import type { NotificationPreferences } from '../types';
-import { PermissionError, initializeNotifications, reportFailure } from './notificationState';
+import { PermissionError } from './notificationState';
+import { runPreferenceChange } from './notificationChanges';
 
 export async function ensurePermission(next: NotificationPreferences): Promise<void> {
   await prepareNotificationChannels(next);
@@ -42,30 +43,30 @@ export async function ensureExactPermission(): Promise<void> {
 let startupPermission: Promise<void> | undefined;
 
 export function requestStartupNotificationPermission(): Promise<void> {
-  startupPermission ??= initializeNotifications()
-    .then(async () => {
-      await ensurePermission({ ...ui.getState().preferences, alarms: true });
-      await requestMissingExactPermission();
-    })
-    .catch((error: unknown) => {
-      throw reportFailure(error);
-    });
+  startupPermission ??= runPreferenceChange(async () => {
+    await ensurePermission({ ...ui.getState().preferences, alarms: true });
+    await requestMissingExactPermission();
+  }).catch((error: unknown) => {
+    startupPermission = undefined;
+    throw error;
+  });
 
   return startupPermission;
 }
 
 export async function authorizeScheduleAlarm(): Promise<void> {
-  await initializeNotifications();
-  await ensurePermission({ ...ui.getState().preferences, alarms: true });
-  await requestMissingExactPermission();
-  const next = {
-    ...ui.getState().preferences,
-    alarms: true,
-    exact: ui.getState().permission?.exact === true,
-  };
+  await runPreferenceChange(async () => {
+    await ensurePermission({ ...ui.getState().preferences, alarms: true });
+    await requestMissingExactPermission();
+    const next = {
+      ...ui.getState().preferences,
+      alarms: true,
+      exact: ui.getState().permission?.exact === true,
+    };
 
-  await saveNotificationPreferences(next);
-  ui.setState({ preferences: next });
+    await saveNotificationPreferences(next);
+    ui.setState({ preferences: next });
+  });
 }
 
 async function requestMissingExactPermission(): Promise<void> {

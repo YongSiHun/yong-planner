@@ -1,7 +1,6 @@
 import type { ExportFormat } from '../../../services/export/files';
 import type { TimeFormat } from '../types';
 import type { NoteSelectionModel, PlannerGuideModel } from '../types/presentation';
-import { EditSchedules } from './EditSchedules';
 import { DeleteSchedules } from './DeleteSchedules';
 import { MonthPicker } from './MonthPicker';
 import { PlannerGuide } from './PlannerGuide';
@@ -69,13 +68,6 @@ function SelectionDialogs({
   return (
     <>
       <SelectedTimePicker selection={selection} timeFormat={timeFormat} />
-      {selection.editSources ? (
-        <EditSchedules
-          items={selection.editSources}
-          onClose={selection.closeEdit}
-          onSave={selection.saveContents}
-        />
-      ) : null}
       {selection.deleteCount > 0 ? (
         <DeleteSchedules
           count={selection.deleteCount}

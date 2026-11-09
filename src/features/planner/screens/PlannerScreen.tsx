@@ -43,7 +43,6 @@ export default function PlannerScreen() {
   const { keyboardVisible, handleInputFocus, scheduleReveal, handleKeyboardScroll } =
     useInlineKeyboard(scrollRef, month.slice(0, 7));
   const guide = usePlannerGuide();
-  const [editingIndex, setEditingIndex] = useState<number | undefined>();
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [menu, setMenu] = useState<PlannerMenuType | null>(null);
@@ -52,15 +51,7 @@ export default function PlannerScreen() {
     Keyboard.dismiss();
     setEditingDate(null);
   }, []);
-  const editSelection = useCallback(
-    (date: string, index: number) => {
-      showDate(date);
-      setEditingIndex(index);
-      setEditingDate(date);
-    },
-    [showDate],
-  );
-  const selection = useNoteSelection(beginSelection, editSelection);
+  const selection = useNoteSelection(beginSelection);
   const { active: isSelecting, clear: clearSelection } = selection;
   const dismissSelection = useCallback(() => {
     if (isSelecting) {
@@ -68,7 +59,6 @@ export default function PlannerScreen() {
     }
   }, [isSelecting, clearSelection]);
   const handleEditDate = useCallback((date: string) => {
-    setEditingIndex(undefined);
     setEditingDate(date);
   }, []);
 
@@ -93,7 +83,9 @@ export default function PlannerScreen() {
       const isClipboard = format === 'clipboard';
 
       if (isClipboard) {
-        showDialog('복사 완료', '이번 달 계획을 클립보드에 복사했습니다.');
+        showDialog('복사 완료', '이번 달 계획을 클립보드에 복사했습니다.', undefined, {
+          dismissOnPress: true,
+        });
       }
     } catch (error) {
       report(error);
@@ -159,7 +151,6 @@ export default function PlannerScreen() {
                 timeFormat={timeFormat}
                 isToday={date === currentDate}
                 isEditing={editingDate === date}
-                editingIndex={editingDate === date ? editingIndex : undefined}
                 selectedIds={selection.selected}
                 selecting={selection.active}
                 copying={selection.copySource !== undefined}

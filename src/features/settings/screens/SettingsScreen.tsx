@@ -46,9 +46,21 @@ function BackupSettings() {
 
   return (
     <>
-      <Label style={styles.backupSettingsLabelStyle}>데이터 복원</Label>
-      <Button title="JSON 백업에서 복원" disabled={isDisabled} onPress={actions.handleRestore} />
-      <Button title="데이터 백업 방법" onPress={() => setGuideOpen(true)} />
+      <View style={layoutStyles.row}>
+        <Label style={styles.backupSettingsLabelStyle}>데이터 복원</Label>
+        <Button
+          compact
+          title="?"
+          accessibilityLabel="데이터 백업 방법"
+          onPress={() => setGuideOpen(true)}
+        />
+      </View>
+      <Button
+        title="JSON 백업에서 복원"
+        style={styles.settingsButtonStyle}
+        disabled={isDisabled}
+        onPress={actions.handleRestore}
+      />
       {guideOpen ? (
         <Dialog title="데이터 백업 방법" onClose={() => setGuideOpen(false)}>
           <Label>1. 달력에서 백업할 월을 선택하세요.</Label>
@@ -89,20 +101,24 @@ export default function SettingsScreen() {
 
       <HolidayOverrides />
 
-      <Label muted>용플래너 {version}</Label>
-      <Button compact title="Pretendard 글꼴 라이선스" onPress={() => setLicenseOpen(true)} />
+      <View style={layoutStyles.row}>
+        <Label muted>용플래너 {version}</Label>
+        <Button compact title="라이선스 정보" onPress={() => setLicenseOpen(true)} />
+      </View>
       {licenseOpen ? (
-        <Dialog title="Pretendard" onClose={() => setLicenseOpen(false)}>
+        <Dialog title="라이선스 정보" onClose={() => setLicenseOpen(false)}>
+          <Label style={styles.backupSettingsLabelStyle}>Pretendard</Label>
           <Label muted>{fontNotice.copyright}</Label>
           <Label muted style={styles.settingsScreenLabelStyle}>
             {fontNotice.license}
           </Label>
+          <Label style={styles.backupSettingsLabelStyle}>공휴일 데이터</Label>
+          <Label muted style={styles.settingsScreenLabelStyle2}>
+            공휴일: date-holidays / commenthol · ISC 및 CC BY 3.0{'\n'}
+            github.com/commenthol/date-holidays
+          </Label>
         </Dialog>
       ) : null}
-      <Label muted style={styles.settingsScreenLabelStyle2}>
-        공휴일: date-holidays / commenthol · ISC 및 CC BY 3.0{'\n'}
-        github.com/commenthol/date-holidays
-      </Label>
     </ScrollView>
   );
 }

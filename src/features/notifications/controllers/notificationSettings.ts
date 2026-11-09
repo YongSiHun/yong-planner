@@ -6,29 +6,19 @@ import type { NotificationPreferences } from '../types';
 import { initializeNotifications, reportFailure } from './notificationState';
 import { syncNotifications } from './notificationSync';
 import { ensurePermission, ensureExactPermission } from './notificationPermissions';
+import { runPreferenceChange } from './notificationChanges';
 
 export async function changeNotificationPreference(
   key: keyof NotificationPreferences,
   enabled: boolean,
 ): Promise<void> {
-  await initializeNotifications();
-  const busy = ui.getState().busy;
-
-  if (busy) {
-    return;
-  }
-  ui.setState({ busy: true, error: null });
-  try {
+  await runPreferenceChange(async () => {
     const next = await preparePreferenceChange(key, enabled);
 
     await saveNotificationPreferences(next);
     ui.setState({ preferences: next });
     await syncNotifications();
-  } catch (error) {
-    throw reportFailure(error);
-  } finally {
-    ui.setState({ busy: false });
-  }
+  });
 }
 
 export async function refreshNotificationPermissions(): Promise<void> {

@@ -34,6 +34,7 @@
       "./plugins/with-gradle-download-timeout.cjs",
       "expo-sqlite",
       "expo-document-picker",
+      "expo-sharing",
       "./plugins/with-dragon-splash.cjs",
       "./plugins/with-planner-notifications.cjs",
       [

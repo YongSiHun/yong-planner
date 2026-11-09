@@ -4,7 +4,7 @@ import { loadData } from '../../../database/repositories/planner';
 import { validateData } from '../../../services/backup';
 import { usePlanner } from '../../../stores/planner';
 import { type PlannerData } from '../types';
-import { WriteQueue } from './WriteQueue';
+import { WriteQueue } from '../../../services/WriteQueue';
 
 const queue = new WriteQueue();
 

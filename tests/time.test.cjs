@@ -5,9 +5,10 @@ const {
   formatScheduleContent,
   formatScheduleTime,
   timeFromFields,
+  boundedClockInput,
 } = require('../src/features/planner/services/time.ts');
 const { applyDailyNote, dailyNoteItems } = require('../src/features/planner/services/note.ts');
-const { copyNoteToDates } = require('../src/features/planner/services/noteSelection.ts');
+const { copyNotesToDates } = require('../src/features/planner/services/noteSelection.ts');
 const { emptyData } = require('../src/features/planner/types/index.ts');
 const { createBackup, parseBackup } = require('../src/services/backup/index.ts');
 test('time format changes display while preserving canonical time', () => {
@@ -32,7 +33,7 @@ test('inserting and deleting schedules keeps times attached to existing IDs', ()
   assert.equal(dailyNoteItems(data, date)[2].time, '13:00');
   data = applyDailyNote(data, date, '장보기,식사', nextId);
   assert.equal(dailyNoteItems(data, date)[1].id, timedId);
-  const copied = copyNoteToDates(data, timedId, ['2026-11-08'], nextId);
+  const copied = copyNotesToDates(data, new Set([timedId]), ['2026-11-08'], nextId);
   assert.equal(dailyNoteItems(copied, '2026-11-08')[0].time, '13:00');
 });
 test('new backups retain times and legacy backups remain readable', () => {
@@ -97,7 +98,7 @@ test('comma-separated time input preserves IDs, overrides time, and survives res
   data = applyDailyNote(data, date, '회의 내용 수정,운동', nextId);
   assert.equal(dailyNoteItems(data, date)[0].time, '14:20');
   data = parseBackup(createBackup(data));
-  data = copyNoteToDates(data, ids[0], ['2026-11-08'], nextId);
+  data = copyNotesToDates(data, new Set([ids[0]]), ['2026-11-08'], nextId);
   assert.equal(dailyNoteItems(data, '2026-11-08')[0].time, '14:20');
 });
 
@@ -131,4 +132,18 @@ test('inline time deletion clears the stored time and alarm without touching oth
     parseBackup(createBackup(data)),
     require('../src/services/backup/validation.ts').validateData(data),
   );
+});
+
+test('hour and minute input clamps to supported ranges without allowing decimals or letters', () => {
+  assert.equal(boundedClockInput('0', '9', 1, 12), '1');
+  assert.equal(boundedClockInput('13', '9', 1, 12), '12');
+  assert.equal(boundedClockInput('0', '9', 0, 23), '0');
+  assert.equal(boundedClockInput('13', '9', 0, 23), '13');
+  assert.equal(boundedClockInput('26', '9', 0, 23), '23');
+  assert.equal(boundedClockInput('-1', '9', 0, 23), '0');
+  assert.equal(boundedClockInput('60', '00', 0, 59), '59');
+  assert.equal(boundedClockInput('99999', '00', 0, 59), '59');
+  assert.equal(boundedClockInput('', '9', 1, 12), '');
+  assert.equal(boundedClockInput('1.5', '9', 1, 12), '9');
+  assert.equal(boundedClockInput('abc', '9', 1, 12), '9');
 });

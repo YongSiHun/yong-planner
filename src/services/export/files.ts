@@ -2,9 +2,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { Share } from 'react-native';
 import type { PlannerData } from '../../features/planner/types';
-import { monthLabel, today } from '../../utils/date';
 import { createBackup, MAX_BACKUP_BYTES, parseBackup, type PlannerBackup } from '../backup';
 import { createHolidayService } from '../holiday';
 import { monthCsv, monthTxt } from './index';
@@ -25,8 +23,6 @@ const monthExporters = {
     shareFile(monthFilename(month, 'csv'), monthCsv(data, month, holidays), 'text/csv'),
   clipboard: async (data, month, holidays) =>
     Clipboard.setStringAsync(monthTxt(data, month, holidays)),
-  share: async (data, month, holidays) =>
-    Share.share({ title: monthLabel(month) + ' 일정', message: monthTxt(data, month, holidays) }),
 } satisfies Record<string, MonthExporter>;
 
 function monthFilename(month: string, extension: string): string {
@@ -62,12 +58,6 @@ export async function exportMonth(
   const holidays = createHolidayService(data.holidayOverrides);
 
   await monthExporters[format](data, month, holidays);
-}
-
-export async function backupFile(data: PlannerData): Promise<void> {
-  const filename = 'yongplanner-' + today().slice(0, 7) + '.json';
-
-  await shareFile(filename, createBackup(data), 'application/json');
 }
 
 export async function chooseBackup(): Promise<PlannerBackup | null> {

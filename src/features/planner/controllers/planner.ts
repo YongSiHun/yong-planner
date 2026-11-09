@@ -2,12 +2,9 @@ export { initializePlanner, updatePlanner, flushPlanner, restorePlanner } from '
 export {
   saveDailyNote,
   deleteDailyNotes,
-  copyDailyNote,
-  saveDailyTime,
   moveDailyNote,
   copyDailyNotes,
   saveDailyTimes,
-  saveDailyContents,
   setDailyImportant,
   setDailyAlarms,
 } from './daily';

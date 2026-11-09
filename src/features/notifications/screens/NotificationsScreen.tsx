@@ -68,8 +68,6 @@ export default function NotificationsScreen() {
       />
       <LockScreenHint />
       <Label muted>알람은 칩을 길게 눌러 설정해요.</Label>
-      <Label muted>예약 범위: 요약 7일 · 알람 30일</Label>
-      <Label muted>앱을 열면 최신 일정으로 갱신돼요.</Label>
 
       <View style={styles.divider(theme)} />
       <Label>알림 권한: {permissionLabel}</Label>

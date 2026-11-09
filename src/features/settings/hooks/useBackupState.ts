@@ -3,7 +3,7 @@ import { report, showDialog } from '../../../components/ui';
 import type { PlannerBackup } from '../../../services/backup';
 import { useBackupActions } from './useBackupActions';
 export function useBackupState() {
-  const { backup, choose, restore } = useBackupActions();
+  const { choose, restore } = useBackupActions();
   const [isBusy, setBusy] = useState(false);
   const operationBusy = useRef(false);
 
@@ -25,10 +25,6 @@ export function useBackupState() {
       operationBusy.current = false;
       setBusy(false);
     }
-  }
-
-  async function handleBackup() {
-    await backup();
   }
 
   async function restoreBackup(data: PlannerBackup) {
@@ -69,9 +65,6 @@ export function useBackupState() {
 
   return {
     isBusy,
-    handleBackup: () => {
-      void runAction(handleBackup);
-    },
     handleRestore: () => {
       void runAction(handleRestore);
     },

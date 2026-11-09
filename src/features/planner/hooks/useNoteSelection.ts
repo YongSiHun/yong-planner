@@ -4,11 +4,7 @@ import { usePlanner } from '../../../stores/planner';
 import { useSelectionActions } from './useSelectionActions';
 
 // 조회 모델 전담; 명령은 Store 구독 없음.
-export function useNoteSelection(
-  onBegin: () => void,
-  onEdit: (date: string, index: number) => void,
-) {
-  const editing = useNoteSelectionStore((state) => state.editing);
+export function useNoteSelection(onBegin: () => void) {
   const active = useNoteSelectionStore((state) => state.active);
   const selected = useNoteSelectionStore((state) => state.selected);
   const data = usePlanner((state) => (selected.size > 0 ? state.data.dailyPlanItems : undefined));
@@ -20,7 +16,6 @@ export function useNoteSelection(
   const timeId = useNoteSelectionStore((state) => state.timeId);
   const copyId = useNoteSelectionStore((state) => state.copyId);
   const copyDates = useNoteSelectionStore((state) => state.copyDates);
-  const editSources = editing ? items : undefined;
   const copySource = items.find((item) => item.id === copyId);
   const timeSource = items.find((item) => item.id === timeId);
   const hasSelectedTime = items.some((item) => Boolean(item.time));
@@ -29,10 +24,9 @@ export function useNoteSelection(
   const alarmSetting = useNoteSelectionStore((state) => state.alarmSetting);
   const allAlarm = items.length > 0 && items.every((item) => item.alarm);
   const allImportant = items.every((item) => item.important);
-  const actions = useSelectionActions(onBegin, onEdit);
+  const actions = useSelectionActions(onBegin);
 
   return {
-    editSources,
     alarmSetting,
     allAlarm,
     hasSelectedTime,

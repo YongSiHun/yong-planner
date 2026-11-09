@@ -18,7 +18,6 @@ export function areDayRowsEqual(before: DayRowProps, after: DayRowProps): boolea
     'copyTarget',
     'copySourceDate',
     'onCopyDate',
-    'editingIndex',
     'onSelect',
     'onOutsidePress',
     'holidayName',

@@ -19,6 +19,7 @@ export function DialogHost() {
   return (
     <Dialog
       title={request.title}
+      dismissOnPress={request.dismissOnPress}
       onClose={() => choose(request.actions.find((action) => action.style === 'cancel'))}
       footer={
         <View style={styles.actions}>

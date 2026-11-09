@@ -1,3 +1,4 @@
+import { fitsUtf8Limit } from '../../utils/utf8';
 import type { PlannerData } from '../../features/planner/types';
 import { backupMonth, monthData, type PlannerBackup } from './month';
 import { ensureValid, readRecord, readTimestamp, validateData } from './validation';
@@ -8,7 +9,7 @@ export { validateData } from './validation';
 export const MAX_BACKUP_BYTES = 50 * 1024 * 1024;
 
 export function parseBackup(json: string): PlannerBackup {
-  const hasValidSize = json.length <= MAX_BACKUP_BYTES;
+  const hasValidSize = fitsUtf8Limit(json, MAX_BACKUP_BYTES);
 
   ensureValid(hasValidSize, '백업 파일은 50MB 이하여야 합니다.');
 

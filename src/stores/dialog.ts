@@ -9,6 +9,7 @@ export interface DialogRequest {
   title: string;
   message: string;
   actions: DialogAction[];
+  dismissOnPress?: boolean;
 }
 
 export const useDialogStore = create<{ request: DialogRequest | null }>(() => ({ request: null }));

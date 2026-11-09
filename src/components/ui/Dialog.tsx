@@ -13,6 +13,7 @@ export function Dialog({
   onClose,
   showHeader = true,
   compact = false,
+  dismissOnPress = false,
 }: {
   title: string;
   children: ReactNode;
@@ -20,8 +21,10 @@ export function Dialog({
   onClose(): void;
   showHeader?: boolean;
   compact?: boolean;
+  dismissOnPress?: boolean;
 }) {
   const theme = useTheme();
+  const Surface = dismissOnPress ? Pressable : View;
 
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
@@ -37,8 +40,18 @@ export function Dialog({
               onPress={onClose}
               style={styles.dialogPressableStyle}
             />
-            <View accessibilityViewIsModal style={styles.dialogViewStyle(theme, compact)}>
-              <DialogHeading title={title} visible={showHeader} onClose={onClose} />
+            <Surface
+              accessibilityViewIsModal
+              accessible={false}
+              onPress={dismissOnPress ? onClose : undefined}
+              style={styles.dialogViewStyle(theme, compact)}
+            >
+              <DialogHeading
+                title={title}
+                visible={showHeader}
+                showClose={!dismissOnPress}
+                onClose={onClose}
+              />
               <ScrollView
                 style={styles.dialogScrollViewStyle}
                 keyboardShouldPersistTaps="handled"
@@ -47,7 +60,7 @@ export function Dialog({
                 {children}
               </ScrollView>
               {footer ? <View style={styles.dialogViewStyle2}>{footer}</View> : null}
-            </View>
+            </Surface>
             <ToastHost />
           </SafeAreaView>
         </KeyboardAvoidingView>
@@ -59,10 +72,12 @@ export function Dialog({
 function DialogHeading({
   title,
   visible,
+  showClose,
   onClose,
 }: {
   title: string;
   visible: boolean;
+  showClose: boolean;
   onClose(): void;
 }) {
   const theme = useTheme();
@@ -74,14 +89,16 @@ function DialogHeading({
   return (
     <View style={styles.dialogHeadingViewStyle}>
       <Label style={styles.dialogHeadingLabelStyle}>{title}</Label>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="닫기"
-        onPress={onClose}
-        style={styles.dialogHeadingPressableStyle}
-      >
-        <Feather name="x" size={22} color={theme.muted} />
-      </Pressable>
+      {showClose ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="닫기"
+          onPress={onClose}
+          style={styles.dialogHeadingPressableStyle}
+        >
+          <Feather name="x" size={22} color={theme.muted} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }

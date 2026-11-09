@@ -4,6 +4,7 @@ export function showDialog(
   title: string,
   message: string,
   actions: DialogAction[] = [{ text: '확인' }],
+  options: { dismissOnPress?: boolean } = {},
 ): void {
-  useDialogStore.setState({ request: { title, message, actions } });
+  useDialogStore.setState({ request: { title, message, actions, ...options } });
 }

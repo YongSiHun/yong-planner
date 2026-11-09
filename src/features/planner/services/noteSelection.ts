@@ -18,15 +18,6 @@ export function deleteSelectedNotes(data: PlannerData, ids: ReadonlySet<string>)
   };
 }
 
-export function copyNoteToDates(
-  data: PlannerData,
-  sourceId: string,
-  dates: string[],
-  createId: () => string,
-): PlannerData {
-  return copyNotesToDates(data, new Set([sourceId]), dates, createId);
-}
-
 export function copyNotesToDates(
   data: PlannerData,
   ids: ReadonlySet<string>,

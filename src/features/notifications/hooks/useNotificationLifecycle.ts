@@ -37,8 +37,15 @@ export function useNotificationLifecycle(): void {
     }
     const stop = startNotificationSync();
 
-    void requestStartupNotificationPermission().catch(() => {});
     let disposed = false;
+
+    void requestStartupNotificationPermission()
+      .then(() => {
+        if (!disposed) {
+          return flushEnabledNotifications();
+        }
+      })
+      .catch(() => {});
     let removeResponse: (() => void) | undefined;
     const subscription = AppState.addEventListener('change', (state) => {
       const active = state === 'active';

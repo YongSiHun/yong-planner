@@ -24,7 +24,6 @@ export const DayRow = memo(function DayRow({
   copyTarget,
   copySourceDate,
   onCopyDate,
-  editingIndex,
   onSelect,
   onOutsidePress,
   recurring,
@@ -112,8 +111,8 @@ export const DayRow = memo(function DayRow({
             noteTimes={noteTimes}
             noteImportant={noteImportant}
             timeFormat={timeFormat}
-            initialIndex={editingIndex ?? initialIndex}
-            initialSlot={getInitialSlot(editingIndex, initialSlot)}
+            initialIndex={initialIndex}
+            initialSlot={initialSlot}
             onSelect={(index, begin) => onSelect(date, index, begin)}
             onBlur={handleBlur}
             onEditPart={startEditing}
@@ -167,10 +166,6 @@ export const DayRow = memo(function DayRow({
     </Pressable>
   );
 }, areDayRowsEqual);
-
-function getInitialSlot(editingIndex: number | undefined, initialSlot: number | undefined) {
-  return editingIndex === undefined ? initialSlot : undefined;
-}
 
 function bodyPointerEvents(copying: boolean) {
   return copying ? 'none' : 'auto';

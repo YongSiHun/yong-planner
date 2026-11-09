@@ -1,7 +1,6 @@
-import { backupPlanner, choosePlannerBackup, restorePlannerBackup } from '../controllers/backup';
+import { choosePlannerBackup, restorePlannerBackup } from '../controllers/backup';
 
 const actions = {
-  backup: backupPlanner,
   choose: choosePlannerBackup,
   restore: restorePlannerBackup,
 };

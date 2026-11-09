@@ -1,12 +1,7 @@
-import { backupFile, chooseBackup } from '../../../services/export/files';
+import { chooseBackup } from '../../../services/export/files';
 import { mergeMonthBackup, type PlannerBackup } from '../../../services/backup';
 import { usePlanner } from '../../../stores/planner';
-import { flushPlanner, restorePlanner } from '../../planner/controllers/planner';
-
-export async function backupPlanner(): Promise<void> {
-  await flushPlanner();
-  await backupFile(usePlanner.getState().data);
-}
+import { restorePlanner } from '../../planner/controllers/planner';
 
 export const choosePlannerBackup = chooseBackup;
 export async function restorePlannerBackup(backup: PlannerBackup): Promise<void> {

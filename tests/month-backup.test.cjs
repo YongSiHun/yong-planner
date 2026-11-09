@@ -1,8 +1,15 @@
 require('./register.cjs');
 const assert = require('node:assert/strict');
+const { Buffer } = require('node:buffer');
 const { test } = require('node:test');
-const { createBackup, parseBackup, mergeMonthBackup } = require('../src/services/backup/index.ts');
+const {
+  createBackup,
+  parseBackup,
+  mergeMonthBackup,
+  MAX_BACKUP_BYTES,
+} = require('../src/services/backup/index.ts');
 const { emptyData } = require('../src/features/planner/types/index.ts');
+const { applyDailyNote } = require('../src/features/planner/services/note.ts');
 const { plansForDate } = require('../src/features/planner/services/plans.ts');
 const { createHolidayService } = require('../src/services/holiday/index.ts');
 const item = (id, date) => ({
@@ -125,5 +132,56 @@ test('leap-month restoration preserves recurring schedules on both adjacent date
   assert.deepEqual(visible(restored, '2024-02-29'), []);
   for (const date of ['2024-01-31', '2024-03-01']) {
     assert.deepEqual(visible(restored, date), visible(current, date));
+  }
+});
+
+function seedBatch() {
+  let id = 0;
+  let data = applyDailyNote(emptyData(), '2026-11-08', '13:10 회의,밥먹기,운동', () =>
+    String(++id),
+  );
+  data.dailyPlanItems[0].important = true;
+  data = applyDailyNote(data, '2026-11-09', '기존 일정', () => String(++id));
+
+  return data;
+}
+
+test('important schedules survive backup round trips and old backups remain compatible', () => {
+  const data = seedBatch();
+  const backup = createBackup(data);
+  assert.equal(JSON.parse(backup).version, 4);
+  assert.equal(parseBackup(backup).dailyPlanItems[0].important, true);
+  for (const version of [1, 2, 3]) {
+    const legacy = { ...emptyData(), version, exportedAt: new Date().toISOString() };
+    assert.deepEqual(parseBackup(JSON.stringify(legacy)), emptyData());
+  }
+  const malformed = JSON.parse(backup);
+  malformed.dailyPlanItems[0].important = 'true';
+  assert.throws(() => parseBackup(JSON.stringify(malformed)), /중요 일정/);
+});
+
+test('chip alarm metadata survives backup and rejects malformed flags', () => {
+  const data = seedBatch();
+  data.dailyPlanItems[0].alarm = true;
+  const backup = createBackup(data);
+  assert.equal(parseBackup(backup).dailyPlanItems[0].alarm, true);
+  const malformed = JSON.parse(backup);
+  malformed.dailyPlanItems[0].alarm = 'true';
+  assert.throws(() => parseBackup(JSON.stringify(malformed)), /알람 값/);
+});
+test('backup size limit counts UTF-8 bytes even when Korean text is below the character limit', () => {
+  const base = createBackup(emptyData());
+  const padding = '가'.repeat(Math.floor(MAX_BACKUP_BYTES / 3) + 1);
+  const json = base.slice(0, -1) + ',"padding":"' + padding + '"}';
+  assert.ok(json.length < MAX_BACKUP_BYTES);
+  assert.throws(() => parseBackup(json), /50MB/);
+});
+
+test('UTF-8 limits handle ASCII, Korean, emoji and isolated surrogate characters at byte boundaries', () => {
+  const { fitsUtf8Limit } = require('../src/utils/utf8.ts');
+  for (const text of ['', 'backup', '한글', '🐉', '\ud800', '\udc00', '가🐉a']) {
+    const bytes = Buffer.byteLength(text, 'utf8');
+    assert.equal(fitsUtf8Limit(text, bytes), true);
+    if (bytes > 0) assert.equal(fitsUtf8Limit(text, bytes - 1), false);
   }
 });

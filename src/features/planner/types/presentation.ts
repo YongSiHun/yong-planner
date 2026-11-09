@@ -4,9 +4,6 @@ import type { DailyPlanItem, PlanEntry, RecurringPlanException, TimeFormat } fro
 
 export interface NoteSelectionModel {
   active: boolean;
-  editSources: DailyPlanItem[] | undefined;
-  saveContents(changes: ReadonlyMap<string, string>): void;
-  closeEdit(): void;
   selected: ReadonlySet<string>;
   copySource: DailyPlanItem | undefined;
   copySourceDate: string | undefined;
@@ -22,7 +19,6 @@ export interface NoteSelectionModel {
   toggle(date: string, index: number, begin?: boolean): void;
   clear(): void;
   selectAll(month: string): void;
-  editSelected(): void;
   deleteSelected(): void;
   requestDelete(): void;
   cancelDelete(): void;
@@ -56,7 +52,6 @@ export interface DayRowProps {
   copyTarget: boolean;
   copySourceDate?: string;
   onCopyDate(date: string): void;
-  editingIndex?: number;
   onSelect(date: string, index: number, begin?: boolean): void;
   onOutsidePress?(): void;
   recurring: PlanEntry[];

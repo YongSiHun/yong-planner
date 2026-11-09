@@ -17,10 +17,7 @@ let toasts = [];
 let alarmPermissionRequests = 0;
 const { emptyData } = require('../src/features/planner/types/index.ts');
 const { applyDailyNote } = require('../src/features/planner/services/note.ts');
-const {
-  deleteSelectedNotes,
-  copyNoteToDates,
-} = require('../src/features/planner/services/noteSelection.ts');
+const { deleteSelectedNotes } = require('../src/features/planner/services/noteSelection.ts');
 function changeInput(input, text, eventCount = ++nativeEventCount) {
   input.props.onChange({ nativeEvent: { text, eventCount } });
 }
@@ -142,13 +139,6 @@ const plannerActions = {
       ),
     };
   },
-  saveDailyContents: (changes) => {
-    plannerData = require('../src/features/planner/services/noteEditing.ts').editDailyContents(
-      plannerData,
-      changes,
-      () => 'edit-' + nativeEventCount++,
-    );
-  },
   copyDailyNotes: (ids, dates) => {
     plannerData = require('../src/features/planner/services/noteSelection.ts').copyNotesToDates(
       plannerData,
@@ -157,19 +147,8 @@ const plannerActions = {
       () => 'copy-' + nativeEventCount++,
     );
   },
-  saveDailyTime: (id, time) => {
-    plannerData = {
-      ...plannerData,
-      dailyPlanItems: plannerData.dailyPlanItems.map((item) =>
-        item.id === id ? { ...item, time } : item,
-      ),
-    };
-  },
   deleteDailyNotes: (ids) => {
     plannerData = deleteSelectedNotes(plannerData, ids);
-  },
-  copyDailyNote: (id, dates) => {
-    plannerData = copyNoteToDates(plannerData, id, dates, () => 'copy-' + nativeEventCount++);
   },
 };
 cacheMock('../src/stores/planner.ts', { usePlanner: plannerStore });
@@ -183,7 +162,6 @@ cacheMock('../src/stores/noteSelection.ts', {
   useNoteSelectionStore: selectionStore,
   emptySelection: () => ({
     active: false,
-    editing: false,
     selected: new Set(),
     deleteIds: null,
     timeId: null,
@@ -455,14 +433,11 @@ test('chip edges insert exactly before or after the tapped chip without saving a
 const { useNoteSelection } = require('../src/features/planner/hooks/useNoteSelection.ts');
 const { SelectionBar } = require('../src/features/planner/components/SelectionBar.tsx');
 const { MonthPicker } = require('../src/features/planner/components/MonthPicker.tsx');
-function renderSelection(edits) {
+function renderSelection() {
   cursor = 0;
   // React 훅: 상태 유지 mock 실행.
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  return useNoteSelection(
-    () => {},
-    (...args) => edits.push(args),
-  );
+  return useNoteSelection(() => {});
 }
 function buttonTitles(node) {
   if (!node) return [];
@@ -510,22 +485,6 @@ test('single and multiple selections offer the same actions', () => {
   selection = renderSelection(edits);
   selection.deleteSelected();
   assert.equal(plannerData.dailyPlanItems.length, 0);
-});
-
-test('a selected schedule opens editing at its own date and index', () => {
-  plannerData = applyDailyNote(
-    plannerData,
-    '2026-11-07',
-    '회의,장보기',
-    () => 'item-' + nativeEventCount++,
-  );
-  const edits = [];
-  let selection = renderSelection(edits);
-  selection.toggle('2026-11-07', 1, true);
-  selection = renderSelection(edits);
-  selection.editSelected();
-  assert.deepEqual(edits, [['2026-11-07', 1]]);
-  assert.equal(renderSelection(edits).active, false);
 });
 
 test('year and month dialog uses matching steppers and blocks invalid values', () => {
@@ -950,29 +909,6 @@ test('multi-selection sets and clears time on every selected chip', () => {
     plannerData.dailyPlanItems.map((item) => item.time ?? null),
     [null, null, null],
   );
-});
-
-test('multi-selection opens batch editing and saves every chosen content together', () => {
-  let id = 0;
-  plannerData = applyDailyNote(plannerData, '2026-11-08', '회의,밥먹기,운동', () => 'edit-' + ++id);
-  let selection = renderSelection([]);
-  selection.toggle('2026-11-08', 0, true);
-  selection.toggle('2026-11-08', 1);
-  selection = renderSelection([]);
-  selection.editSelected();
-  selection = renderSelection([]);
-  assert.equal(selection.editSources.length, 2);
-  selection.saveContents(
-    new Map([
-      ['edit-1', '팀 회의'],
-      ['edit-2', '저녁'],
-    ]),
-  );
-  assert.deepEqual(
-    plannerData.dailyPlanItems.map((item) => item.content),
-    ['팀 회의', '저녁', '운동'],
-  );
-  assert.equal(renderSelection([]).active, false);
 });
 
 test('multi-selection copies every selected chip to dates chosen on the page', () => {

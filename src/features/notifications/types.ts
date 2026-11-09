@@ -5,9 +5,9 @@ export interface NotificationPreferences {
   exact: boolean;
 }
 export const defaultNotificationPreferences: NotificationPreferences = {
-  summary: false,
+  summary: true,
   alarms: false,
-  lockScreen: true,
+  lockScreen: false,
   exact: false,
 };
 export interface NotificationPermissionState {

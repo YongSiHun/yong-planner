@@ -40,14 +40,13 @@ export function PlannerGuide({
       </GuideStep>
       <GuideStep title="2. 쉼표(,)나 엔터로 나누기">
         <SplitExample />
-        <Label muted style={styles.plannerGuideLabelStyle}>
-          백스페이스를 입력하면 칩의 내용을 수정할 수 있어요.
-        </Label>
       </GuideStep>
       <GuideStep title="3. 일정 복사">
         <Label muted style={styles.plannerGuideLabelStyle}>
-          칩 길게 누르기 → 일정 복사 → 날짜 선택 → 복사. 월을 넘겨 여러 날짜를 고를 수 있어요.
-          복사한 일정은 맨 뒤에 붙어요.
+          {'칩 길게 누르기 > 일정 복사 > 날짜 선택 > 복사'}
+        </Label>
+        <Label muted style={styles.plannerGuideLabelStyle}>
+          월을 넘겨서도 복사 가능해요.
         </Label>
       </GuideStep>
       <GuideStep title="4. 공유">

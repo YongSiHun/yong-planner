@@ -12,13 +12,16 @@ export function settingsScreenScrollViewStyle(theme: Theme) {
 
 export const settingsScreenScrollViewContentContainerStyle = {
   paddingBottom: 40,
-  gap: 16,
+  gap: design.space.lg,
+  alignItems: 'flex-start',
 } as const;
 
 export function settingsScreenViewStyle(theme: Theme) {
-  return { height: 1, backgroundColor: theme.line } as const;
+  return { width: '100%', height: 1, backgroundColor: theme.line } as const;
 }
 
 export const settingsScreenLabelStyle = { fontSize: design.type.caption, lineHeight: 18 } as const;
 
 export const settingsScreenLabelStyle2 = { fontSize: design.type.caption } as const;
+
+export const settingsButtonStyle = { alignItems: 'flex-start', paddingHorizontal: 0 } as const;

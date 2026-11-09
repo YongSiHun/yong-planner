@@ -17,6 +17,7 @@ let removed;
 let callback;
 let lastResponse;
 let runtime;
+let startup;
 let parameters;
 let refs;
 let cursor;
@@ -50,7 +51,7 @@ mock('../src/features/notifications/controllers/notifications.ts', {
     return () => stops++;
   },
   refreshNotificationPermissions: async () => {},
-  requestStartupNotificationPermission: async () => {},
+  requestStartupNotificationPermission: () => startup,
   flushEnabledNotifications: async () => {
     flushed++;
   },
@@ -94,6 +95,7 @@ beforeEach(() => {
   callback = undefined;
   lastResponse = null;
   runtime = Promise.resolve(native);
+  startup = Promise.resolve();
   parameters = {};
   refs = [];
   cursor = 0;
@@ -118,7 +120,7 @@ test('cold-start notification waits for navigation readiness and ignores unrelat
   assert.equal(clears, 2);
   appStateHandler('background');
   await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(flushed, 1);
+  assert.equal(flushed, 2);
   cleanups.at(-1)();
   assert.equal(stops, 1);
   assert.equal(removed, 1);
@@ -149,4 +151,32 @@ test('notification date is applied once per event and malformed dates are ignore
   parameters = { notificationDate: '2026-11-09', notificationKey: '3' };
   renderDate((date) => dates.push(date));
   assert.deepEqual(dates, ['2026-11-08', '2026-11-09']);
+});
+
+test('startup approval immediately applies enabled notifications', async () => {
+  ready = true;
+  let approve;
+  startup = new Promise((resolve) => {
+    approve = resolve;
+  });
+  renderLifecycle();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(flushed, 0);
+  approve();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(flushed, 1);
+  cleanups.at(-1)();
+});
+
+test('startup approval after unmount does not restart notification work', async () => {
+  ready = true;
+  let approve;
+  startup = new Promise((resolve) => {
+    approve = resolve;
+  });
+  renderLifecycle();
+  cleanups.at(-1)();
+  approve();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(flushed, 0);
 });

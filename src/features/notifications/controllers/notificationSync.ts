@@ -1,3 +1,4 @@
+import { WriteQueue } from '../../../services/WriteQueue';
 import { createHolidayService } from '../../../services/holiday';
 import { useNotificationStore as ui } from '../../../stores/notifications';
 import { usePlanner } from '../../../stores/planner';
@@ -12,7 +13,7 @@ import { reconcileNotifications } from '../services/reconcile';
 import type { NotificationPreferences } from '../types';
 import { initializeNotifications, reportFailure } from './notificationState';
 
-let tail: Promise<void> = Promise.resolve();
+const queue = new WriteQueue();
 
 let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -40,13 +41,10 @@ async function synchronize(): Promise<void> {
 
 export function syncNotifications(): Promise<void> {
   clearTimeout(timer);
-  const task = tail.then(synchronize).catch((error: unknown) => {
+
+  return queue.enqueue(synchronize).catch((error: unknown) => {
     throw reportFailure(error);
   });
-
-  tail = task.catch(() => {});
-
-  return task;
 }
 
 function scheduleSync(force = false): void {
@@ -68,6 +66,8 @@ function scheduleSync(force = false): void {
 }
 
 export function startNotificationSync(): () => void {
+  let disposed = false;
+
   const unsubscribe = usePlanner.subscribe((state, previous) => {
     const changed = state.ready && (state.data !== previous.data || !previous.ready);
 
@@ -78,10 +78,15 @@ export function startNotificationSync(): () => void {
   const interval = setInterval(scheduleSync, 60_000);
 
   void initializeNotifications()
-    .then(() => scheduleSync())
+    .then(() => {
+      if (!disposed) {
+        scheduleSync();
+      }
+    })
     .catch(() => {});
 
   return () => {
+    disposed = true;
     unsubscribe();
     clearInterval(interval);
     clearTimeout(timer);

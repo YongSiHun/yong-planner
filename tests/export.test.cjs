@@ -1,24 +1,13 @@
 require('./register.cjs');
 const assert = require('node:assert/strict');
 const { test, beforeEach } = require('node:test');
-const shared = [];
 const files = [];
 const fileShares = [];
 let copied;
-let shareError;
 function mock(name, exports) {
   const filename = require.resolve(name);
   require.cache[filename] = { id: filename, filename, loaded: true, exports };
 }
-mock('react-native', {
-  Share: {
-    share: async (payload) => {
-      if (shareError) throw shareError;
-      shared.push(payload);
-      return { action: 'sharedAction' };
-    },
-  },
-});
 mock('expo-file-system', {
   File: class {
     constructor(directory, name) {
@@ -60,37 +49,15 @@ function fixture() {
 }
 beforeEach(() => {
   copied = undefined;
-  shareError = undefined;
-  shared.length = 0;
   files.length = 0;
   fileShares.length = 0;
-});
-
-test('Kakao share opens the OS text share sheet with the selected month schedule', async () => {
-  await exportMonth(fixture(), '2026-11-07', 'share');
-  assert.equal(shared.length, 1);
-  assert.equal(shared[0].title, '2026년 11월 일정');
-  assert.ok(shared[0].message.startsWith('2026년 11월'));
-  assert.ok(shared[0].message.includes('회의'));
-  assert.ok(shared[0].message.includes('장보기'));
-  assert.equal(shared[0].url, undefined);
-  assert.equal(files.length, 0);
-  assert.equal(copied, undefined);
 });
 
 test('content copy writes the same Korean plain text without opening the share sheet', async () => {
   await exportMonth(fixture(), '2026-11-07', 'clipboard');
   assert.ok(copied.includes('회의'));
   assert.ok(copied.includes('장보기'));
-  assert.equal(shared.length, 0);
-  await exportMonth(fixture(), '2026-11-07', 'share');
-  assert.equal(copied, shared[0].message);
   assert.equal(files.length, 0);
-});
-
-test('share failures reach the screen so an error can be displayed', async () => {
-  shareError = new Error('share failed');
-  await assert.rejects(exportMonth(fixture(), '2026-11-07', 'share'), /share failed/);
 });
 
 for (const [format, mimeType] of [

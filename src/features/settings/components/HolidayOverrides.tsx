@@ -40,7 +40,11 @@ export function HolidayOverrides() {
         </View>
       ))}
 
-      <Button title="+ 공휴일 보정 추가" onPress={() => setEditorOpen(true)} />
+      <Button
+        title="+ 공휴일 보정 추가"
+        style={styles.addButton}
+        onPress={() => setEditorOpen(true)}
+      />
 
       {isEditorOpen ? (
         <Dialog title="공휴일 보정" onClose={() => setEditorOpen(false)}>

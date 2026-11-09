@@ -58,13 +58,6 @@ export function PlannerMenu({ type, month, onClose, onShowExport, onExport }: Pl
               bold
               labelSize={design.type.body + 1}
               style={styles.plannerMenuButtonStyle}
-              title="카카오톡으로 공유"
-              onPress={() => onExport('share')}
-            />
-            <Button
-              bold
-              labelSize={design.type.body + 1}
-              style={styles.plannerMenuButtonStyle}
               title="내용 복사"
               onPress={() => onExport('clipboard')}
             />

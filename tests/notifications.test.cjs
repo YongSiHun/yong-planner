@@ -23,16 +23,24 @@ function seed() {
   data.dailyPlanItems[0].alarm = true;
   return data;
 }
-test('notification planning is off by default and never schedules untimed or past alarms', () => {
+test('disabled notification planning never schedules untimed or past alarms', () => {
   const data = seed();
-  assert.deepEqual(buildNotificationPlan(data, defaultNotificationPreferences, now, holidays), {
-    summary: null,
-    pending: [],
-    truncated: false,
-  });
+  assert.deepEqual(
+    buildNotificationPlan(
+      data,
+      { ...defaultNotificationPreferences, summary: false },
+      now,
+      holidays,
+    ),
+    {
+      summary: null,
+      pending: [],
+      truncated: false,
+    },
+  );
   const plan = buildNotificationPlan(
     data,
-    { ...defaultNotificationPreferences, alarms: true },
+    { ...defaultNotificationPreferences, summary: false, alarms: true },
     now,
     holidays,
   );
@@ -153,7 +161,7 @@ test('reconciliation retries a partially failed schedule and fingerprints privac
   const fixture = portFixture();
   const plan = buildNotificationPlan(
     seed(),
-    { ...defaultNotificationPreferences, alarms: true },
+    { ...defaultNotificationPreferences, summary: false, alarms: true },
     now,
     holidays,
   );
@@ -177,7 +185,7 @@ test('failed native batches finish outstanding requests before returning an erro
   const fixture = portFixture();
   const first = buildNotificationPlan(
     seed(),
-    { ...defaultNotificationPreferences, alarms: true },
+    { ...defaultNotificationPreferences, summary: false, alarms: true },
     now,
     holidays,
   ).pending[0];
@@ -218,7 +226,7 @@ test('only opted-in chips ring and disabling one cancels only that reservation',
     content: '선택 안 함',
     alarm: undefined,
   });
-  const prefs = { ...defaultNotificationPreferences, alarms: true };
+  const prefs = { ...defaultNotificationPreferences, summary: false, alarms: true };
   const initial = buildNotificationPlan(data, prefs, now, holidays);
   assert.equal(initial.pending.length, 1);
   const fixture = portFixture();
@@ -230,4 +238,13 @@ test('only opted-in chips ring and disabling one cancels only that reservation',
     'mode',
   );
   assert.equal(fixture.pending.size, 0);
+});
+
+test('default display includes summaries and keeps lock screen hidden', () => {
+  assert.equal(defaultNotificationPreferences.summary, true);
+  assert.equal(defaultNotificationPreferences.lockScreen, false);
+  const plan = buildNotificationPlan(seed(), defaultNotificationPreferences, now, holidays);
+  assert.ok(plan.summary);
+  assert.equal(plan.pending.filter((item) => item.kind === 'summary').length, 7);
+  assert.equal(plan.pending.filter((item) => item.kind === 'alarm').length, 0);
 });
