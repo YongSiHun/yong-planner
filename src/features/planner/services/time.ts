@@ -1,4 +1,4 @@
-import type { PlanEntry, TimeFormat } from '../types';
+import type { DailyPlanItem, PlanEntry, TimeFormat } from '../types';
 
 export function formatScheduleTime(
   time: string | null | undefined,
@@ -119,16 +119,18 @@ export function boundedClockInput(
 
 export function timeOverwriteMessage(
   alarm: boolean,
-  hasTime: boolean,
+  items: readonly Pick<DailyPlanItem, 'time'>[],
   hasAlarm: boolean,
 ): string | undefined {
-  const hasExistingValues = alarm ? hasTime || hasAlarm : hasTime;
+  const times = items.flatMap((item) => (item.time ? [item.time] : []));
+  const hasDifferentTimes = new Set(times).size > 1;
+  const hasExistingValues = alarm ? times.length > 0 || hasAlarm : hasDifferentTimes;
 
   if (!hasExistingValues) {
     return undefined;
   }
 
   return alarm
-    ? '이미 시간 또는 알람이 설정된 일정이 있습니다. 선택한 모든 일정의 시간과 알람을 지정한 알람 시간으로 덮어쓰시겠어요?'
+    ? '선택한 일정의 시간과 알람을 덮어쓸까요?'
     : '이미 시간이 설정된 일정이 있습니다. 덮어쓰시겠어요?';
 }

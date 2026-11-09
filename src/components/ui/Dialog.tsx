@@ -13,6 +13,7 @@ export function Dialog({
   onClose,
   showHeader = true,
   dismissOnPress = false,
+  height,
 }: {
   title: string;
   children: ReactNode;
@@ -20,6 +21,7 @@ export function Dialog({
   onClose(): void;
   showHeader?: boolean;
   dismissOnPress?: boolean;
+  height?: number;
 }) {
   const theme = useTheme();
   const Surface = dismissOnPress ? Pressable : View;
@@ -42,7 +44,7 @@ export function Dialog({
               accessibilityViewIsModal
               accessible={false}
               onPress={dismissOnPress ? onClose : undefined}
-              style={styles.dialogViewStyle(theme)}
+              style={styles.dialogViewStyle(theme, height)}
             >
               <DialogHeading
                 title={title}

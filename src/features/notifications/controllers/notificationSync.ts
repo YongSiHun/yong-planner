@@ -8,7 +8,7 @@ import {
   prepareNotificationChannels,
   readNotificationPermissions,
 } from '../data/native';
-import { buildNotificationPlan } from '../services/plan';
+import { NOTIFICATION_PREFIX, buildNotificationPlan } from '../services/plan';
 import { reconcileNotifications } from '../services/reconcile';
 import type { NotificationPreferences } from '../types';
 import { initializeNotifications, reportFailure } from './notificationState';
@@ -113,4 +113,37 @@ export function flushEnabledNotifications(): Promise<void> {
     usePlanner.getState().data.dailyPlanItems.some((item) => item.alarm);
 
   return enabled ? syncNotifications() : Promise.resolve();
+}
+
+export function removeAlarmNotifications(ids?: ReadonlySet<string>): Promise<void> {
+  clearTimeout(timer);
+
+  return queue
+    .enqueue(async () => {
+      await initializeNotifications();
+      const port = await createNativeNotificationPort(ui.getState().preferences);
+      const matches = alarmMatcher(ids);
+      const [pending, presented] = await Promise.all([port.pending(), port.presented()]);
+      const results = await Promise.allSettled([
+        ...pending.filter((item) => matches(item.id)).map((item) => port.cancel(item.id)),
+        ...presented.filter((item) => matches(item.id)).map((item) => port.dismiss(item.id)),
+      ]);
+      const failure = results.find((result) => result.status === 'rejected');
+
+      if (failure) {
+        throw failure.reason;
+      }
+      await synchronize();
+    })
+    .catch((error: unknown) => {
+      throw reportFailure(error);
+    });
+}
+
+function alarmMatcher(ids: ReadonlySet<string> | undefined) {
+  const suffixes = ids && new Set([...ids].map((id) => encodeURIComponent('daily:' + id)));
+
+  return (id: string) =>
+    id.startsWith(NOTIFICATION_PREFIX + 'alarm:') &&
+    (!suffixes || suffixes.has(id.slice(id.lastIndexOf(':') + 1)));
 }

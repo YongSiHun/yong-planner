@@ -6,6 +6,7 @@ const {
   formatScheduleTime,
   timeFromFields,
   boundedClockInput,
+  timeOverwriteMessage,
 } = require('../src/features/planner/services/time.ts');
 const { applyDailyNote, dailyNoteItems } = require('../src/features/planner/services/note.ts');
 const { copyNotesToDates } = require('../src/features/planner/services/noteSelection.ts');
@@ -146,4 +147,27 @@ test('hour and minute input clamps to supported ranges without allowing decimals
   assert.equal(boundedClockInput('', '9', 1, 12), '');
   assert.equal(boundedClockInput('1.5', '9', 1, 12), '9');
   assert.equal(boundedClockInput('abc', '9', 1, 12), '9');
+});
+
+test('time overwrite notice only appears for different assigned times in a selection', () => {
+  const message = '이미 시간이 설정된 일정이 있습니다. 덮어쓰시겠어요?';
+  const notice = (times) =>
+    timeOverwriteMessage(
+      false,
+      times.map((time) => ({ time })),
+      false,
+    );
+  assert.equal(notice([]), undefined);
+  assert.equal(notice(['09:00']), undefined);
+  assert.equal(notice(['09:00', '09:00']), undefined);
+  assert.equal(notice([null, undefined]), undefined);
+  assert.equal(notice(['09:00', null]), undefined);
+  assert.equal(notice(['09:00', '09:30']), message);
+  assert.equal(notice(['09:00', '09:30', null]), message);
+});
+
+test('alarm overwrite notice still confirms existing times or alarms', () => {
+  assert.match(timeOverwriteMessage(true, [{ time: '09:00' }], false), /시간과 알람을 덮어쓸까요/);
+  assert.match(timeOverwriteMessage(true, [{ time: null }], true), /시간과 알람을 덮어쓸까요/);
+  assert.equal(timeOverwriteMessage(true, [{ time: null }], false), undefined);
 });

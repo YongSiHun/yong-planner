@@ -1,5 +1,6 @@
 import { showToast } from '../../../components/ui';
 import {
+  clearScheduleAlarms,
   changeNotificationPreference,
   refreshNotificationPermissions,
   syncNotifications,
@@ -17,6 +18,7 @@ async function run(action: () => Promise<void>): Promise<void> {
   }
 }
 const actions = {
+  clearAlarms: clearScheduleAlarms,
   change: (key: keyof NotificationPreferences, enabled: boolean) =>
     run(() => changeNotificationPreference(key, enabled)),
   refresh: () => run(refreshNotificationPermissions),

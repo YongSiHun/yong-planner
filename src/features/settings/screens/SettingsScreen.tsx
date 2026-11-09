@@ -8,6 +8,7 @@ import { usePlanner } from '../../../stores/planner';
 import { usePlannerActions } from '../../planner/hooks/usePlannerActions';
 import { HolidayOverrides } from '../components/HolidayOverrides';
 import { TimeFormatSettings } from '../components/TimeFormatSettings';
+import { useAlarmSettings } from '../hooks/useAlarmSettings';
 import { useBackupState } from '../hooks/useBackupState';
 import * as styles from './SettingsScreen.styles';
 
@@ -82,6 +83,24 @@ function BackupSettings() {
   );
 }
 
+function AlarmSettings() {
+  const { busy, requestDelete } = useAlarmSettings();
+  const unavailable = usePlanner((state) => !state.ready || state.restoring);
+
+  return (
+    <>
+      <Label style={styles.backupSettingsLabelStyle}>알람</Label>
+      <Button
+        title="모든 알람 삭제"
+        danger
+        style={styles.settingsButtonStyle}
+        disabled={busy || unavailable}
+        onPress={requestDelete}
+      />
+    </>
+  );
+}
+
 export default function SettingsScreen() {
   const theme = useTheme();
   const [licenseOpen, setLicenseOpen] = useState(false);
@@ -94,6 +113,9 @@ export default function SettingsScreen() {
     >
       <ThemeSettings />
       <TimeFormatSettings />
+      <View style={styles.settingsScreenViewStyle(theme)} />
+
+      <AlarmSettings />
       <View style={styles.settingsScreenViewStyle(theme)} />
 
       <BackupSettings />

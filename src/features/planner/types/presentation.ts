@@ -5,6 +5,7 @@ import type { DailyPlanItem, PlanEntry, RecurringPlanException, TimeFormat } fro
 export interface NoteSelectionModel {
   active: boolean;
   selected: ReadonlySet<string>;
+  selectedItems: readonly DailyPlanItem[];
   copySource: DailyPlanItem | undefined;
   copySourceDate: string | undefined;
   hasSelectedTime: boolean;

@@ -97,12 +97,16 @@ function SelectedTimePicker({
   return (
     <TimePicker
       item={item}
+      items={selection.selectedItems}
       title={selection.alarmSetting ? '알람 설정' : '시간 설정'}
       count={selection.selected.size}
-      hasExistingTime={selection.alarmSetting ? false : selection.hasSelectedTime}
+      hasExistingTime={
+        selection.alarmSetting ? selection.hasSelectedAlarm : selection.hasSelectedTime
+      }
+      clearTitle={selection.alarmSetting ? '알람 지우기' : '시간 지우기'}
       overwriteMessage={timeOverwriteMessage(
         selection.alarmSetting,
-        selection.hasSelectedTime,
+        selection.selectedItems,
         selection.hasSelectedAlarm,
       )}
       format={timeFormat}

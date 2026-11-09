@@ -12,3 +12,5 @@ export {
   changeNotificationPreference,
   refreshNotificationPermissions,
 } from './notificationSettings';
+
+export { clearScheduleAlarms } from './alarmActions';

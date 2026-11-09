@@ -27,6 +27,7 @@ export function useNoteSelection(onBegin: () => void) {
   const actions = useSelectionActions(onBegin);
 
   return {
+    selectedItems: items,
     alarmSetting,
     hasSelectedAlarm,
     hasSelectedTime,

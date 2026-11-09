@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { View } from 'react-native';
-import { Button, Input, Label } from '../../../components/ui';
+import { ScrollView, View } from 'react-native';
+import { Button, Input, Label, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
 import { boundedClockInput, formatScheduleContent, timeFromFields } from '../services/time';
 import type { DailyPlanItem, TimeFormat } from '../types';
@@ -8,23 +8,28 @@ import * as styles from './TimePicker.styles';
 
 export function TimePicker({
   item,
+  items = [item],
   format,
   count = 1,
   hasExistingTime,
+  clearTitle = '시간 지우기',
   overwriteMessage,
   title = '시간 설정',
   onClose,
   onSave,
 }: {
   item: DailyPlanItem;
+  items?: readonly DailyPlanItem[];
   format: TimeFormat;
   count?: number;
   title?: string;
   hasExistingTime?: boolean;
+  clearTitle?: string;
   overwriteMessage?: string;
   onClose(): void;
   onSave(time: string | null): void;
 }) {
+  const theme = useTheme();
   const [hour, setHour] = useState(() => initialHour(item.time, format));
   const [minute, setMinute] = useState(item.time?.slice(3) ?? '00');
   const [period, setPeriod] = useState<'am' | 'pm'>(() =>
@@ -37,21 +42,46 @@ export function TimePicker({
   return (
     <Dialog
       title={title}
+      height={styles.dialogHeight}
       onClose={onClose}
       footer={
-        <Button
-          bold
-          title={overwriteMessage ? '덮어쓰기' : '적용'}
-          disabled={time === null}
-          onPress={() => onSave(time)}
-          style={styles.action}
-        />
+        <View style={styles.footer}>
+          <View style={styles.clearSlot}>
+            {hasTime ? (
+              <Button
+                bold
+                title={clearTitle}
+                danger
+                onPress={() => onSave(null)}
+                style={styles.action}
+              />
+            ) : null}
+          </View>
+          <Button
+            bold
+            title={overwriteMessage ? '덮어쓰기' : '적용'}
+            disabled={time === null}
+            onPress={() => onSave(time)}
+            style={styles.action}
+          />
+        </View>
       }
     >
       {renderOverwriteNotice(overwriteMessage)}
-      <Label>
-        {count > 1 ? count + '개 일정에 적용' : formatScheduleContent(item.content, time, format)}
-      </Label>
+      <View style={styles.preview(theme)}>
+        <Label muted>{count}개 일정에 적용</Label>
+        <ScrollView
+          accessibilityLabel="선택한 일정 목록"
+          nestedScrollEnabled
+          keyboardShouldPersistTaps="handled"
+          style={styles.previewScroll}
+          contentContainerStyle={styles.previewContent}
+        >
+          {items.map((entry) => (
+            <Label key={entry.id}>{formatScheduleContent(entry.content, entry.time, format)}</Label>
+          ))}
+        </ScrollView>
+      </View>
       {is12 ? (
         <View style={styles.timePickerViewStyle}>
           <Button title="오전" selected={period === 'am'} onPress={() => setPeriod('am')} />
@@ -82,7 +112,6 @@ export function TimePicker({
         </View>
         <Label>분</Label>
       </View>
-      {hasTime ? <Button compact title="시간 지우기" danger onPress={() => onSave(null)} /> : null}
     </Dialog>
   );
 }

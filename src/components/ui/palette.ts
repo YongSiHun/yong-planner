@@ -1,5 +1,6 @@
 export const light = {
   bg: '#F7FBFF',
+  surface: '#EDF0F3',
   text: '#20344A',
   muted: '#566E87',
   line: '#DBE8F3',
@@ -12,6 +13,7 @@ export const light = {
 };
 export const dark: typeof light = {
   bg: '#101E2D',
+  surface: '#26313D',
   text: '#E5F2FF',
   muted: '#9CB4CC',
   line: '#2A4259',

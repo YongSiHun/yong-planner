@@ -8,6 +8,6 @@ export const plannerMenuViewStyle = {
 export const plannerMenuButtonStyle = {
   minHeight: 48,
   alignItems: 'flex-start',
-  paddingHorizontal: design.space.lg,
+  paddingHorizontal: 0,
   paddingVertical: design.space.md,
 } as const;

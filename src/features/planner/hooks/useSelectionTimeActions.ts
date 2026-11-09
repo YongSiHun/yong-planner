@@ -1,6 +1,9 @@
 import { useCallback, useRef } from 'react';
 import { report } from '../../../components/ui';
-import { authorizeScheduleAlarm } from '../../notifications/controllers/notifications';
+import {
+  authorizeScheduleAlarm,
+  clearScheduleAlarms,
+} from '../../notifications/controllers/notifications';
 import { useNoteSelectionStore as ui } from '../../../stores/noteSelection';
 import { usePlanner } from '../../../stores/planner';
 import { usePlannerActions } from './usePlannerActions';
@@ -10,7 +13,7 @@ export function useSelectionTimeActions(clear: () => void) {
   const savingAlarm = useRef(false);
   const saveAlarm = useCallback(
     async (time: string | null) => {
-      const unavailable = !time || savingAlarm.current;
+      const unavailable = savingAlarm.current;
 
       if (unavailable) {
         return;
@@ -19,8 +22,7 @@ export function useSelectionTimeActions(clear: () => void) {
 
       savingAlarm.current = true;
       try {
-        await authorizeScheduleAlarm();
-        setDailyAlarms(selected, true, time);
+        await applyAlarm(selected, time, setDailyAlarms);
         clear();
       } catch (error) {
         report(error);
@@ -73,4 +75,20 @@ export function useSelectionTimeActions(clear: () => void) {
 
 function selectedItems(ids = ui.getState().selected) {
   return usePlanner.getState().data.dailyPlanItems.filter((item) => ids.has(item.id));
+}
+
+async function applyAlarm(
+  ids: ReadonlySet<string>,
+  time: string | null,
+  save: (ids: ReadonlySet<string>, alarm: boolean, time: string) => void,
+) {
+  const removing = time === null;
+
+  if (removing) {
+    await clearScheduleAlarms(ids);
+
+    return;
+  }
+  await authorizeScheduleAlarm();
+  save(ids, true, time);
 }
