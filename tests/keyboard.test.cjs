@@ -1,6 +1,9 @@
 require('./register.cjs');
 const assert = require('node:assert/strict');
 const { test, afterEach } = require('node:test');
+const React = require('react');
+let windowHeight = 800;
+const platform = { OS: 'android' };
 const cleanups = [];
 const frames = new Map();
 let frameId = 0;
@@ -26,6 +29,9 @@ require.cache[reactPath] = {
   filename: reactPath,
   loaded: true,
   exports: {
+    ...React,
+    createContext: (value) => ({ value, Provider: 'Provider' }),
+    useContext: (context) => context.value,
     useRef: (current) => ({ current }),
     useState: (initial) => [typeof initial === 'function' ? initial() : initial, () => {}],
     useCallback: (callback) => callback,
@@ -41,7 +47,16 @@ require.cache[nativePath] = {
   loaded: true,
   exports: {
     Keyboard: keyboard,
-    Dimensions: { get: () => ({ height: 800 }) },
+    Platform: platform,
+    Dimensions: { get: () => ({ height: windowHeight }) },
+    StyleSheet: { create: (styles) => styles, flatten: (style) => style },
+    KeyboardAvoidingView: 'KeyboardAvoidingView',
+    Modal: 'Modal',
+    Pressable: 'Pressable',
+    ScrollView: 'ScrollView',
+    View: 'View',
+    TextInput: 'TextInput',
+    Text: 'Text',
   },
 };
 global.requestAnimationFrame = (callback) => {
@@ -49,7 +64,7 @@ global.requestAnimationFrame = (callback) => {
   return frameId;
 };
 global.cancelAnimationFrame = (id) => frames.delete(id);
-const { useInlineKeyboard } = require('../src/features/planner/hooks/useInlineKeyboard.ts');
+const { useInlineKeyboard } = require('../src/hooks/useInlineKeyboard.ts');
 function flushFrames() {
   const pending = [...frames.values()];
   frames.clear();
@@ -66,6 +81,9 @@ afterEach(() => {
   cleanups.splice(0).forEach((cleanup) => cleanup());
   frames.clear();
   keyboard.visible = false;
+  keyboard.top = 400;
+  windowHeight = 800;
+  platform.OS = 'android';
 });
 
 test('keyboard initial visibility preserves the native method receiver', () => {
@@ -106,4 +124,105 @@ test('measurements arriving after blur cannot scroll a stale input', () => {
   controller.handleInputFocus(null);
   measured(0, 450, 200, 100);
   assert.deepEqual(calls, []);
+});
+
+test('resized Android windows limit input visibility even when keyboard metrics are higher', () => {
+  keyboard.visible = true;
+  keyboard.top = 600;
+  windowHeight = 400;
+  const { controller, calls } = setup();
+  controller.handleInputFocus({ measureInWindow: (callback) => callback(0, 350, 200, 100) });
+  flushFrames();
+  assert.deepEqual(calls, [{ y: 66, animated: false }]);
+});
+
+test('changing keyboard frame reveals the focused input again without refocusing', () => {
+  keyboard.visible = true;
+  keyboard.top = 600;
+  const { controller, calls } = setup();
+  controller.handleInputFocus({ measureInWindow: (callback) => callback(0, 350, 200, 100) });
+  flushFrames();
+  assert.deepEqual(calls, []);
+  keyboard.top = 400;
+  listeners.get('keyboardDidChangeFrame')();
+  flushFrames();
+  assert.deepEqual(calls, [{ y: 66, animated: false }]);
+});
+
+test('unmounted input measurements cannot scroll and keyboard listeners are removed', () => {
+  keyboard.visible = true;
+  const { controller, calls } = setup();
+  let measured;
+  controller.handleInputFocus({
+    measureInWindow: (callback) => {
+      measured = callback;
+    },
+  });
+  flushFrames();
+  cleanups.splice(0).forEach((cleanup) => cleanup());
+  measured(0, 450, 200, 100);
+  assert.deepEqual(calls, []);
+  assert.equal(listeners.size, 0);
+});
+
+function mockModule(id, exports) {
+  const filename = require.resolve(id);
+  require.cache[filename] = { id: filename, filename, loaded: true, exports };
+}
+mockModule('react-native-safe-area-context', {
+  SafeAreaProvider: 'SafeAreaProvider',
+  SafeAreaView: 'SafeAreaView',
+});
+mockModule('@expo/vector-icons/Feather', () => null);
+const { Input } = require('../src/components/ui/index.tsx');
+const { InputFocusContext } = require('../src/components/ui/InputFocusContext.ts');
+const { Dialog } = require('../src/components/ui/Dialog.tsx');
+function find(node, predicate) {
+  if (!node) return undefined;
+  if (Array.isArray(node)) return node.map((child) => find(child, predicate)).find(Boolean);
+  if (predicate(node)) return node;
+  return find(node.props?.children, predicate);
+}
+
+test('shared modal input focus automatically reveals covered fields in its own scroll view', () => {
+  keyboard.visible = true;
+  const tree = Dialog({ title: '공휴일 보정', children: null, onClose() {}, scrollable: true });
+  assert.equal(
+    find(tree, (node) => node.type === 'KeyboardAvoidingView').props.behavior,
+    'padding',
+  );
+  const body = find(tree, (node) => node.type?.name === 'DialogBody');
+  const provider = body.type(body.props);
+  InputFocusContext.value = provider.props.value;
+  const scroll = provider.props.children;
+  const calls = [];
+  scroll.props.ref.current = { scrollTo: (options) => calls.push(options) };
+  scroll.props.onScroll({ nativeEvent: { contentOffset: { y: 100 } } });
+  const focusEvents = [];
+  const input = Input({ onInputFocus: (value) => focusEvents.push(value) });
+  input.props.ref.current = { measureInWindow: (callback) => callback(0, 350, 200, 100) };
+  input.props.onFocus({});
+  flushFrames();
+  assert.deepEqual(calls, [{ y: 166, animated: false }]);
+  input.props.onBlur({});
+  scroll.props.onLayout();
+  flushFrames();
+  assert.equal(calls.length, 1);
+  assert.equal(focusEvents.at(-1), null);
+  InputFocusContext.value = undefined;
+});
+
+test('modal docks near the keyboard while open and centers when the keyboard is closed', () => {
+  keyboard.visible = true;
+  const open = Dialog({ title: '시간 설정', children: null, onClose() {} });
+  const docked = find(open, (node) => node.type === 'SafeAreaView');
+  assert.equal(docked.props.style.justifyContent, 'flex-end');
+  assert.equal(docked.props.style.paddingBottom, 8);
+  assert.equal(docked.props.edges.includes('bottom'), false);
+  keyboard.visible = false;
+  const closed = Dialog({ title: '시간 설정', children: null, onClose() {} });
+  const centered = find(closed, (node) => node.type === 'SafeAreaView');
+  assert.equal(centered.props.style.justifyContent, 'center');
+  assert.equal(centered.props.style.paddingBottom, 16);
+  assert.equal(centered.props.edges, undefined);
 });

@@ -558,3 +558,43 @@ test('alarm deletion is blocked during restoration', async () => {
   await assert.rejects(clearScheduleAlarms(), /불러온 후/);
   assert.equal(events.includes('flush-planner'), false);
 });
+
+test('changing a schedule time cancels its old alarm instead of moving it to the new time', async () => {
+  const { dateKey } = require('../src/utils/date.ts');
+  const { timeChangeClearsAlarm } = require('../src/features/planner/services/alarms.ts');
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const data = emptyData();
+  data.dailyPlanItems = ['a', 'b'].map((id) => ({
+    id,
+    date: dateKey(tomorrow),
+    content: id,
+    time: '13:00',
+    alarm: true,
+  }));
+  usePlanner.setState({ data });
+  granted = true;
+  await syncNotifications();
+  const idFor = (id) =>
+    [...pending.keys()].find((key) => key.endsWith(encodeURIComponent('daily:' + id)));
+  const removed = idFor('a');
+  const kept = idFor('b');
+  usePlanner.setState({
+    data: {
+      ...data,
+      dailyPlanItems: data.dailyPlanItems.map((item) =>
+        item.id === 'a'
+          ? {
+              ...item,
+              time: '14:00',
+              alarm: timeChangeClearsAlarm(item, '14:00') ? undefined : item.alarm,
+            }
+          : item,
+      ),
+    },
+  });
+  await syncNotifications();
+  assert.equal(pending.has(removed), false);
+  assert.equal(pending.has(kept), true);
+  assert.equal(pending.size, 1);
+});

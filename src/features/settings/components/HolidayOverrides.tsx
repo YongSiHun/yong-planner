@@ -25,7 +25,7 @@ export function HolidayOverrides() {
   }
 
   return (
-    <>
+    <View style={layoutStyles.section}>
       <Label style={styles.holidayOverridesLabelStyle}>공휴일 보정</Label>
       <Label muted>
         라이브러리에 없는 임시공휴일을 추가하거나 특정 날짜의 공휴일을 해제할 수 있습니다.
@@ -66,6 +66,6 @@ export function HolidayOverrides() {
           />
         </Dialog>
       ) : null}
-    </>
+    </View>
   );
 }

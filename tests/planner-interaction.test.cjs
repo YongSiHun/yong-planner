@@ -102,6 +102,7 @@ cacheMock('../src/components/ui/index.tsx', {
     accent: '#1F6EAC',
     bg: '#F7FBFF',
     selected: '#E4F2FF',
+    red: '#B5485B',
   }),
   report: (error) => {
     throw error;
@@ -142,7 +143,18 @@ const plannerActions = {
     plannerData = {
       ...plannerData,
       dailyPlanItems: plannerData.dailyPlanItems.map((item) =>
-        ids.has(item.id) ? { ...item, time } : item,
+        ids.has(item.id)
+          ? {
+              ...item,
+              time,
+              alarm: require('../src/features/planner/services/alarms.ts').timeChangeClearsAlarm(
+                item,
+                time,
+              )
+                ? undefined
+                : item.alarm,
+            }
+          : item,
       ),
     };
   },
@@ -1305,9 +1317,8 @@ test('copy rechecks changed targets before saving and preserves the selection on
   assert.equal(renderSelection().copyDates.size, 0);
 });
 
-test('time overwrite modal confirms before updating mixed selected times', () => {
+test('time modal applies mixed selected times without an overwrite notice', () => {
   const { TimePicker } = require('../src/features/planner/components/TimePicker.tsx');
-  const { timeOverwriteMessage } = require('../src/features/planner/services/time.ts');
   let id = 0;
   plannerData = applyDailyNote(
     plannerData,
@@ -1325,8 +1336,6 @@ test('time overwrite modal confirms before updating mixed selected times', () =>
     (node) => node.type === 'Button' && node.props.title === '시간 설정',
   );
   assert.notEqual(timeButton.props.disabled, true);
-  const message = timeOverwriteMessage(false, selection.selectedItems, selection.hasSelectedAlarm);
-  assert.equal(message, '이미 시간이 설정된 일정이 있습니다. 덮어쓰시겠어요?');
   slots = [];
   cursor = 0;
   const dialog = TimePicker({
@@ -1334,20 +1343,18 @@ test('time overwrite modal confirms before updating mixed selected times', () =>
     format: '24h',
     count: 2,
     hasExistingTime: true,
-    overwriteMessage: message,
     onClose: selection.closeTime,
     onSave: selection.saveTime,
   });
-  assert.ok(find(dialog, (node) => node.type === 'Label' && node.props.children === message));
   assert.equal(
-    find(dialog.props.footer, (node) => node.type === 'Button' && node.props.title === '덮어쓰기')
-      .props.title,
-    '덮어쓰기',
+    find(dialog.props.footer, (node) => node.type === 'Button' && node.props.title === '적용').props
+      .title,
+    '적용',
   );
   assert.equal(plannerData.dailyPlanItems[1].time, '14:00');
   find(
     dialog.props.footer,
-    (node) => node.type === 'Button' && node.props.title === '덮어쓰기',
+    (node) => node.type === 'Button' && node.props.title === '적용',
   ).props.onPress();
   assert.deepEqual(
     plannerData.dailyPlanItems.map((item) => item.time ?? null),
@@ -1355,9 +1362,8 @@ test('time overwrite modal confirms before updating mixed selected times', () =>
   );
 });
 
-test('alarm overwrite modal confirms and aligns all selected schedule times', async () => {
+test('alarm modal applies and aligns all selected schedule times without an overwrite notice', async () => {
   const { TimePicker } = require('../src/features/planner/components/TimePicker.tsx');
-  const { timeOverwriteMessage } = require('../src/features/planner/services/time.ts');
   let id = 0;
   plannerData = applyDailyNote(
     plannerData,
@@ -1382,8 +1388,6 @@ test('alarm overwrite modal confirms and aligns all selected schedule times', as
   alarmButton.props.onPress();
   const opened = renderSelection();
   assert.equal(opened.alarmSetting, true);
-  const message = timeOverwriteMessage(true, opened.selectedItems, opened.hasSelectedAlarm);
-  assert.equal(message, '선택한 일정의 시간과 알람을 덮어쓸까요?');
   slots = [];
   cursor = 0;
   const dialog = TimePicker({
@@ -1391,20 +1395,19 @@ test('alarm overwrite modal confirms and aligns all selected schedule times', as
     format: '24h',
     count: 3,
     hasExistingTime: false,
-    overwriteMessage: message,
     onClose: opened.closeTime,
     onSave: opened.saveTime,
   });
   assert.equal(
-    find(dialog.props.footer, (node) => node.type === 'Button' && node.props.title === '덮어쓰기')
-      .props.title,
-    '덮어쓰기',
+    find(dialog.props.footer, (node) => node.type === 'Button' && node.props.title === '적용').props
+      .title,
+    '적용',
   );
   assert.equal(plannerData.dailyPlanItems[1].time, '14:00');
   assert.equal(alarmPermissionRequests, 0);
   find(
     dialog.props.footer,
-    (node) => node.type === 'Button' && node.props.title === '덮어쓰기',
+    (node) => node.type === 'Button' && node.props.title === '적용',
   ).props.onPress();
   await new Promise((resolve) => setImmediate(resolve));
   assert.deepEqual(
@@ -1445,7 +1448,6 @@ test('time and alarm clear actions share footer styling and alarm clearing prese
     format: '24h',
     hasExistingTime: true,
     clearTitle: '알람 지우기',
-    overwriteMessage: '덮어쓰기 확인',
     onClose: selection.closeTime,
     onSave: selection.saveTime,
   });
@@ -1455,7 +1457,7 @@ test('time and alarm clear actions share footer styling and alarm clearing prese
   );
   const apply = find(
     dialog.props.footer,
-    (node) => node.type === 'Button' && node.props.title === '덮어쓰기',
+    (node) => node.type === 'Button' && node.props.title === '적용',
   );
   assert.equal(remove.props.bold, true);
   assert.equal(remove.props.style, apply.props.style);
@@ -1531,4 +1533,89 @@ test('time clearing appears in the footer with the same typography as apply', ()
   );
   remove.props.onPress();
   assert.deepEqual(saved, [null]);
+});
+
+test('time and alarm dialogs keep controls fixed and scroll only the schedule preview', () => {
+  const { TimePicker } = require('../src/features/planner/components/TimePicker.tsx');
+  const items = Array.from({ length: 8 }, (_, index) => ({
+    id: 'layout-' + index,
+    content: '일정 ' + index,
+    time: '13:00',
+  }));
+  for (const format of ['12h', '24h']) {
+    const dialogs = ['시간 설정', '알람 설정'].map((title) => {
+      slots = [];
+      cursor = 0;
+      return TimePicker({
+        title,
+        item: items[0],
+        items,
+        count: items.length,
+        format,
+        onClose() {},
+        onSave() {},
+      });
+    });
+    for (const dialog of dialogs) {
+      assert.equal(dialog.props.scrollable, false);
+      assert.equal(dialog.props.height, dialogs[0].props.height);
+      const [preview, controls] = React.Children.toArray(dialog.props.children);
+      assert.deepEqual(
+        preview.props.style,
+        React.Children.toArray(dialogs[0].props.children)[0].props.style,
+      );
+      const list = find(preview, (node) => node.type === 'ScrollView');
+      assert.ok(list);
+      assert.ok(list.props.style.height > 0);
+      assert.equal(
+        find(list, (node) => node.props?.accessibilityLabel === '시'),
+        undefined,
+      );
+      assert.ok(find(controls, (node) => node.props?.accessibilityLabel === '시'));
+      assert.ok(find(controls, (node) => node.props?.accessibilityLabel === '분'));
+      assert.ok(
+        find(list, (node) => node.type === 'Label' && node.props.children === '13시 일정 7') ||
+          find(list, (node) => node.type === 'Label' && node.props.children === '오후 1시 일정 7'),
+      );
+      assert.equal(
+        find(controls, (node) => node.type === 'ScrollView'),
+        undefined,
+      );
+    }
+  }
+});
+
+test('time modal warns below the title only when the chosen time would clear an existing alarm', () => {
+  const { TimePicker } = require('../src/features/planner/components/TimePicker.tsx');
+  const { light } = require('../src/components/ui/palette.ts');
+  const items = [
+    { id: 'a', content: '회의', time: '13:00', alarm: true },
+    { id: 'b', content: '식사', time: '14:00' },
+  ];
+  const render = (alarmSetting = false) => {
+    cursor = 0;
+    return TimePicker({
+      item: items[0],
+      items,
+      count: 2,
+      format: '24h',
+      alarmSetting,
+      onClose() {},
+      onSave() {},
+    });
+  };
+  let dialog = render();
+  assert.equal(dialog.props.headerNotice, null);
+  find(dialog, (node) => node.props?.accessibilityLabel === '분').props.onChangeText('30');
+  dialog = render();
+  const notice = dialog.props.headerNotice;
+  assert.equal(notice.props.children, '알람이 설정된 일정은 알람이 해제돼요');
+  assert.equal(notice.props.style.color, light.red);
+  assert.equal(notice.props.style.fontSize, 13);
+  assert.equal(dialog.props.scrollable, false);
+  const alarmNotice = render(true).props.headerNotice;
+  assert.equal(alarmNotice.props.children, '설정한 시간으로 알람이 일괄로 설정돼요');
+  assert.deepEqual(alarmNotice.props.style, notice.props.style);
+  find(dialog, (node) => node.props?.accessibilityLabel === '분').props.onChangeText('00');
+  assert.equal(render().props.headerNotice, null);
 });

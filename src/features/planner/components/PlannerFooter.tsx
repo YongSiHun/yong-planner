@@ -1,5 +1,4 @@
 import { Pressable, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../../components/ui';
 import type { NoteSelectionModel } from '../types/presentation';
 import { CopyBar } from './CopyBar';
@@ -56,10 +55,9 @@ export function PlannerFooter({
 
 function TodayButton({ onPress }: { onPress(): void }) {
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
 
   return (
-    <View pointerEvents="box-none" style={styles.todayButtonViewStyle(insets.bottom)}>
+    <View pointerEvents="box-none" style={styles.todayButtonViewStyle}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="오늘 날짜로 이동"

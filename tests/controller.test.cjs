@@ -76,3 +76,26 @@ test('clearing a selected time also disables its alarm without changing another 
   assert.equal(usePlanner.getState().data.dailyPlanItems[0].alarm, undefined);
   await flushPlanner();
 });
+
+test('changing selected times clears only alarms whose scheduled times change', async () => {
+  usePlanner.setState({ ready: true, restoring: false, data: emptyData(), dirty: false });
+  saveDailyNote('2026-11-09', '13:00 회의,14:00 식사,18:00 운동,독서');
+  const items = usePlanner.getState().data.dailyPlanItems;
+  setDailyAlarms(new Set(items.slice(0, 3).map((item) => item.id)), true);
+  const selected = new Set([items[0].id, items[1].id, items[3].id]);
+  saveDailyTimes(selected, '13:00');
+  const changed = usePlanner.getState().data.dailyPlanItems;
+  assert.deepEqual(
+    changed.map((item) => item.time),
+    ['13:00', '13:00', '18:00', '13:00'],
+  );
+  assert.deepEqual(
+    changed.map((item) => Boolean(item.alarm)),
+    [true, false, true, false],
+  );
+  await flushPlanner();
+  assert.deepEqual(
+    writes.at(-1).dailyPlanItems.map((item) => Boolean(item.alarm)),
+    [true, false, true, false],
+  );
+});

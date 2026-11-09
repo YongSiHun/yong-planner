@@ -1,6 +1,6 @@
 import { randomUUID } from 'expo-crypto';
 import { validTime } from '../../../utils/date';
-import { updateDailyAlarms } from '../services/alarms';
+import { timeChangeClearsAlarm, updateDailyAlarms } from '../services/alarms';
 import { applyDailyNote } from '../services/note';
 import { moveDailyNote as reorderDailyNote } from '../services/noteMove';
 import { copyNotesToDates, deleteSelectedNotes } from '../services/noteSelection';
@@ -32,7 +32,9 @@ export function saveDailyTimes(ids: ReadonlySet<string>, time: string | null) {
     (data) => ({
       ...data,
       dailyPlanItems: data.dailyPlanItems.map((item) =>
-        ids.has(item.id) ? { ...item, time, alarm: time ? item.alarm : undefined } : item,
+        ids.has(item.id)
+          ? { ...item, time, alarm: timeChangeClearsAlarm(item, time) ? undefined : item.alarm }
+          : item,
       ),
     }),
     true,

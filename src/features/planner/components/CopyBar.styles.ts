@@ -3,20 +3,25 @@ import { design } from '../../../components/ui/tokens';
 
 export function copyBarViewStyle(theme: Theme) {
   return {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: design.space.sm,
+    paddingVertical: design.space.sm,
     backgroundColor: theme.bg,
     borderTopWidth: 1,
     borderTopColor: theme.line,
-    gap: 4,
+    gap: design.space.sm,
   } as const;
 }
 
-export const copyBarViewStyle2 = { flexDirection: 'row', alignItems: 'center', gap: 8 } as const;
+export const copyBarViewStyle2 = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: design.space.sm,
+} as const;
 
 export function copyBarTextStyle(theme: Theme) {
   return {
     flex: 1,
+    minWidth: 0,
     fontFamily: design.font.medium,
     color: theme.text,
     fontSize: design.type.small,

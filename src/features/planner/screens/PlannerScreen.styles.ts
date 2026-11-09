@@ -1,3 +1,4 @@
+import { layout } from '../../../components/ui/layout.styles';
 import type { Theme } from '../../../components/ui/palette';
 import { design } from '../../../components/ui/tokens';
 
@@ -9,9 +10,6 @@ export function plannerScreenSafeAreaViewStyle(theme: Theme) {
   return {
     flex: 1,
     backgroundColor: theme.bg,
-    width: '100%',
-    maxWidth: 960,
-    alignSelf: 'center',
   } as const;
 }
 
@@ -21,8 +19,12 @@ export function plannerScreenScrollViewContentContainerStyle(
 ) {
   return {
     paddingHorizontal: design.space.xs,
-    paddingBottom: selectionActive || selectionCopySource ? 12 : 76,
+    paddingBottom:
+      selectionActive || selectionCopySource
+        ? design.space.md
+        : design.touchTarget + design.space.md * 2,
   } as const;
 }
 
 export const surface = { flex: 1 } as const;
+export const frame = layout.page;

@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { showDialog } from '../../controllers/dialog';
 import * as styles from './index.styles';
+import { InputFocusContext } from './InputFocusContext';
 import { light } from './palette';
 import { design } from './tokens';
 import { fontForWeight } from './typography';
@@ -116,18 +117,21 @@ export function Input({
   onInputFocus?(input: ComponentRef<typeof TextInput> | null): void;
 }) {
   const theme = useTheme();
-  const [contentHeight, setContentHeight] = useState(48);
+  const [contentHeight, setContentHeight] = useState<number>(design.controlHeight);
   const input = useRef<ComponentRef<typeof TextInput>>(null);
+  const reportFocus = useContext(InputFocusContext);
 
   return (
     <TextInput
       {...props}
       ref={input}
       onFocus={(event) => {
+        reportFocus?.(input.current);
         onInputFocus?.(input.current);
         props.onFocus?.(event);
       }}
       onBlur={(event) => {
+        reportFocus?.(null);
         onInputFocus?.(null);
         props.onBlur?.(event);
       }}
@@ -139,7 +143,7 @@ export function Input({
         const isMultiline = Boolean(props.multiline);
 
         if (isMultiline) {
-          setContentHeight(Math.max(48, event.nativeEvent.contentSize.height));
+          setContentHeight(Math.max(design.controlHeight, event.nativeEvent.contentSize.height));
         }
         props.onContentSizeChange?.(event);
       }}

@@ -31,3 +31,10 @@ export function updateDailyAlarms(
     ),
   };
 }
+
+export function timeChangeClearsAlarm(
+  item: Pick<DailyPlanItem, 'alarm' | 'time'>,
+  time: string | null,
+): boolean {
+  return Boolean(item.alarm) && (!time || item.time !== time);
+}

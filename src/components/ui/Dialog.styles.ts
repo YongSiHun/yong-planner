@@ -3,11 +3,12 @@ import type { Theme } from './palette';
 
 export const dialogKeyboardAvoidingViewStyle = { flex: 1 } as const;
 
-export function dialogSafeAreaViewStyle(theme: Theme) {
+export function dialogSafeAreaViewStyle(theme: Theme, keyboardVisible = false) {
   return {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: keyboardVisible ? 'flex-end' : 'center',
     padding: design.space.lg,
+    paddingBottom: keyboardVisible ? design.space.sm : design.space.lg,
     backgroundColor: theme.scrim,
   } as const;
 }
@@ -31,7 +32,7 @@ export function dialogViewStyle(theme: Theme, height?: number) {
     maxHeight: '85%',
     gap: design.space.md,
     width: '100%',
-    maxWidth: 480,
+    maxWidth: design.layout.dialogMaxWidth,
     alignSelf: 'center',
   } as const;
 }
@@ -48,8 +49,9 @@ export const dialogHeadingViewStyle = {
   gap: design.space.sm,
 } as const;
 
+export const dialogHeadingContent = { flex: 1, minWidth: 0, gap: design.space.xs } as const;
+
 export const dialogHeadingLabelStyle = {
-  flex: 1,
   fontSize: design.type.title,
   lineHeight: design.lineHeights.title,
   fontFamily: design.font.bold,
@@ -80,3 +82,5 @@ export const action = {
   paddingVertical: design.space.sm,
   backgroundColor: 'transparent',
 } as const;
+
+export const fixedBody = { flex: 1, minHeight: 0, width: '100%', gap: design.space.md } as const;

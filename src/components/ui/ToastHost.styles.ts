@@ -23,7 +23,7 @@ export function message(theme: Theme) {
     borderRadius: design.radius.medium,
     paddingHorizontal: design.space.lg,
     paddingVertical: design.space.sm,
-    maxWidth: 480,
+    maxWidth: design.layout.dialogMaxWidth,
     overflow: 'hidden',
   } as const;
 }

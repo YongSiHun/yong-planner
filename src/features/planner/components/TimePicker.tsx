@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Button, Input, Label, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
+import type { Theme } from '../../../components/ui/palette';
+import { timeChangeClearsAlarm } from '../services/alarms';
 import { boundedClockInput, formatScheduleContent, timeFromFields } from '../services/time';
 import type { DailyPlanItem, TimeFormat } from '../types';
 import * as styles from './TimePicker.styles';
@@ -13,8 +15,8 @@ export function TimePicker({
   count = 1,
   hasExistingTime,
   clearTitle = '시간 지우기',
-  overwriteMessage,
   title = '시간 설정',
+  alarmSetting = false,
   onClose,
   onSave,
 }: {
@@ -23,9 +25,9 @@ export function TimePicker({
   format: TimeFormat;
   count?: number;
   title?: string;
+  alarmSetting?: boolean;
   hasExistingTime?: boolean;
   clearTitle?: string;
-  overwriteMessage?: string;
   onClose(): void;
   onSave(time: string | null): void;
 }) {
@@ -42,7 +44,9 @@ export function TimePicker({
   return (
     <Dialog
       title={title}
+      headerNotice={renderAlarmNotice(items, time, alarmSetting, theme)}
       height={styles.dialogHeight}
+      scrollable={false}
       onClose={onClose}
       footer={
         <View style={styles.footer}>
@@ -59,7 +63,7 @@ export function TimePicker({
           </View>
           <Button
             bold
-            title={overwriteMessage ? '덮어쓰기' : '적용'}
+            title="적용"
             disabled={time === null}
             onPress={() => onSave(time)}
             style={styles.action}
@@ -67,7 +71,6 @@ export function TimePicker({
         </View>
       }
     >
-      {renderOverwriteNotice(overwriteMessage)}
       <View style={styles.preview(theme)}>
         <Label muted>{count}개 일정에 적용</Label>
         <ScrollView
@@ -82,13 +85,25 @@ export function TimePicker({
           ))}
         </ScrollView>
       </View>
-      {is12 ? (
-        <View style={styles.timePickerViewStyle}>
-          <Button title="오전" selected={period === 'am'} onPress={() => setPeriod('am')} />
-          <Button title="오후" selected={period === 'pm'} onPress={() => setPeriod('pm')} />
-        </View>
-      ) : null}
       <View style={styles.timePickerViewStyle2}>
+        {is12 ? (
+          <View style={styles.timePickerViewStyle}>
+            <Button
+              compact
+              style={styles.period}
+              title="오전"
+              selected={period === 'am'}
+              onPress={() => setPeriod('am')}
+            />
+            <Button
+              compact
+              style={styles.period}
+              title="오후"
+              selected={period === 'pm'}
+              onPress={() => setPeriod('pm')}
+            />
+          </View>
+        ) : null}
         <View style={styles.timePickerViewStyle3}>
           <Input
             accessibilityLabel="시"
@@ -122,8 +137,18 @@ function initialHour(time: string | null | undefined, format: TimeFormat): strin
   return String(format === '12h' ? hour % 12 || 12 : hour);
 }
 
-function renderOverwriteNotice(message: string | undefined) {
-  const visible = message !== undefined;
+function renderAlarmNotice(
+  items: readonly DailyPlanItem[],
+  time: string | null,
+  alarmSetting: boolean,
+  theme: Theme,
+) {
+  if (alarmSetting) {
+    return <Label style={styles.alarmNotice(theme)}>설정한 시간으로 알람이 일괄로 설정돼요</Label>;
+  }
+  const visible = time !== null && items.some((item) => timeChangeClearsAlarm(item, time));
 
-  return visible ? <Label>{message}</Label> : null;
+  return visible ? (
+    <Label style={styles.alarmNotice(theme)}>알람이 설정된 일정은 알람이 해제돼요</Label>
+  ) : null;
 }

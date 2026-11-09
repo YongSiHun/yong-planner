@@ -10,7 +10,7 @@ export function TimeFormatSettings() {
   const format = usePlanner((state) => state.data.settings.timeFormat ?? '24h');
 
   return (
-    <>
+    <View style={layoutStyles.section}>
       <View style={layoutStyles.row}>
         <Label style={styles.timeFormatSettingsLabelStyle}>시간 표시</Label>
         <Label muted style={styles.timeFormatSettingsLabelStyle2}>
@@ -21,6 +21,6 @@ export function TimeFormatSettings() {
         <Button title="24시간제" selected={format === '24h'} onPress={() => setTimeFormat('24h')} />
         <Button title="12시간제" selected={format === '12h'} onPress={() => setTimeFormat('12h')} />
       </View>
-    </>
+    </View>
   );
 }

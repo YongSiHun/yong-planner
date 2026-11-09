@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import fontNotice from '../../../../assets/fonts/NOTICE.json';
 import { Button, Label, styles as layoutStyles, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
@@ -23,7 +24,7 @@ function ThemeSettings() {
   const selectedTheme = usePlanner((state) => state.data.settings.theme);
 
   return (
-    <>
+    <View style={layoutStyles.section}>
       <Label style={styles.themeSettingsLabelStyle}>화면 테마</Label>
       <View style={layoutStyles.row}>
         {themeOptions.map((option) => (
@@ -35,7 +36,7 @@ function ThemeSettings() {
           />
         ))}
       </View>
-    </>
+    </View>
   );
 }
 
@@ -46,7 +47,7 @@ function BackupSettings() {
   const [guideOpen, setGuideOpen] = useState(false);
 
   return (
-    <>
+    <View style={layoutStyles.section}>
       <View style={layoutStyles.row}>
         <Label style={styles.backupSettingsLabelStyle}>데이터 복원</Label>
         <Button
@@ -79,7 +80,7 @@ function BackupSettings() {
           </Label>
         </Dialog>
       ) : null}
-    </>
+    </View>
   );
 }
 
@@ -88,7 +89,7 @@ function AlarmSettings() {
   const unavailable = usePlanner((state) => !state.ready || state.restoring);
 
   return (
-    <>
+    <View style={layoutStyles.section}>
       <Label style={styles.backupSettingsLabelStyle}>알람</Label>
       <Button
         title="모든 알람 삭제"
@@ -97,7 +98,7 @@ function AlarmSettings() {
         disabled={busy || unavailable}
         onPress={requestDelete}
       />
-    </>
+    </View>
   );
 }
 
@@ -107,40 +108,42 @@ export default function SettingsScreen() {
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
   return (
-    <ScrollView
-      style={styles.settingsScreenScrollViewStyle(theme)}
-      contentContainerStyle={styles.settingsScreenScrollViewContentContainerStyle}
-    >
-      <ThemeSettings />
-      <TimeFormatSettings />
-      <View style={styles.settingsScreenViewStyle(theme)} />
+    <SafeAreaView style={layoutStyles.surface} edges={['left', 'right', 'bottom']}>
+      <ScrollView
+        style={styles.settingsScreenScrollViewStyle(theme)}
+        contentContainerStyle={styles.settingsScreenScrollViewContentContainerStyle}
+      >
+        <ThemeSettings />
+        <TimeFormatSettings />
+        <View style={styles.settingsScreenViewStyle(theme)} />
 
-      <AlarmSettings />
-      <View style={styles.settingsScreenViewStyle(theme)} />
+        <AlarmSettings />
+        <View style={styles.settingsScreenViewStyle(theme)} />
 
-      <BackupSettings />
-      <View style={styles.settingsScreenViewStyle(theme)} />
+        <BackupSettings />
+        <View style={styles.settingsScreenViewStyle(theme)} />
 
-      <HolidayOverrides />
+        <HolidayOverrides />
 
-      <View style={layoutStyles.row}>
-        <Label muted>용플래너 {version}</Label>
-        <Button compact title="라이선스 정보" onPress={() => setLicenseOpen(true)} />
-      </View>
-      {licenseOpen ? (
-        <Dialog title="라이선스 정보" onClose={() => setLicenseOpen(false)}>
-          <Label style={styles.backupSettingsLabelStyle}>Pretendard</Label>
-          <Label muted>{fontNotice.copyright}</Label>
-          <Label muted style={styles.settingsScreenLabelStyle}>
-            {fontNotice.license}
-          </Label>
-          <Label style={styles.backupSettingsLabelStyle}>공휴일 데이터</Label>
-          <Label muted style={styles.settingsScreenLabelStyle2}>
-            공휴일: date-holidays / commenthol · ISC 및 CC BY 3.0{'\n'}
-            github.com/commenthol/date-holidays
-          </Label>
-        </Dialog>
-      ) : null}
-    </ScrollView>
+        <View style={layoutStyles.row}>
+          <Label muted>용플래너 {version}</Label>
+          <Button compact title="라이선스 정보" onPress={() => setLicenseOpen(true)} />
+        </View>
+        {licenseOpen ? (
+          <Dialog title="라이선스 정보" onClose={() => setLicenseOpen(false)}>
+            <Label style={styles.backupSettingsLabelStyle}>Pretendard</Label>
+            <Label muted>{fontNotice.copyright}</Label>
+            <Label muted style={styles.settingsScreenLabelStyle}>
+              {fontNotice.license}
+            </Label>
+            <Label style={styles.backupSettingsLabelStyle}>공휴일 데이터</Label>
+            <Label muted style={styles.settingsScreenLabelStyle2}>
+              공휴일: date-holidays / commenthol · ISC 및 CC BY 3.0{'\n'}
+              github.com/commenthol/date-holidays
+            </Label>
+          </Dialog>
+        ) : null}
+      </ScrollView>
+    </SafeAreaView>
   );
 }

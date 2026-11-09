@@ -18,7 +18,11 @@ export function DateFields({
   return (
     <>
       <Label>시작일</Label>
-      <Button title={plan.startDate + ' ▾'} onPress={() => onSelect('startDate')} />
+      <Button
+        style={layoutStyles.textAction}
+        title={plan.startDate + ' ▾'}
+        onPress={() => onSelect('startDate')}
+      />
 
       <Label>종료일 · 해당 날짜 포함</Label>
       <View style={layoutStyles.row}>

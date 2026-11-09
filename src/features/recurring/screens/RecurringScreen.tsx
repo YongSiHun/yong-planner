@@ -1,11 +1,19 @@
 import { randomUUID } from 'expo-crypto';
 import { useLocalSearchParams } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useRef, useState, type ComponentRef } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
-import { Button, Label, showDialog, useTheme } from '../../../components/ui';
+import { Keyboard, KeyboardAvoidingView, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  Button,
+  Label,
+  styles as layoutStyles,
+  showDialog,
+  useTheme,
+} from '../../../components/ui';
 import { usePlanner } from '../../../stores/planner';
 import { today } from '../../../utils/date';
-import { useInlineKeyboard } from '../../planner/hooks/useInlineKeyboard';
+import { useInlineKeyboard } from '../../../hooks/useInlineKeyboard';
 import { usePlannerActions } from '../../planner/hooks/usePlannerActions';
 import type { RecurringPlan } from '../../planner/types';
 import { RecurringForm } from '../components/RecurringForm';
@@ -38,12 +46,18 @@ function RecurringRow({
       <Label muted>
         {plan.startDate}부터 {endDate}
       </Label>
-      <Button title="전체 삭제" danger onPress={handleDelete} />
+      <Button
+        title="전체 삭제"
+        style={styles.recurringRowButtonStyle}
+        danger
+        onPress={handleDelete}
+      />
     </View>
   );
 }
 
 function RecurringContent({ initialId }: { initialId?: string }) {
+  const headerHeight = useHeaderHeight();
   const theme = useTheme();
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const { handleInputFocus, scheduleReveal, handleKeyboardScroll } = useInlineKeyboard(scrollRef);
@@ -73,11 +87,13 @@ function RecurringContent({ initialId }: { initialId?: string }) {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior="padding"
+      keyboardVerticalOffset={headerHeight}
       style={styles.recurringContentKeyboardAvoidingViewStyle(theme)}
     >
       <ScrollView
         ref={scrollRef}
+        onLayout={scheduleReveal}
         onContentSizeChange={scheduleReveal}
         onScroll={handleKeyboardScroll}
         scrollEventThrottle={16}
@@ -121,5 +137,9 @@ function RecurringContent({ initialId }: { initialId?: string }) {
 export default function RecurringScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
 
-  return <RecurringContent key={id ?? 'list'} initialId={id} />;
+  return (
+    <SafeAreaView style={layoutStyles.surface} edges={['left', 'right', 'bottom']}>
+      <RecurringContent key={id ?? 'list'} initialId={id} />
+    </SafeAreaView>
+  );
 }

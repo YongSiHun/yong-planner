@@ -4,6 +4,7 @@ import { weekdays } from '../../../utils/date';
 import type { RecurringPlan } from '../../planner/types';
 import { toggleWeekday } from '../services/presentation';
 import { type ChangePlan } from '../types';
+import * as styles from './WeekdaySelector.styles';
 
 const weekdayPresets = [
   { label: '매일', days: [0, 1, 2, 3, 4, 5, 6] },
@@ -31,10 +32,11 @@ export function WeekdaySelector({ plan, onChange }: { plan: RecurringPlan; onCha
         ))}
       </View>
 
-      <View style={layoutStyles.row}>
+      <View style={styles.weekdays}>
         {weekdays.map((label, day) => (
           <Button
             key={day}
+            style={styles.weekday}
             title={label}
             selected={plan.weekdays.includes(day)}
             onPress={() => onChange({ weekdays: toggleWeekday(plan.weekdays, day) })}

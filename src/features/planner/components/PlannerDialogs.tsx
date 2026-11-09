@@ -1,6 +1,5 @@
 import type { ExportFormat } from '../../../services/export/files';
 import type { TimeFormat } from '../types';
-import { timeOverwriteMessage } from '../services/time';
 import type { NoteSelectionModel, PlannerGuideModel } from '../types/presentation';
 import { DeleteSchedules } from './DeleteSchedules';
 import { MonthPicker } from './MonthPicker';
@@ -98,17 +97,13 @@ function SelectedTimePicker({
     <TimePicker
       item={item}
       items={selection.selectedItems}
+      alarmSetting={selection.alarmSetting}
       title={selection.alarmSetting ? '알람 설정' : '시간 설정'}
       count={selection.selected.size}
       hasExistingTime={
         selection.alarmSetting ? selection.hasSelectedAlarm : selection.hasSelectedTime
       }
       clearTitle={selection.alarmSetting ? '알람 지우기' : '시간 지우기'}
-      overwriteMessage={timeOverwriteMessage(
-        selection.alarmSetting,
-        selection.selectedItems,
-        selection.hasSelectedAlarm,
-      )}
       format={timeFormat}
       onClose={selection.closeTime}
       onSave={selection.saveTime}

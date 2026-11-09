@@ -2,7 +2,11 @@ import type { Theme } from '../../../components/ui/palette';
 import { design } from '../../../components/ui/tokens';
 export { action } from '../../../components/ui/Dialog.styles';
 
-export const monthPickerViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 8 } as const;
+export const monthPickerViewStyle = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: design.space.sm,
+} as const;
 
 export const monthPickerViewStyle2 = { flex: 1 } as const;
 

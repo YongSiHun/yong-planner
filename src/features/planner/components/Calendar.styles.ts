@@ -1,10 +1,11 @@
 import { layout as layoutStyles } from '../../../components/ui/layout.styles';
+import { design } from '../../../components/ui/tokens';
 import type { Theme } from '../../../components/ui/palette';
 
 export const weekdayHeadingViewStyle = {
   width: '14.2857%',
   alignItems: 'center',
-  paddingVertical: 8,
+  paddingVertical: design.space.sm,
 } as const;
 
 export function weekdayHeadingLabelStyle(color: string) {
@@ -17,7 +18,8 @@ export function calendarDateButtonStyle(isToday: boolean, theme: Theme) {
   return {
     paddingHorizontal: 0,
     minWidth: 0,
-    paddingBottom: 14,
+    paddingVertical: design.space.sm,
+    minHeight: design.controlHeight,
     borderWidth: isToday ? 1 : 0,
     borderColor: theme.accent,
   } as const;
@@ -26,7 +28,7 @@ export function calendarDateButtonStyle(isToday: boolean, theme: Theme) {
 export function calendarDateViewStyle2(theme: Theme) {
   return {
     position: 'absolute',
-    bottom: 7,
+    bottom: design.space.xs,
     alignSelf: 'center',
     width: 4,
     height: 4,

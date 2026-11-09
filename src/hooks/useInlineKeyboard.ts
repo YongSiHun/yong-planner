@@ -26,7 +26,10 @@ export function useInlineKeyboard(
 
     if (hasInput) {
       input.measureInWindow((_, top, __, height) => {
-        const keyboardTop = Keyboard.metrics()?.screenY ?? Dimensions.get('window').height;
+        const keyboardTop = Math.min(
+          Keyboard.metrics()?.screenY ?? Infinity,
+          Dimensions.get('window').height,
+        );
         const overlap = top + height + 16 - keyboardTop;
         const isCovered = overlap > 0 && focusedInput.current === input;
 
@@ -54,10 +57,13 @@ export function useInlineKeyboard(
       scheduleReveal();
     });
     const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    const resize = Keyboard.addListener('keyboardDidChangeFrame', scheduleReveal);
 
     return () => {
       show.remove();
       hide.remove();
+      resize.remove();
+      focusedInput.current = null;
       const hasFrame = frame.current !== null;
 
       if (hasFrame) {

@@ -8,6 +8,16 @@ export const design = {
   lineHeight: 22,
   lineHeights: { caption: 18, small: 20, body: 22, title: 26, display: 32 },
   radius: { small: 6, medium: 10, dialog: 20, pill: 24 },
+  layout: {
+    contentMaxWidth: 480,
+    dialogMaxWidth: 448,
+    pagePadding: 16,
+    pageGap: 24,
+    bottomSpace: 32,
+    pickerHeight: 380,
+    previewRows: 4,
+  },
+  controlHeight: 48,
   touchTarget: 44,
   rowMinHeight: 38,
 } as const;

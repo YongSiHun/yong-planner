@@ -1,5 +1,5 @@
 import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
-import type { Theme } from './/palette';
+import type { Theme } from './palette';
 import { design, lineHeightForSize } from './tokens';
 
 export function label(
@@ -32,9 +32,10 @@ export function button(
     [
       {
         minHeight: design.touchTarget,
+        maxWidth: '100%',
         minWidth: design.touchTarget,
         paddingHorizontal: compact ? design.space.sm : design.space.md,
-        paddingVertical: compact ? design.space.xs : 10,
+        paddingVertical: compact ? design.space.xs : design.space.sm,
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: design.radius.medium,
@@ -76,14 +77,14 @@ export function input(
       backgroundColor: theme.bg,
       borderColor: theme.line,
       borderWidth: 1,
-      borderRadius: 9,
-      padding: 12,
-      minHeight: 48,
+      borderRadius: design.radius.medium,
+      padding: design.space.md,
+      minHeight: design.controlHeight,
       height: propsMultiline ? contentHeight : undefined,
       fontSize: design.type.body,
       lineHeight: design.lineHeights.body,
       fontFamily: design.font.regular,
-      textAlignVertical: 'top',
+      textAlignVertical: propsMultiline ? 'top' : 'center',
     } as const,
     propsStyle,
   ] as const;
