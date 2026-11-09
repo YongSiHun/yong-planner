@@ -16,7 +16,7 @@
     "ipa": "eas build --platform ios --profile production --local",
     "submit-ipa": "eas submit --platform ios --profile production --path",
     "eas-build-pre-install": "corepack enable",
-    "prebuild": "npx expo prebuild --no-clean",
+    "prebuild": "expo prebuild",
     "prepare": "husky",
     "lint": "eslint .",
     "format": "prettier --write .",
