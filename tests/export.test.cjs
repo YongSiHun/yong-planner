@@ -2,6 +2,8 @@ require('./register.cjs');
 const assert = require('node:assert/strict');
 const { test, beforeEach } = require('node:test');
 const shared = [];
+const files = [];
+const fileShares = [];
 let copied;
 let shareError;
 function mock(name, exports) {
@@ -19,13 +21,22 @@ mock('react-native', {
 });
 mock('expo-file-system', {
   File: class {
-    constructor() {
-      throw new Error('Text sharing must not create files');
+    constructor(directory, name) {
+      this.name = name;
+      this.uri = directory + '/' + name;
+      files.push(this);
+    }
+    create() {}
+    write(content) {
+      this.content = content;
     }
   },
   Paths: { cache: 'cache' },
 });
-mock('expo-sharing', {});
+mock('expo-sharing', {
+  isAvailableAsync: async () => true,
+  shareAsync: async (uri, options) => fileShares.push({ uri, ...options }),
+});
 mock('expo-clipboard', {
   setStringAsync: async (text) => {
     copied = text;
@@ -51,6 +62,8 @@ beforeEach(() => {
   copied = undefined;
   shareError = undefined;
   shared.length = 0;
+  files.length = 0;
+  fileShares.length = 0;
 });
 
 test('Kakao share opens the OS text share sheet with the selected month schedule', async () => {
@@ -61,6 +74,7 @@ test('Kakao share opens the OS text share sheet with the selected month schedule
   assert.ok(shared[0].message.includes('회의'));
   assert.ok(shared[0].message.includes('장보기'));
   assert.equal(shared[0].url, undefined);
+  assert.equal(files.length, 0);
   assert.equal(copied, undefined);
 });
 
@@ -71,9 +85,28 @@ test('content copy writes the same Korean plain text without opening the share s
   assert.equal(shared.length, 0);
   await exportMonth(fixture(), '2026-11-07', 'share');
   assert.equal(copied, shared[0].message);
+  assert.equal(files.length, 0);
 });
 
 test('share failures reach the screen so an error can be displayed', async () => {
   shareError = new Error('share failed');
   await assert.rejects(exportMonth(fixture(), '2026-11-07', 'share'), /share failed/);
 });
+
+for (const [format, mimeType] of [
+  ['json', 'application/json'],
+  ['txt', 'text/plain'],
+  ['csv', 'text/csv'],
+]) {
+  test(format + ' uses the selected year and month in its filename', async () => {
+    await exportMonth(fixture(), '2026-11-07', format);
+    assert.equal(files[0].name, 'yongplanner-2026-11.' + format);
+    assert.equal(fileShares[0].mimeType, mimeType);
+    if (format === 'json') {
+      const { parseBackup } = require('../src/services/backup/index.ts');
+      const backup = parseBackup(files[0].content);
+      assert.equal(backup.month, '2026-11');
+      assert.equal(backup.dailyPlanItems[0].content, '회의\n장보기');
+    }
+  });
+}

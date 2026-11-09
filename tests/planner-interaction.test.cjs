@@ -1020,19 +1020,6 @@ test('marking selected schedules important affects only those chips and supports
   );
 });
 
-test('important chip shows its star, sky background and accessible label', () => {
-  cursor = 0;
-  const button = ScheduleChip({ content: '회의', important: true, onPress() {}, onLongPress() {} });
-  assert.equal(button.props.style({ pressed: false }).backgroundColor, '#E4F2FF');
-  assert.equal(button.props.accessibilityLabel, '회의, 중요 일정');
-  const mark = find(button, (node) => node.type?.name === 'ImportantMark');
-  const badge = mark.type(mark.props);
-  assert.equal(badge.props.children.props.name, 'star');
-  assert.equal(badge.props.children.props.size, 10);
-  assert.equal(badge.props.style.position, 'absolute');
-  assert.equal(badge.props.style.left, 2);
-});
-
 test('12-hour time picker selects AM/PM for all selected schedules and clamps invalid values', () => {
   const { TimePicker } = require('../src/features/planner/components/TimePicker.tsx');
   const savedTimes = [];

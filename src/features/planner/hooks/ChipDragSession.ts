@@ -14,7 +14,7 @@ export class ChipDragSession {
   private moving: number | null = null;
   readonly pan = PanResponder.create({
     // Long press 후 첫 이동부터 캡처: ScrollView 선점 방지.
-    onMoveShouldSetPanResponderCapture: () => this.armed !== null,
+    onMoveShouldSetPanResponderCapture: () => this.armed !== null && this.canDrag(this.armed),
     onPanResponderGrant: () => this.begin(),
     onPanResponderMove: (_, gesture) => this.move(gesture.dx, gesture.dy),
     onPanResponderRelease: (_, gesture) => this.finish(gesture.dx, gesture.dy),
@@ -23,7 +23,10 @@ export class ChipDragSession {
     onShouldBlockNativeResponder: () => true,
   });
 
-  constructor(private publish: (snapshot: ChipDragSnapshot) => void) {}
+  constructor(
+    private publish: (snapshot: ChipDragSnapshot) => void,
+    private canDrag: (index: number) => boolean = () => true,
+  ) {}
 
   setCount(count: number) {
     this.boxes.forEach((_, index) => {
@@ -43,7 +46,7 @@ export class ChipDragSession {
     this.boxes.set(index, event.nativeEvent.layout);
   };
   arm = (index: number) => {
-    this.armed = index;
+    this.armed = this.canDrag(index) ? index : null;
   };
   releaseArm = () => {
     this.armed = null;
@@ -52,7 +55,7 @@ export class ChipDragSession {
   private begin() {
     const index = this.armed;
     const box = index === null ? undefined : this.boxes.get(index);
-    const canBegin = index !== null && box !== undefined;
+    const canBegin = index !== null && box !== undefined && this.canDrag(index);
 
     if (!canBegin) {
       return;
@@ -74,18 +77,21 @@ export class ChipDragSession {
       return;
     }
     this.updateTarget(box, dx, dy);
-    const target = this.target;
-    const hasTarget = target !== null;
+    this.commit(source, this.target);
+    this.cancel();
+  }
 
-    if (hasTarget) {
+  private commit(source: number, target: ChipDropTarget | null) {
+    const shouldMove = target !== null && this.canDrag(source);
+
+    if (shouldMove) {
       this.onMove?.(source, target.boundary);
     }
-    this.cancel();
   }
 
   private move(dx: number, dy: number) {
     const box = this.moving === null ? undefined : this.boxes.get(this.moving);
-    const hasBox = box !== undefined;
+    const hasBox = box !== undefined && this.moving !== null && this.canDrag(this.moving);
 
     if (!hasBox) {
       return;

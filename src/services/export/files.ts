@@ -5,7 +5,7 @@ import * as Sharing from 'expo-sharing';
 import { Share } from 'react-native';
 import type { PlannerData } from '../../features/planner/types';
 import { monthLabel, today } from '../../utils/date';
-import { createBackup, MAX_BACKUP_BYTES, parseBackup } from '../backup';
+import { createBackup, MAX_BACKUP_BYTES, parseBackup, type PlannerBackup } from '../backup';
 import { createHolidayService } from '../holiday';
 import { monthCsv, monthTxt } from './index';
 
@@ -17,6 +17,8 @@ type MonthExporter = (
 ) => Promise<unknown>;
 
 const monthExporters = {
+  json: async (data, month) =>
+    shareFile(monthFilename(month, 'json'), createBackup(data, month), 'application/json'),
   txt: async (data, month, holidays) =>
     shareFile(monthFilename(month, 'txt'), monthTxt(data, month, holidays), 'text/plain'),
   csv: async (data, month, holidays) =>
@@ -28,7 +30,7 @@ const monthExporters = {
 } satisfies Record<string, MonthExporter>;
 
 function monthFilename(month: string, extension: string): string {
-  return 'yong_planner_' + month.slice(0, 7).replace('-', '_') + '.' + extension;
+  return 'yongplanner-' + month.slice(0, 7) + '.' + extension;
 }
 
 const fileTypes: Record<string, string> = {
@@ -63,12 +65,12 @@ export async function exportMonth(
 }
 
 export async function backupFile(data: PlannerData): Promise<void> {
-  const filename = 'yong_planner_backup_' + today().replace(/-/g, '') + '.json';
+  const filename = 'yongplanner-' + today().slice(0, 7) + '.json';
 
   await shareFile(filename, createBackup(data), 'application/json');
 }
 
-export async function chooseBackup(): Promise<PlannerData | null> {
+export async function chooseBackup(): Promise<PlannerBackup | null> {
   const result = await DocumentPicker.getDocumentAsync({
     type: ['application/json', 'text/plain', 'application/octet-stream'],
     copyToCacheDirectory: true,

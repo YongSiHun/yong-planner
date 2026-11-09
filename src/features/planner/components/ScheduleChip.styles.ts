@@ -5,7 +5,7 @@ export function chip(selected: boolean, theme: Theme, important = false) {
   return ({ pressed }: import('react-native').PressableStateCallbackType) =>
     ({
       backgroundColor: chipBackground(selected, important, theme),
-      borderColor: selected ? theme.accent : theme.line,
+      borderColor: selected || important ? theme.accent : theme.line,
       borderWidth: 1,
       borderRadius: design.radius.pill,
       paddingHorizontal: design.space.sm,
@@ -21,11 +21,8 @@ export function chip(selected: boolean, theme: Theme, important = false) {
 
 export function importantMark(selected: boolean, theme: Theme) {
   return {
-    position: 'absolute',
-    top: -4,
-    left: 2,
-    width: 12,
-    height: 12,
+    width: 16,
+    height: 16,
     borderRadius: design.radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -33,10 +30,10 @@ export function importantMark(selected: boolean, theme: Theme) {
   } as const;
 }
 
-export function chipLabel(selected: boolean, theme: Theme) {
+export function chipLabel(selected: boolean, theme: Theme, important = false) {
   return {
     color: selected ? theme.onAccent : theme.text,
-    fontFamily: design.font.regular,
+    fontFamily: important ? design.font.bold : design.font.regular,
     includeFontPadding: false,
     fontSize: design.type.body,
     lineHeight: design.lineHeight,

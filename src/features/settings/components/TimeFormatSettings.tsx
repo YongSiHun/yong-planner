@@ -11,14 +11,16 @@ export function TimeFormatSettings() {
 
   return (
     <>
-      <Label style={styles.timeFormatSettingsLabelStyle}>시간 표시</Label>
+      <View style={layoutStyles.row}>
+        <Label style={styles.timeFormatSettingsLabelStyle}>시간 표시</Label>
+        <Label muted style={styles.timeFormatSettingsLabelStyle2}>
+          {'예) ' + formatScheduleContent('빨래하기', '13:00', format)}
+        </Label>
+      </View>
       <View style={layoutStyles.row}>
         <Button title="24시간제" selected={format === '24h'} onPress={() => setTimeFormat('24h')} />
         <Button title="12시간제" selected={format === '12h'} onPress={() => setTimeFormat('12h')} />
       </View>
-      <Label muted style={styles.timeFormatSettingsLabelStyle2}>
-        {formatScheduleContent('밥먹기', '13:00', format)}
-      </Label>
     </>
   );
 }

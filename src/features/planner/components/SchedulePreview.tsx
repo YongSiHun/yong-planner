@@ -59,8 +59,8 @@ export function SchedulePreview({
             selected={selectedIndexes.has(index)}
             selecting={selecting}
             onLongPress={() => {
-              onArm?.(index);
               onSelect(index, true);
+              onArm?.(index);
             }}
             onPress={() => (selecting ? onSelect(index) : onEdit(index))}
             onBefore={() => onInsert?.(index)}

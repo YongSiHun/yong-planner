@@ -42,16 +42,30 @@ function BackupSettings() {
   const actions = useBackupState();
   const isRestoring = usePlanner((state) => state.restoring);
   const isDisabled = actions.isBusy || isRestoring;
-  const backupTitle = actions.isBusy ? '처리 중…' : 'JSON 백업 파일 공유';
+  const [guideOpen, setGuideOpen] = useState(false);
 
   return (
     <>
-      <Label style={styles.backupSettingsLabelStyle}>데이터 보관</Label>
-      <Label muted>
-        일정은 이 기기에 저장됩니다. 기기를 바꾸기 전에는 JSON 백업 파일을 보관해 주세요.
-      </Label>
-      <Button title={backupTitle} disabled={isDisabled} onPress={actions.handleBackup} />
+      <Label style={styles.backupSettingsLabelStyle}>데이터 복원</Label>
       <Button title="JSON 백업에서 복원" disabled={isDisabled} onPress={actions.handleRestore} />
+      <Button title="데이터 백업 방법" onPress={() => setGuideOpen(true)} />
+      {guideOpen ? (
+        <Dialog title="데이터 백업 방법" onClose={() => setGuideOpen(false)}>
+          <Label>1. 달력에서 백업할 월을 선택하세요.</Label>
+          <Label>2. 우측 메뉴 → 내보내기 → JSON 파일 공유를 누르세요.</Label>
+          <Label>
+            3. 파일 앱이나 클라우드에 yongplanner-2026-11.json 같은 이름으로 저장하세요.
+          </Label>
+          <Label muted>
+            월마다 따로 백업해 주세요. JSON에는 해당 월의 일정과 반복 일정, 시간, 중요 표시가
+            저장됩니다.
+          </Label>
+          <Label muted>
+            설정 → JSON 백업에서 복원으로 불러오면 해당 월의 일정만 교체합니다. 기존 전체 백업
+            파일도 복원할 수 있습니다. TXT와 CSV는 열람·공유용이며 복원할 수 없습니다.
+          </Label>
+        </Dialog>
+      ) : null}
     </>
   );
 }

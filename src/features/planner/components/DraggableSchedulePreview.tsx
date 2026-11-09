@@ -10,7 +10,7 @@ export function DraggableSchedulePreview({
   ...props
 }: SchedulePreviewProps & { onMove(from: number, boundary: number): void }) {
   const theme = useTheme();
-  const drag = useChipDrag(onMove, props.note.split(',').length);
+  const drag = useChipDrag(onMove, props.note.split(',').length, props.date);
   const index = drag.index;
   const box = drag.box;
   const hasOverlay = index !== null && box !== undefined;

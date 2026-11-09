@@ -49,7 +49,7 @@ export function ScheduleChip({
     >
       {selected ? <Feather name="check" size={14} color={theme.onAccent} /> : null}
       <ImportantMark important={important} selected={selected} />
-      <Text style={styles.chipLabel(selected, theme)}>{label}</Text>
+      <Text style={styles.chipLabel(selected, theme, important)}>{label}</Text>
       <ChipEdges
         selecting={selecting}
         content={content}
@@ -138,7 +138,7 @@ function ImportantMark({ important, selected }: { important: boolean; selected: 
 
   return (
     <View pointerEvents="none" style={styles.importantMark(selected, theme)}>
-      <Feather name="star" size={10} color={selected ? theme.onAccent : theme.accent} />
+      <Feather name="star" size={14} color={selected ? theme.onAccent : theme.accent} />
     </View>
   );
 }
