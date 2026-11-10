@@ -2,8 +2,6 @@ import type { Theme } from '../../../components/ui/palette';
 import { design } from '../../../components/ui/tokens';
 export { action } from '../../../components/ui/Dialog.styles';
 
-export const dialogHeight = design.layout.pickerHeight;
-
 export const timePickerViewStyle = {
   flexDirection: 'row',
   flexShrink: 0,
@@ -44,7 +42,7 @@ export function preview(theme: Theme) {
 }
 
 export const previewScroll = {
-  height: design.lineHeights.body * design.layout.previewRows,
+  maxHeight: design.lineHeights.body * design.layout.previewRows,
   flexShrink: 1,
   minHeight: 0,
   flexGrow: 0,

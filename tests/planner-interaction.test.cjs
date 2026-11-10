@@ -1521,7 +1521,7 @@ test('time and alarm dialogs keep controls fixed and scroll only the schedule pr
     });
     for (const dialog of dialogs) {
       assert.equal(dialog.props.scrollable, false);
-      assert.equal(dialog.props.height, dialogs[0].props.height);
+      assert.equal(dialog.props.height, undefined);
       const [preview, controls] = React.Children.toArray(dialog.props.children);
       assert.deepEqual(
         preview.props.style,
@@ -1529,7 +1529,8 @@ test('time and alarm dialogs keep controls fixed and scroll only the schedule pr
       );
       const list = find(preview, (node) => node.type === 'ScrollView');
       assert.ok(list);
-      assert.ok(list.props.style.height > 0);
+      assert.ok(list.props.style.maxHeight > 0);
+      assert.equal(list.props.style.height, undefined);
       assert.equal(
         find(list, (node) => node.props?.accessibilityLabel === '시'),
         undefined,

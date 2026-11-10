@@ -1,46 +1,53 @@
+import type { Theme } from '../../../components/ui/palette';
 import { design } from '../../../components/ui/tokens';
 
-export const container = {
-  backgroundColor: '#505050',
-  borderTopWidth: 1,
-  borderTopColor: '#707070',
-  width: '100%',
-  flexShrink: 0,
-  paddingTop: 16,
-  paddingBottom: 30,
-} as const;
-export const viewport = { width: '100%', flexGrow: 0, flexShrink: 0 } as const;
+export function container(theme: Theme) {
+  return {
+    backgroundColor: theme.bg,
+    borderTopWidth: 1,
+    borderTopColor: theme.line,
+    width: '100%',
+    flexShrink: 0,
+    paddingTop: design.space.sm,
+    paddingBottom: design.space.xs,
+    paddingHorizontal: design.space.sm,
+  } as const;
+}
+
 export const actions = {
   flexDirection: 'row',
+  flexWrap: 'wrap',
   alignItems: 'stretch',
-  flexGrow: 1,
-  gap: 8,
-  paddingHorizontal: 16,
-} as const;
-export const action = {
-  minHeight: 66,
-  minWidth: 64,
-  flexGrow: 1,
-  flexShrink: 0,
-  paddingHorizontal: 8,
-  paddingVertical: 10,
-  borderRadius: design.radius.small,
-  backgroundColor: '#626262',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-} as const;
-export const label = {
-  color: '#eeeeee',
-  fontFamily: design.font.regular,
-  fontSize: design.type.small,
-  textAlign: 'center',
+  gap: design.space.xs,
 } as const;
 
-export function actionState(disabled: boolean) {
+export function label(theme: Theme) {
+  return {
+    color: theme.accent,
+    fontFamily: design.font.medium,
+    fontSize: design.type.small,
+    lineHeight: design.lineHeights.small,
+    textAlign: 'center',
+    alignSelf: 'stretch',
+  } as const;
+}
+
+export function actionState(disabled: boolean, theme: Theme) {
   return ({ pressed }: import('react-native').PressableStateCallbackType) => {
-    const activeOpacity = pressed ? 0.7 : 1;
+    const activeOpacity = pressed ? 0.6 : 1;
 
-    return [action, { opacity: disabled ? 0.4 : activeOpacity }];
+    return {
+      flex: 1,
+      minWidth: design.touchTarget,
+      minHeight: design.controlHeight + design.space.lg,
+      paddingHorizontal: design.space.xs,
+      paddingVertical: design.space.sm,
+      borderRadius: design.radius.medium,
+      backgroundColor: pressed ? theme.selected : 'transparent',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: design.space.xs,
+      opacity: disabled ? 0.4 : activeOpacity,
+    } as const;
   };
 }

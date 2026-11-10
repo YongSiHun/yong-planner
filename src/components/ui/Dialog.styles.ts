@@ -37,7 +37,7 @@ export function dialogViewStyle(theme: Theme, height?: number) {
   } as const;
 }
 
-export const dialogScrollViewStyle = { flexShrink: 1, width: '100%' } as const;
+export const dialogScrollViewStyle = { flexGrow: 0, flexShrink: 1, width: '100%' } as const;
 
 export const dialogScrollViewContentContainerStyle = { gap: design.space.md } as const;
 
@@ -83,4 +83,10 @@ export const action = {
   backgroundColor: 'transparent',
 } as const;
 
-export const fixedBody = { flex: 1, minHeight: 0, width: '100%', gap: design.space.md } as const;
+export const fixedBody = {
+  flexGrow: 0,
+  flexShrink: 1,
+  minHeight: 0,
+  width: '100%',
+  gap: design.space.md,
+} as const;

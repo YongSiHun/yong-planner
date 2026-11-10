@@ -45,7 +45,6 @@ export function TimePicker({
     <Dialog
       title={title}
       headerNotice={renderAlarmNotice(items, time, alarmSetting, theme)}
-      height={styles.dialogHeight}
       scrollable={false}
       onClose={onClose}
       footer={
