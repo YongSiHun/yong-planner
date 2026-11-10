@@ -1,7 +1,12 @@
 import type { Theme } from '../../../components/ui/palette';
 import { design } from '../../../components/ui/tokens';
 
-export function icon(edge: 'left' | 'right' | undefined, theme: Theme, disabled: boolean) {
+export function icon(
+  edge: 'left' | 'right' | undefined,
+  theme: Theme,
+  disabled: boolean,
+  feedback = true,
+) {
   return ({ pressed }: import('react-native').PressableStateCallbackType) =>
     ({
       width: design.touchTarget,
@@ -10,7 +15,7 @@ export function icon(edge: 'left' | 'right' | undefined, theme: Theme, disabled:
       paddingHorizontal: edge ? 6 : 0,
       justifyContent: 'center',
       borderRadius: design.radius.small,
-      backgroundColor: pressed ? theme.selected : 'transparent',
+      backgroundColor: pressed && feedback ? theme.selected : 'transparent',
       flexShrink: 0,
       opacity: disabled ? 0.35 : 1,
     }) as const;

@@ -79,6 +79,7 @@ cacheMock('react', {
   },
 });
 cacheMock('react-native', {
+  StyleSheet: { create: (styles) => styles },
   Alert: { alert: (title, message, buttons) => alerts.push({ title, message, buttons }) },
   Keyboard: { dismiss() {} },
   View: 'View',
@@ -478,11 +479,11 @@ test('single and multiple selections offer the same actions', () => {
   selection = renderSelection(edits);
   assert.equal(selection.selected.size, 1);
   let bar = SelectionBar({ count: 1, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
-  assert.deepEqual(buttonTitles(bar), ['시간 설정', '일정 복사', '알람 설정', '삭제', '더보기']);
+  assert.deepEqual(buttonTitles(bar), ['시간 설정', '일정 복사', '알람 설정', '삭제']);
   selection.toggle('2026-11-07', 1);
   selection = renderSelection(edits);
   bar = SelectionBar({ count: 2, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
-  assert.deepEqual(buttonTitles(bar), ['시간 설정', '일정 복사', '알람 설정', '삭제', '더보기']);
+  assert.deepEqual(buttonTitles(bar), ['시간 설정', '일정 복사', '알람 설정', '삭제']);
   selection.requestDelete();
   assert.equal(plannerData.dailyPlanItems.length, 2);
   selection = renderSelection(edits);
@@ -490,7 +491,7 @@ test('single and multiple selections offer the same actions', () => {
   assert.equal(plannerData.dailyPlanItems.length, 0);
 });
 
-test('year and month dialog uses matching steppers and blocks invalid values', () => {
+test('date navigation wraps months, preserves the year and blocks invalid values', () => {
   const choices = [];
   const render = () => {
     cursor = 0;
@@ -517,6 +518,20 @@ test('year and month dialog uses matching steppers and blocks invalid values', (
   find(field(picker, '월'), (node) => node.props?.accessibilityLabel === '다음 월').props.onPress();
   picker = render();
   assert.equal(find(field(picker, '월'), (node) => node.type === 'Input').props.value, '3');
+  find(field(picker, '월'), (node) => node.type === 'Input').props.onChangeText('12');
+  picker = render();
+  const plus = find(field(picker, '월'), (node) => node.props?.accessibilityLabel === '다음 월');
+  assert.equal(plus.props.disabled, false);
+  plus.props.onPress();
+  picker = render();
+  assert.equal(find(field(picker, '월'), (node) => node.type === 'Input').props.value, '1');
+  const minus = find(field(picker, '월'), (node) => node.props?.accessibilityLabel === '이전 월');
+  assert.equal(minus.props.disabled, false);
+  minus.props.onPress();
+  picker = render();
+  assert.equal(find(field(picker, '월'), (node) => node.type === 'Input').props.value, '12');
+  assert.equal(find(field(picker, '년'), (node) => node.type === 'Input').props.value, '2030');
+  assert.equal(picker.props.title, '날짜 이동');
   find(field(picker, '월'), (node) => node.type === 'Input').props.onChangeText('13');
   picker = render();
   assert.equal(picker.props.footer.props.disabled, true);
@@ -1160,7 +1175,7 @@ test('empty days and date labels dismiss selection without opening input or date
 test('selection bar omits selection count and bulk selection controls', () => {
   cursor = 0;
   const tree = SelectionBar({ count: 3 });
-  assert.deepEqual(buttonTitles(tree), ['시간 설정', '일정 복사', '알람 설정', '삭제', '더보기']);
+  assert.deepEqual(buttonTitles(tree), ['시간 설정', '일정 복사', '알람 설정', '삭제']);
   assert.equal(
     find(tree, (node) => node.type === 'Label'),
     undefined,
@@ -1591,26 +1606,11 @@ test('time modal warns below the title only when the chosen time would clear an 
   assert.equal(render().props.headerNotice, null);
 });
 
-test('more opens a modal for important schedules and applies the action', () => {
-  slots = [];
-  cursor = 0;
-  let marked = 0;
-  const props = { count: 1, onImportant: () => marked++ };
-  let tree = SelectionBar(props);
+test('selection bar has four evenly spaced actions without more', () => {
+  const tree = SelectionBar({ count: 1 });
+  assert.deepEqual(buttonTitles(tree), ['시간 설정', '일정 복사', '알람 설정', '삭제']);
   assert.equal(
     find(tree, (node) => node.type === 'Dialog'),
-    undefined,
-  );
-  find(tree, (node) => node.props?.title === '더보기').props.onPress();
-  cursor = 0;
-  tree = SelectionBar(props);
-  const dialog = find(tree, (node) => node.type === 'Dialog');
-  assert.ok(dialog);
-  find(dialog, (node) => node.props?.title === '중요 일정 등록').props.onPress();
-  assert.equal(marked, 1);
-  cursor = 0;
-  assert.equal(
-    find(SelectionBar(props), (node) => node.type === 'Dialog'),
     undefined,
   );
 });
@@ -1626,4 +1626,27 @@ test('alarm marks follow schedule chips in both preview and editing', () => {
   assert.match(ScheduleChip(chip.props).props.accessibilityLabel, /알람 설정됨/);
   const editor = renderInput('회의,식사', 1, () => {}, { noteAlarms: [true, false] });
   assert.equal(find(editor.tree, (node) => node.type === ScheduleChip).props.alarm, true);
+});
+
+test('empty input measures wrapped placeholder text so the hint is not clipped', () => {
+  let editor = renderInput('', 0);
+  const measurement = find(editor.tree, (node) => node.type === 'Text' && node.props.onTextLayout);
+  assert.equal(measurement.props.children, editor.input.props.placeholder);
+  measurement.props.onTextLayout({
+    nativeEvent: {
+      lines: [
+        { width: 230, height: 22 },
+        { width: 210, height: 22 },
+      ],
+    },
+  });
+  editor = renderInput('', 0);
+  assert.ok(editor.input.props.style.height >= 52);
+  changeInput(editor.input, '회의');
+  editor = renderInput('', 0);
+  const contentMeasurement = find(
+    editor.tree,
+    (node) => node.type === 'Text' && node.props.onTextLayout,
+  );
+  assert.equal(contentMeasurement.props.children, '회의');
 });

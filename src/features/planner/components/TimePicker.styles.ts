@@ -13,12 +13,27 @@ export const timePickerViewStyle2 = {
   flexDirection: 'row',
   flexShrink: 0,
   alignItems: 'center',
-  gap: design.space.sm,
+  gap: design.space.md,
+  paddingTop: design.space.sm,
+  paddingBottom: 0,
 } as const;
 
-export const timePickerViewStyle3 = { flex: 1 } as const;
+export const timePickerViewStyle3 = { flex: 1, minWidth: 0 } as const;
 
-export const timePickerInputStyle = { textAlign: 'center' } as const;
+export const timePickerInputStyle = {
+  textAlign: 'center',
+  fontSize: design.type.title,
+  lineHeight: design.lineHeights.title,
+  fontFamily: design.font.medium,
+  minHeight: design.controlHeight + design.space.sm,
+  paddingHorizontal: design.space.sm,
+  paddingVertical: design.space.sm,
+} as const;
+export const timeUnit = {
+  fontSize: design.type.action,
+  lineHeight: design.lineHeights.action,
+  fontFamily: design.font.medium,
+} as const;
 
 export const footer = {
   flexDirection: 'row',
@@ -31,13 +46,14 @@ export const clearSlot = { flexGrow: 1, flexDirection: 'row' } as const;
 
 export function preview(theme: Theme) {
   return {
+    marginTop: design.space.sm,
     flexShrink: 1,
     minHeight: 0,
     overflow: 'hidden',
     backgroundColor: theme.surface,
     borderRadius: design.radius.medium,
-    padding: design.space.md,
-    gap: design.space.sm,
+    padding: design.space.sm,
+    gap: design.space.xs,
   } as const;
 }
 

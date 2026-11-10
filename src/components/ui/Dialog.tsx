@@ -12,23 +12,33 @@ import { Label, useTheme } from './index';
 export function Dialog({
   title,
   headerNotice,
+  titleSize,
   children,
   footer,
   onClose,
   showHeader = true,
   dismissOnPress = false,
   height,
+  maxWidth,
+  paddingVertical,
+  contentGap,
   scrollable = true,
+  showsScrollIndicator = true,
 }: {
   title: string;
   headerNotice?: ReactNode;
+  titleSize?: number;
   children: ReactNode;
   footer?: ReactNode;
   onClose(): void;
   showHeader?: boolean;
   dismissOnPress?: boolean;
   height?: number;
+  maxWidth?: number;
+  paddingVertical?: number;
+  contentGap?: number;
   scrollable?: boolean;
+  showsScrollIndicator?: boolean;
 }) {
   const theme = useTheme();
   const Surface = dismissOnPress ? Pressable : View;
@@ -52,16 +62,19 @@ export function Dialog({
               accessibilityViewIsModal
               accessible={false}
               onPress={dismissOnPress ? onClose : undefined}
-              style={styles.dialogViewStyle(theme, height)}
+              style={styles.dialogViewStyle(theme, height, maxWidth, paddingVertical, contentGap)}
             >
               <DialogHeading
                 title={title}
                 notice={headerNotice}
+                titleSize={titleSize}
                 visible={showHeader}
                 showClose={!dismissOnPress}
                 onClose={onClose}
               />
-              <DialogBody scrollable={scrollable}>{children}</DialogBody>
+              <DialogBody scrollable={scrollable} showsScrollIndicator={showsScrollIndicator}>
+                {children}
+              </DialogBody>
               {footer ? <View style={styles.dialogViewStyle2}>{footer}</View> : null}
             </Surface>
             <ToastHost />
@@ -75,12 +88,14 @@ export function Dialog({
 function DialogHeading({
   title,
   notice,
+  titleSize,
   visible,
   showClose,
   onClose,
 }: {
   title: string;
   notice?: ReactNode;
+  titleSize?: number;
   visible: boolean;
   showClose: boolean;
   onClose(): void;
@@ -94,7 +109,7 @@ function DialogHeading({
   return (
     <View style={styles.dialogHeadingViewStyle}>
       <View style={styles.dialogHeadingContent}>
-        <Label style={styles.dialogHeadingLabelStyle}>{title}</Label>
+        <Label style={styles.dialogHeadingLabelStyle(titleSize)}>{title}</Label>
         {notice}
       </View>
       {showClose ? (
@@ -111,12 +126,21 @@ function DialogHeading({
   );
 }
 
-function DialogBody({ children, scrollable }: { children: ReactNode; scrollable: boolean }) {
+function DialogBody({
+  children,
+  scrollable,
+  showsScrollIndicator,
+}: {
+  children: ReactNode;
+  scrollable: boolean;
+  showsScrollIndicator: boolean;
+}) {
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const keyboard = useInlineKeyboard(scrollRef);
   const body = scrollable ? (
     <ScrollView
       ref={scrollRef}
+      showsVerticalScrollIndicator={showsScrollIndicator}
       style={styles.dialogScrollViewStyle}
       onLayout={keyboard.scheduleReveal}
       onContentSizeChange={keyboard.scheduleReveal}

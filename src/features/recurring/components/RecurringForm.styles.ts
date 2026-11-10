@@ -12,6 +12,7 @@ export function recurringFormLabelStyle(theme: Theme) {
     color: theme.accent,
     fontFamily: design.font.bold,
     fontSize: design.type.title,
+    lineHeight: design.lineHeights.title,
   } as const;
 }
 

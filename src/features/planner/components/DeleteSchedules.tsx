@@ -23,7 +23,7 @@ export function DeleteSchedules({
           <Button
             title="취소"
             bold
-            labelSize={design.type.body}
+            labelSize={design.type.action}
             onPress={onCancel}
             textColor={theme.accent}
             style={styles.action}
@@ -31,7 +31,7 @@ export function DeleteSchedules({
           <Button
             title="삭제"
             bold
-            labelSize={design.type.body}
+            labelSize={design.type.action}
             onPress={onConfirm}
             textColor={theme.red}
             style={styles.action}

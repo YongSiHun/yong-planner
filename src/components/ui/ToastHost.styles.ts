@@ -18,7 +18,7 @@ export function message(theme: Theme) {
     backgroundColor: theme.text,
     color: theme.bg,
     fontFamily: design.font.medium,
-    fontSize: design.type.action,
+    fontSize: design.type.body,
     lineHeight: design.lineHeight,
     borderRadius: design.radius.medium,
     paddingHorizontal: design.space.lg,

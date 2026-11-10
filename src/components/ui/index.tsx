@@ -101,9 +101,7 @@ export function Button({
         style,
       )}
     >
-      <Text
-        style={styles.buttonLabel(textColor, danger, theme, labelSize, compact, selected, bold)}
-      >
+      <Text style={styles.buttonLabel(textColor, danger, theme, labelSize, selected, bold)}>
         {title}
       </Text>
     </Pressable>

@@ -12,8 +12,8 @@ export function guideStepViewStyle(theme: Theme) {
 }
 
 export const guideStepLabelStyle = {
-  fontSize: design.type.body,
-  lineHeight: design.lineHeights.body,
+  fontSize: design.type.action,
+  lineHeight: design.lineHeights.action,
   fontFamily: design.font.bold,
 } as const;
 
@@ -49,11 +49,27 @@ export function splitExampleTextStyle2(theme: Theme) {
   } as const;
 }
 
-export const guideFooterViewStyle = { gap: design.space.sm } as const;
+export const guideFooterViewStyle = {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: design.space.xs,
+} as const;
 
 export const guideFooterPressableStyle = {
   flexDirection: 'row',
   alignItems: 'center',
   gap: design.space.sm,
   minHeight: design.touchTarget,
+} as const;
+
+export const guideContent = {
+  gap: design.space.sm,
+  paddingBottom: design.space.sm,
+} as const;
+
+export const dontShowAgainLabel = {
+  fontSize: design.type.small + 1,
+  lineHeight: design.lineHeights.small,
 } as const;

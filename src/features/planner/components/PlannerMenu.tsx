@@ -26,27 +26,33 @@ export function PlannerMenu({ type, month, onClose, onShowExport, onExport }: Pl
   }
 
   return (
-    <Dialog title={title} onClose={onClose} showHeader={false}>
-      <View style={styles.plannerMenuViewStyle}>
+    <Dialog
+      title={title}
+      onClose={onClose}
+      showHeader={false}
+      maxWidth={design.layout.menuMaxWidth}
+      paddingVertical={isNavigationMenu ? undefined : design.space.sm}
+    >
+      <View style={isNavigationMenu ? styles.plannerMenuViewStyle : styles.exportMenu}>
         {isNavigationMenu ? (
           <>
             <Button
               bold
-              labelSize={design.type.body}
+              labelSize={design.type.title}
               style={styles.plannerMenuButtonStyle}
               title="내보내기"
               onPress={onShowExport}
             />
             <Button
               bold
-              labelSize={design.type.body}
+              labelSize={design.type.title}
               style={styles.plannerMenuButtonStyle}
               title="알림"
               onPress={() => handleNavigate('/notifications')}
             />
             <Button
               bold
-              labelSize={design.type.body}
+              labelSize={design.type.title}
               style={styles.plannerMenuButtonStyle}
               title="설정"
               onPress={() => handleNavigate('/settings')}
@@ -56,29 +62,29 @@ export function PlannerMenu({ type, month, onClose, onShowExport, onExport }: Pl
           <>
             <Button
               bold
-              labelSize={design.type.body}
-              style={styles.plannerMenuButtonStyle}
+              labelSize={design.type.action}
+              style={styles.exportButton}
               title="내용 복사"
               onPress={() => onExport('clipboard')}
             />
             <Button
               bold
-              labelSize={design.type.body}
-              style={styles.plannerMenuButtonStyle}
+              labelSize={design.type.action}
+              style={styles.exportButton}
               title="TXT 파일 공유"
               onPress={() => onExport('txt')}
             />
             <Button
               bold
-              labelSize={design.type.body}
-              style={styles.plannerMenuButtonStyle}
+              labelSize={design.type.action}
+              style={styles.exportButton}
               title="JSON 파일 공유"
               onPress={() => onExport('json')}
             />
             <Button
               bold
-              labelSize={design.type.body}
-              style={styles.plannerMenuButtonStyle}
+              labelSize={design.type.action}
+              style={styles.exportButton}
               title="CSV 파일 공유"
               onPress={() => onExport('csv')}
             />

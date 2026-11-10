@@ -91,7 +91,7 @@ export function ScheduleInput({
         onTextLayout={handleTextLayout}
         style={styles.measurement(availableWidth)}
       >
-        {content || ' '}
+        {edit.text.length === 0 ? PLACEHOLDER : content || ' '}
       </Text>
       {parts.slice(0, edit.index).map(renderChip)}
       {/* Native 입력 유지: 칩 전환 시 재마운트 방지. */}

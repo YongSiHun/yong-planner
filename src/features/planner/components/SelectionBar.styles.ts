@@ -25,8 +25,8 @@ export function label(theme: Theme) {
   return {
     color: theme.accent,
     fontFamily: design.font.medium,
-    fontSize: design.type.small,
-    lineHeight: design.lineHeights.small,
+    fontSize: design.type.action,
+    lineHeight: design.lineHeights.action,
     textAlign: 'center',
     alignSelf: 'stretch',
   } as const;

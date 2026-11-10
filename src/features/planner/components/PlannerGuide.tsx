@@ -1,7 +1,7 @@
 import Feather from '@expo/vector-icons/Feather';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { Button, Label, useTheme } from '../../../components/ui';
+import { Button, design, Label, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
 import * as styles from './PlannerGuide.styles';
 
@@ -28,32 +28,36 @@ export function PlannerGuide({
   return (
     <Dialog
       title="사용 가이드"
+      showsScrollIndicator={false}
+      titleSize={design.type.title + 1}
       onClose={onClose}
       footer={
         <GuideFooter onClose={onClose} checked={dontShowAgain} onChange={onDontShowAgainChange} />
       }
     >
-      <GuideStep title="1. 눌러서 작성">
-        <Label muted style={styles.plannerGuideLabelStyle}>
-          일정 칸이나 칩을 눌러 수정하세요. 자동으로 저장돼요.
-        </Label>
-      </GuideStep>
-      <GuideStep title="2. 쉼표(,)나 엔터로 나누기">
-        <SplitExample />
-      </GuideStep>
-      <GuideStep title="3. 일정 복사">
-        <Label muted style={styles.plannerGuideLabelStyle}>
-          {'칩 길게 누르기 > 일정 복사 > 날짜 선택 > 복사'}
-        </Label>
-        <Label muted style={styles.plannerGuideLabelStyle}>
-          월을 넘겨서도 복사 가능해요.
-        </Label>
-      </GuideStep>
-      <GuideStep title="4. 공유">
-        <Label muted style={styles.plannerGuideLabelStyle}>
-          우측 메뉴 → 내보내기에서 공유하거나 복사하세요.
-        </Label>
-      </GuideStep>
+      <View style={styles.guideContent}>
+        <GuideStep title="1. 눌러서 작성">
+          <Label muted style={styles.plannerGuideLabelStyle}>
+            일정 칸이나 칩을 눌러 수정하세요. 자동으로 저장돼요.
+          </Label>
+        </GuideStep>
+        <GuideStep title="2. 쉼표(,)나 엔터로 나누기">
+          <SplitExample />
+        </GuideStep>
+        <GuideStep title="3. 일정 복사">
+          <Label muted style={styles.plannerGuideLabelStyle}>
+            {'칩 길게 누르기 > 일정 복사 > 날짜 선택 > 복사'}
+          </Label>
+          <Label muted style={styles.plannerGuideLabelStyle}>
+            월을 넘겨서도 복사 가능해요.
+          </Label>
+        </GuideStep>
+        <GuideStep title="4. 공유">
+          <Label muted style={styles.plannerGuideLabelStyle}>
+            우측 메뉴 → 내보내기에서 공유하거나 복사하세요.
+          </Label>
+        </GuideStep>
+      </View>
     </Dialog>
   );
 }
@@ -64,6 +68,7 @@ function SplitExample() {
   return (
     <ScrollView
       horizontal
+      showsHorizontalScrollIndicator={false}
       bounces={false}
       contentContainerStyle={styles.splitExampleScrollViewContentContainerStyle}
     >
@@ -101,7 +106,7 @@ function GuideFooter({
         style={styles.guideFooterPressableStyle}
       >
         <Feather name={checked ? 'check-square' : 'square'} size={22} color={theme.accent} />
-        <Label style={styles.plannerGuideLabelStyle}>다시 보지 않음</Label>
+        <Label style={styles.dontShowAgainLabel}>다시 보지 않음</Label>
       </Pressable>
       <Button title="일정 작성하기" bold onPress={onClose} style={styles.action} />
     </View>

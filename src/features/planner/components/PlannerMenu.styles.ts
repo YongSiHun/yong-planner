@@ -7,7 +7,19 @@ export const plannerMenuViewStyle = {
 
 export const plannerMenuButtonStyle = {
   minHeight: 48,
-  alignItems: 'flex-start',
+  alignItems: 'center',
   paddingHorizontal: 0,
   paddingVertical: design.space.md,
+} as const;
+
+export const exportMenu = {
+  ...plannerMenuViewStyle,
+  gap: 0,
+  paddingVertical: 0,
+} as const;
+
+export const exportButton = {
+  ...plannerMenuButtonStyle,
+  minHeight: design.touchTarget,
+  paddingVertical: design.space.sm,
 } as const;

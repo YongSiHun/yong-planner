@@ -26,8 +26,8 @@ export function todayButtonPressableStyle(theme: Theme) {
 export function todayButtonTextStyle(theme: Theme) {
   return {
     color: theme.onAccent,
-    fontSize: design.type.small,
-    lineHeight: design.lineHeights.small,
+    fontSize: design.type.action,
+    lineHeight: design.lineHeights.action,
     fontFamily: design.font.medium,
   } as const;
 }

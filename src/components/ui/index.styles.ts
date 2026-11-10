@@ -51,11 +51,10 @@ export function buttonLabel(
   danger: boolean,
   theme: Theme,
   labelSize: number | undefined,
-  compact: boolean,
   selected: boolean,
   bold: boolean,
 ) {
-  const fontSize = labelSize ?? (compact ? design.type.small : design.type.body);
+  const fontSize = labelSize ?? design.type.action;
 
   return {
     color: textColor ?? (danger ? theme.red : theme.accent),

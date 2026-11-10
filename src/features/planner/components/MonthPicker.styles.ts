@@ -1,16 +1,29 @@
 import type { Theme } from '../../../components/ui/palette';
 import { design } from '../../../components/ui/tokens';
-export { action } from '../../../components/ui/Dialog.styles';
+import { filledButton } from '../../../components/ui/settings.styles';
 
 export const monthPickerViewStyle = {
   flexDirection: 'row',
   alignItems: 'center',
-  gap: design.space.sm,
+  gap: design.space.md,
 } as const;
 
-export const monthPickerViewStyle2 = { flex: 1 } as const;
+export const monthPickerViewStyle2 = { flex: 1, minWidth: 0 } as const;
 
-export const monthPickerInputStyle = { textAlign: 'center' } as const;
+export const monthPickerInputStyle = {
+  textAlign: 'center',
+  fontSize: design.type.title,
+  lineHeight: design.lineHeights.title,
+  fontFamily: design.font.medium,
+  minHeight: design.controlHeight + design.space.sm,
+  paddingHorizontal: design.space.sm,
+  paddingVertical: design.space.sm,
+} as const;
+export const unit = {
+  fontSize: design.type.action,
+  lineHeight: design.lineHeights.action,
+  fontFamily: design.font.medium,
+} as const;
 
 export function validation(theme: Theme) {
   return {
@@ -19,4 +32,8 @@ export function validation(theme: Theme) {
     lineHeight: design.lineHeights.small,
     marginTop: design.space.xs,
   } as const;
+}
+
+export function moveAction(theme: Theme) {
+  return { ...filledButton(theme), alignSelf: 'flex-end' } as const;
 }

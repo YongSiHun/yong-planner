@@ -21,25 +21,32 @@ export const dialogPressableStyle = {
   right: 0,
 } as const;
 
-export function dialogViewStyle(theme: Theme, height?: number) {
+export function dialogViewStyle(
+  theme: Theme,
+  height?: number,
+  maxWidth: number = design.layout.dialogMaxWidth,
+  paddingVertical?: number,
+  contentGap: number = design.space.sm,
+) {
   return {
     backgroundColor: theme.bg,
     borderRadius: design.radius.dialog,
     borderWidth: 1,
     borderColor: theme.line,
     padding: design.space.lg,
+    paddingVertical,
     height,
     maxHeight: '85%',
-    gap: design.space.md,
+    gap: contentGap,
     width: '100%',
-    maxWidth: design.layout.dialogMaxWidth,
+    maxWidth,
     alignSelf: 'center',
   } as const;
 }
 
 export const dialogScrollViewStyle = { flexGrow: 0, flexShrink: 1, width: '100%' } as const;
 
-export const dialogScrollViewContentContainerStyle = { gap: design.space.md } as const;
+export const dialogScrollViewContentContainerStyle = { gap: design.space.sm } as const;
 
 export const dialogViewStyle2 = { width: '100%' } as const;
 
@@ -51,11 +58,13 @@ export const dialogHeadingViewStyle = {
 
 export const dialogHeadingContent = { flex: 1, minWidth: 0, gap: design.space.xs } as const;
 
-export const dialogHeadingLabelStyle = {
-  fontSize: design.type.title,
-  lineHeight: design.lineHeights.title,
-  fontFamily: design.font.bold,
-} as const;
+export function dialogHeadingLabelStyle(size: number = design.type.title) {
+  return {
+    fontSize: size,
+    lineHeight: design.lineHeights.title + size - design.type.title,
+    fontFamily: design.font.bold,
+  } as const;
+}
 
 export const dialogHeadingPressableStyle = {
   width: design.touchTarget,
@@ -88,5 +97,5 @@ export const fixedBody = {
   flexShrink: 1,
   minHeight: 0,
   width: '100%',
-  gap: design.space.md,
+  gap: design.space.sm,
 } as const;

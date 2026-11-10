@@ -112,7 +112,7 @@ export function TimePicker({
             style={styles.timePickerInputStyle}
           />
         </View>
-        <Label>시</Label>
+        <Label style={styles.timeUnit}>시</Label>
         <View style={styles.timePickerViewStyle3}>
           <Input
             accessibilityLabel="분"
@@ -122,7 +122,7 @@ export function TimePicker({
             style={styles.timePickerInputStyle}
           />
         </View>
-        <Label>분</Label>
+        <Label style={styles.timeUnit}>분</Label>
       </View>
     </Dialog>
   );

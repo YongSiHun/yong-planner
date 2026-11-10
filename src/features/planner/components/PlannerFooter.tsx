@@ -34,8 +34,6 @@ export function PlannerFooter({
     return (
       <SelectionBar
         count={selection.selected.size}
-        onImportant={selection.toggleImportant}
-        allImportant={selection.allImportant}
         onCopy={selection.openCopy}
         onTime={selection.openTime}
         onAlarm={selection.toggleAlarm}
