@@ -20,7 +20,8 @@ export function header(theme: Theme) {
   return {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: design.space.md,
+    paddingLeft: design.space.md,
+    paddingRight: 0,
     borderBottomWidth: 1,
     borderBottomColor: theme.line,
   } as const;
