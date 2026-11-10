@@ -8,6 +8,7 @@ import * as styles from './ScheduleChip.styles';
 export function ScheduleChip({
   content,
   important = false,
+  alarm = false,
   time,
   timeFormat = '24h',
   onPress,
@@ -19,6 +20,7 @@ export function ScheduleChip({
 }: {
   content: string;
   important?: boolean;
+  alarm?: boolean;
   time?: string | null;
   timeFormat?: TimeFormat;
   onPress(): void;
@@ -40,7 +42,7 @@ export function ScheduleChip({
   return (
     <Pressable
       accessibilityRole={selecting ? 'checkbox' : 'button'}
-      accessibilityLabel={chipAccessibilityLabel(label, important)}
+      accessibilityLabel={chipAccessibilityLabel(label, important) + (alarm ? ', 알람 설정됨' : '')}
       accessibilityState={{ selected, checked: selected }}
       accessibilityHint="길게 누르면 여러 일정을 선택할 수 있어요."
       onPress={onPress}
@@ -48,7 +50,7 @@ export function ScheduleChip({
       style={styles.chip(selected, theme, important)}
     >
       {selected ? <Feather name="check" size={14} color={theme.onAccent} /> : null}
-      <ImportantMark important={important} selected={selected} />
+      <AlarmMark alarm={alarm} selected={selected} />
       <Text style={styles.chipLabel(selected, theme, important)}>{label}</Text>
       <ChipEdges
         selecting={selecting}
@@ -129,16 +131,16 @@ function chipAccessibilityLabel(label: string, important: boolean): string {
   return label + (important ? ', 중요 일정' : ', 일정');
 }
 
-function ImportantMark({ important, selected }: { important: boolean; selected: boolean }) {
+function AlarmMark({ alarm, selected }: { alarm: boolean; selected: boolean }) {
   const theme = useTheme();
 
-  if (!important) {
+  if (!alarm) {
     return null;
   }
 
   return (
     <View pointerEvents="none" style={styles.importantMark(selected, theme)}>
-      <Feather name="star" size={14} color={selected ? theme.onAccent : theme.accent} />
+      <Feather name="bell" size={14} color={selected ? theme.onAccent : theme.accent} />
     </View>
   );
 }

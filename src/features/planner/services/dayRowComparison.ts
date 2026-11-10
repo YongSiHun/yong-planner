@@ -50,7 +50,8 @@ export function areDayRowsEqual(before: DayRowProps, after: DayRowProps): boolea
       (id, index) =>
         id === after.noteIds[index] &&
         before.noteTimes[index] === after.noteTimes[index] &&
-        before.noteImportant?.[index] === after.noteImportant?.[index],
+        before.noteImportant?.[index] === after.noteImportant?.[index] &&
+        before.noteAlarms?.[index] === after.noteAlarms?.[index],
     );
 
   return sameValues && sameRecurring && sameExceptions && sameNoteIds;

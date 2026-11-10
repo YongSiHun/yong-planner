@@ -49,7 +49,7 @@ test('disabled notification planning never schedules untimed or past alarms', ()
   assert.equal(new Date(plan.pending[0].at).getHours(), 9);
   assert.equal(new Date(plan.pending[0].at).getMinutes(), 10);
 });
-test('today and next seven days use schedule time format, importance and recurring exceptions', () => {
+test('today and next seven days use schedule time format, alarm marks and recurring exceptions', () => {
   const data = seed();
   data.settings.timeFormat = '12h';
   data.dailyPlanItems[0].important = true;
@@ -71,7 +71,7 @@ test('today and next seven days use schedule time format, importance and recurri
     now,
     holidays,
   );
-  assert.match(plan.summary.body, /☆ 오전 9시 10분 회의/);
+  assert.match(plan.summary.body, /⏰ 오전 9시 10분 회의/);
   assert.doesNotMatch(plan.summary.body, /반복 일정/);
   assert.equal(plan.pending.filter((item) => item.kind === 'summary').length, 7);
   const tomorrow = plan.pending.find((item) => item.kind === 'alarm' && item.date === '2026-11-09');

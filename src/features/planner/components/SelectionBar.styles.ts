@@ -1,58 +1,46 @@
-import type { Theme } from '../../../components/ui/palette';
 import { design } from '../../../components/ui/tokens';
 
-export function container(theme: Theme) {
-  return {
-    backgroundColor: theme.bg,
-    borderTopWidth: 1,
-    borderTopColor: theme.line,
-    width: '100%',
-    flexShrink: 0,
-    paddingHorizontal: 1,
-    paddingVertical: 0,
-  } as const;
-}
-
-export const count = { fontSize: design.type.small, paddingHorizontal: 0 } as const;
-
+export const container = {
+  backgroundColor: '#505050',
+  borderTopWidth: 1,
+  borderTopColor: '#707070',
+  width: '100%',
+  flexShrink: 0,
+  paddingTop: 16,
+  paddingBottom: 30,
+} as const;
 export const viewport = { width: '100%', flexGrow: 0, flexShrink: 0 } as const;
-
 export const actions = {
   flexDirection: 'row',
   alignItems: 'stretch',
-  gap: design.space.sm,
-  paddingHorizontal: design.space.xs,
-  paddingVertical: 0,
+  flexGrow: 1,
+  gap: 8,
+  paddingHorizontal: 16,
 } as const;
-
 export const action = {
-  minHeight: design.touchTarget,
-  minWidth: 0,
+  minHeight: 66,
+  minWidth: 64,
+  flexGrow: 1,
   flexShrink: 0,
-  paddingHorizontal: 4,
-  paddingVertical: 2,
-  borderRadius: 0,
-  backgroundColor: 'transparent',
-} as const;
-
-export const summary = {
-  flexDirection: 'row',
+  paddingHorizontal: 8,
+  paddingVertical: 10,
+  borderRadius: design.radius.small,
+  backgroundColor: '#626262',
   alignItems: 'center',
-  justifyContent: 'space-between',
-  paddingHorizontal: design.space.sm,
-  paddingVertical: design.space.xs,
+  justifyContent: 'center',
+  gap: 6,
+} as const;
+export const label = {
+  color: '#eeeeee',
+  fontFamily: design.font.regular,
+  fontSize: design.type.small,
+  textAlign: 'center',
 } as const;
 
-export const cancel = {
-  minHeight: 32,
-  minWidth: 0,
-  paddingHorizontal: 0,
-  paddingVertical: 0,
-  backgroundColor: 'transparent',
-} as const;
+export function actionState(disabled: boolean) {
+  return ({ pressed }: import('react-native').PressableStateCallbackType) => {
+    const activeOpacity = pressed ? 0.7 : 1;
 
-export const selectionControls = {
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: design.space.sm,
-} as const;
+    return [action, { opacity: disabled ? 0.4 : activeOpacity }];
+  };
+}

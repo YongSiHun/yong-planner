@@ -35,3 +35,16 @@ function readRecord(raw: string): Record<string, unknown> {
 export async function saveNotificationPreferences(value: NotificationPreferences): Promise<void> {
   await storage.setItem(KEY, JSON.stringify(value));
 }
+
+const STARTUP_KEY = 'notification-startup-requested-v1';
+
+export async function claimStartupPermissionRequest(): Promise<boolean> {
+  const requested = await storage.getItem(STARTUP_KEY);
+
+  if (requested) {
+    return false;
+  }
+  await storage.setItem(STARTUP_KEY, 'true');
+
+  return true;
+}

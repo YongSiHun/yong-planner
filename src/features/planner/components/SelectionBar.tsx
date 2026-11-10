@@ -1,5 +1,8 @@
-import { ScrollView, View } from 'react-native';
-import { Button, design, Label, useTheme } from '../../../components/ui';
+import Feather from '@expo/vector-icons/Feather';
+import { useState, type ComponentProps } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Button } from '../../../components/ui';
+import { Dialog } from '../../../components/ui/Dialog';
 import * as styles from './SelectionBar.styles';
 
 export function SelectionBar({
@@ -10,8 +13,6 @@ export function SelectionBar({
   onTime,
   onAlarm,
   onDelete,
-  onCancel,
-  onSelectAll,
 }: {
   count: number;
   onImportant(): void;
@@ -20,98 +21,74 @@ export function SelectionBar({
   onTime(): void;
   onAlarm(): void;
   onDelete(): void;
-  onCancel(): void;
-  onSelectAll(): void;
 }) {
-  const theme = useTheme();
-  const hasSelection = count > 0;
+  const [moreOpen, setMoreOpen] = useState(false);
 
   return (
-    <View style={styles.container(theme)}>
-      <View style={styles.summary}>
-        <Label style={styles.count}>{count}개 선택</Label>
-        <View style={styles.selectionControls}>
-          <Button
-            labelSize={design.type.small}
-            style={styles.cancel}
-            compact
-            bold
-            title="전체선택"
-            accessibilityLabel="이번 달 일정 전체 선택"
-            onPress={onSelectAll}
-          />
-          <Label muted>|</Label>
-          <Button
-            labelSize={design.type.small}
-            style={styles.cancel}
-            compact
-            bold
-            title="해제"
-            accessibilityLabel="전체 선택 해제"
-            onPress={onCancel}
-          />
-        </View>
-      </View>
+    <View style={styles.container}>
       <ScrollView
         horizontal
         style={styles.viewport}
         contentContainerStyle={styles.actions}
-        showsHorizontalScrollIndicator
+        showsHorizontalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <Button
-          labelSize={design.type.body}
-          style={styles.action}
-          compact
-          bold
-          title={allImportant ? '중요 일정 해제' : '중요 일정 등록'}
-          accessibilityLabel={allImportant ? '중요 일정 해제' : '중요 일정 등록'}
-          selected={allImportant}
-          onPress={onImportant}
-        />
-
-        <Button
-          labelSize={design.type.body}
-          style={styles.action}
-          compact
-          bold
-          title="시간 설정"
-          accessibilityLabel="시간 설정"
-          onPress={onTime}
-        />
-        <Button
-          labelSize={design.type.body}
-          style={styles.action}
-          compact
-          bold
+        <SheetAction icon="clock" title="시간 설정" disabled={count === 0} onPress={onTime} />
+        <SheetAction
+          icon="copy"
           title="일정 복사"
-          accessibilityLabel="일정 복사"
           disabled={count !== 1}
           onDisabledPress={onCopy}
           onPress={onCopy}
         />
-        <Button
-          labelSize={design.type.body}
-          style={styles.action}
-          compact
-          bold
-          title="알람 설정"
-          accessibilityLabel="알람 설정"
-          disabled={!hasSelection}
-          onPress={onAlarm}
-        />
-        <Button
-          labelSize={design.type.body}
-          style={styles.action}
-          compact
-          bold
-          title="삭제"
-          accessibilityLabel="삭제"
-          danger
+        <SheetAction icon="bell" title="알람 설정" disabled={count === 0} onPress={onAlarm} />
+        <SheetAction icon="trash-2" title="삭제" disabled={count === 0} onPress={onDelete} />
+        <SheetAction
+          icon="more-horizontal"
+          title="더보기"
           disabled={count === 0}
-          onPress={onDelete}
+          onPress={() => setMoreOpen(true)}
         />
       </ScrollView>
+      {moreOpen ? (
+        <Dialog title="일정 더보기" onClose={() => setMoreOpen(false)}>
+          <Button
+            title={allImportant ? '중요 일정 해제' : '중요 일정 등록'}
+            onPress={() => {
+              setMoreOpen(false);
+              onImportant();
+            }}
+          />
+        </Dialog>
+      ) : null}
     </View>
+  );
+}
+
+function SheetAction({
+  icon,
+  title,
+  disabled,
+  onDisabledPress,
+  onPress,
+}: {
+  icon: ComponentProps<typeof Feather>['name'];
+  title: string;
+  disabled: boolean;
+  onDisabledPress?(): void;
+  onPress(): void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled }}
+      disabled={disabled && !onDisabledPress}
+      onPress={disabled ? onDisabledPress : onPress}
+      style={styles.actionState(disabled)}
+    >
+      <Feather name={icon} size={22} color="#e5e5e5" />
+      <Text style={styles.label}>{title}</Text>
+    </Pressable>
   );
 }

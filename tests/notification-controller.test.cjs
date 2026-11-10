@@ -10,6 +10,8 @@ let sound;
 let allowPrompt;
 let allowExact;
 let storedPreferences;
+let startupRequested;
+let acceptPermission = true;
 const events = [];
 const pending = new Map();
 const presented = new Map();
@@ -28,11 +30,17 @@ function permissions() {
 }
 mock('react-native', {
   Platform: platform,
+  Alert: { alert: (_title, _message, buttons) => buttons[acceptPermission ? 1 : 0].onPress() },
   Linking: { openSettings: async () => events.push('settings') },
 });
 mock('expo-sqlite/kv-store', {
-  getItem: async () => storedPreferences,
-  setItem: async (_key, value) => {
+  getItem: async (key) =>
+    key === 'notification-startup-requested-v1' ? startupRequested : storedPreferences,
+  setItem: async (key, value) => {
+    if (key === 'notification-startup-requested-v1') {
+      startupRequested = value;
+      return;
+    }
     storedPreferences = value;
   },
 });
@@ -101,6 +109,8 @@ beforeEach(() => {
   allowPrompt = true;
   allowExact = true;
   storedPreferences = null;
+  startupRequested = null;
+  acceptPermission = true;
   events.length = 0;
   pending.clear();
   presented.clear();
@@ -369,6 +379,7 @@ test('startup skips granted permissions and stops exact access after notificatio
     false,
   );
   granted = false;
+  startupRequested = null;
   allowPrompt = false;
   await assert.rejects(freshStartupRequest()(), /알림 권한/);
   assert.equal(
@@ -410,14 +421,14 @@ test('concurrent display changes are saved in order without dropping either choi
   assert.equal(useNotificationStore.getState().busy, false);
 });
 
-test('startup permission can retry after a rejected request in the same session', async () => {
+test('startup denial is remembered across sessions without another prompt', async () => {
   const request = freshStartupRequest();
   allowPrompt = false;
   await assert.rejects(request(), /알림 권한/);
   allowPrompt = true;
-  await request();
-  assert.equal(useNotificationStore.getState().permission.granted, true);
-  assert.equal(useNotificationStore.getState().error, null);
+  await assert.rejects(request(), /알림 권한/);
+  await freshStartupRequest()();
+  assert.equal(events.filter((event) => event.type === 'permission').length, 1);
 });
 
 test('stopping sync before initialization settles leaves no delayed synchronization', async (context) => {
@@ -436,10 +447,10 @@ test('stopping sync before initialization settles leaves no delayed synchronizat
 test('a failed queued change does not discard the next setting', async () => {
   allowPrompt = false;
   const denied = assert.rejects(changeNotificationPreference('summary', true), /알림 권한/);
-  const next = changeNotificationPreference('lockScreen', true);
+  const next = changeNotificationPreference('lockScreen', false);
   await Promise.all([denied, next]);
   assert.equal(useNotificationStore.getState().preferences.summary, false);
-  assert.equal(useNotificationStore.getState().preferences.lockScreen, true);
+  assert.equal(useNotificationStore.getState().preferences.lockScreen, false);
   assert.equal(useNotificationStore.getState().busy, false);
   assert.equal(useNotificationStore.getState().error, null);
 });
@@ -597,4 +608,27 @@ test('changing a schedule time cancels its old alarm instead of moving it to the
   assert.equal(pending.has(removed), false);
   assert.equal(pending.has(kept), true);
   assert.equal(pending.size, 1);
+});
+
+test('canceling the permission modal does not request or save an alarm', async () => {
+  acceptPermission = false;
+  await assert.rejects(authorizeScheduleAlarm(), /저장하지/);
+  assert.equal(storedPreferences, null);
+  assert.equal(useNotificationStore.getState().preferences.alarms, false);
+  assert.equal(
+    events.some((event) => event.type === 'permission'),
+    false,
+  );
+});
+test('lock screen alone creates notifications without changing the status bar preference', async () => {
+  await changeNotificationPreference('lockScreen', true);
+  assert.equal(useNotificationStore.getState().preferences.summary, false);
+  assert.equal(useNotificationStore.getState().preferences.lockScreen, true);
+  assert.equal(pending.size, 7);
+  assert.equal(presented.size, 1);
+  assert.ok([...pending.values()].every((request) => request.trigger.channelId.includes('public')));
+  granted = false;
+  await syncNotifications();
+  assert.equal(pending.size, 0);
+  assert.equal(presented.size, 0);
 });

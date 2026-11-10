@@ -461,7 +461,7 @@ function renderSelection() {
 function buttonTitles(node) {
   if (!node) return [];
   if (Array.isArray(node)) return node.flatMap(buttonTitles);
-  if (node.type === 'Button') return [node.props.title];
+  if (node.type === 'Button' || node.type?.name === 'SheetAction') return [node.props.title];
   return buttonTitles(node.props?.children);
 }
 
@@ -478,27 +478,11 @@ test('single and multiple selections offer the same actions', () => {
   selection = renderSelection(edits);
   assert.equal(selection.selected.size, 1);
   let bar = SelectionBar({ count: 1, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
-  assert.deepEqual(buttonTitles(bar), [
-    '전체선택',
-    '해제',
-    '중요 일정 등록',
-    '시간 설정',
-    '일정 복사',
-    '알람 설정',
-    '삭제',
-  ]);
+  assert.deepEqual(buttonTitles(bar), ['시간 설정', '일정 복사', '알람 설정', '삭제', '더보기']);
   selection.toggle('2026-11-07', 1);
   selection = renderSelection(edits);
   bar = SelectionBar({ count: 2, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
-  assert.deepEqual(buttonTitles(bar), [
-    '전체선택',
-    '해제',
-    '중요 일정 등록',
-    '시간 설정',
-    '일정 복사',
-    '알람 설정',
-    '삭제',
-  ]);
+  assert.deepEqual(buttonTitles(bar), ['시간 설정', '일정 복사', '알람 설정', '삭제', '더보기']);
   selection.requestDelete();
   assert.equal(plannerData.dailyPlanItems.length, 2);
   selection = renderSelection(edits);
@@ -945,7 +929,10 @@ test('multiple selected schedules show a disabled copy button with a toast on ta
   renderSelection().toggle('2026-11-08', 1);
   let selection = renderSelection();
   const bar = SelectionBar({ count: 2, onCopy: selection.openCopy });
-  const copy = find(bar, (node) => node.type === 'Button' && node.props.title === '일정 복사');
+  const copy = find(
+    bar,
+    (node) => node.type?.name === 'SheetAction' && node.props.title === '일정 복사',
+  );
   assert.equal(copy.props.disabled, true);
   copy.props.onDisabledPress();
   selection = renderSelection();
@@ -958,7 +945,7 @@ test('multiple selected schedules show a disabled copy button with a toast on ta
   const singleBar = SelectionBar({ count: 1, onCopy: selection.openCopy });
   const enabledCopy = find(
     singleBar,
-    (node) => node.type === 'Button' && node.props.title === '일정 복사',
+    (node) => node.type?.name === 'SheetAction' && node.props.title === '일정 복사',
   );
   assert.equal(enabledCopy.props.disabled, false);
   enabledCopy.props.onPress();
@@ -1170,38 +1157,14 @@ test('empty days and date labels dismiss selection without opening input or date
   assert.equal(renderSelection([]).active, false);
 });
 
-test('select all targets the displayed month, stays selected on repeat and clears from the bar', () => {
-  let id = 0;
-  for (const date of ['2026-10-31', '2026-11-01', '2026-11-30', '2026-12-01', '2027-11-01']) {
-    plannerData = applyDailyNote(plannerData, date, '회의,운동', () => 'all-' + ++id);
-  }
-  let selection = renderSelection([]);
-  selection.toggle('2026-11-01', 0, true);
-  const renderBar = () => {
-    selection = renderSelection([]);
-    return SelectionBar({
-      count: selection.selected.size,
-      onSelectAll: () => selection.selectAll('2026-11-08'),
-      onCancel: selection.clear,
-    });
-  };
-  const press = (title) =>
-    find(
-      renderBar(),
-      (node) => node.type === 'Button' && node.props.title === title,
-    ).props.onPress();
-  press('전체선택');
-  const expected = plannerData.dailyPlanItems
-    .filter((item) => item.date.startsWith('2026-11-'))
-    .map((item) => item.id);
-  assert.deepEqual([...renderSelection([]).selected], expected);
-  assert.equal(renderSelection([]).active, true);
-  press('전체선택');
-  assert.deepEqual([...renderSelection([]).selected], expected);
-  press('해제');
-  assert.equal(renderSelection([]).selected.size, 0);
-  assert.equal(renderSelection([]).active, false);
-  assert.equal(plannerData.dailyPlanItems.length, 10);
+test('selection bar omits selection count and bulk selection controls', () => {
+  cursor = 0;
+  const tree = SelectionBar({ count: 3 });
+  assert.deepEqual(buttonTitles(tree), ['시간 설정', '일정 복사', '알람 설정', '삭제', '더보기']);
+  assert.equal(
+    find(tree, (node) => node.type === 'Label'),
+    undefined,
+  );
 });
 
 test('enter creates the next chip without a newline and keeps the editor available', () => {
@@ -1333,7 +1296,7 @@ test('time modal applies mixed selected times without an overwrite notice', () =
   const bar = SelectionBar({ count: 2, onTime: selection.openTime });
   const timeButton = find(
     bar,
-    (node) => node.type === 'Button' && node.props.title === '시간 설정',
+    (node) => node.type?.name === 'SheetAction' && node.props.title === '시간 설정',
   );
   assert.notEqual(timeButton.props.disabled, true);
   slots = [];
@@ -1382,7 +1345,7 @@ test('alarm modal applies and aligns all selected schedule times without an over
   const bar = SelectionBar({ count: 3, onAlarm: selection.toggleAlarm });
   const alarmButton = find(
     bar,
-    (node) => node.type === 'Button' && node.props.title === '알람 설정',
+    (node) => node.type?.name === 'SheetAction' && node.props.title === '알람 설정',
   );
   assert.equal(alarmButton.props.disabled, false);
   alarmButton.props.onPress();
@@ -1574,8 +1537,15 @@ test('time and alarm dialogs keep controls fixed and scroll only the schedule pr
       assert.ok(find(controls, (node) => node.props?.accessibilityLabel === '시'));
       assert.ok(find(controls, (node) => node.props?.accessibilityLabel === '분'));
       assert.ok(
-        find(list, (node) => node.type === 'Label' && node.props.children === '13시 일정 7') ||
-          find(list, (node) => node.type === 'Label' && node.props.children === '오후 1시 일정 7'),
+        find(
+          list,
+          (node) => node.type === 'Label' && String(node.props.children).includes('13시 일정 7'),
+        ) ||
+          find(
+            list,
+            (node) =>
+              node.type === 'Label' && String(node.props.children).includes('오후 1시 일정 7'),
+          ),
       );
       assert.equal(
         find(controls, (node) => node.type === 'ScrollView'),
@@ -1618,4 +1588,41 @@ test('time modal warns below the title only when the chosen time would clear an 
   assert.deepEqual(alarmNotice.props.style, notice.props.style);
   find(dialog, (node) => node.props?.accessibilityLabel === '분').props.onChangeText('00');
   assert.equal(render().props.headerNotice, null);
+});
+
+test('more opens a modal for important schedules and applies the action', () => {
+  slots = [];
+  cursor = 0;
+  let marked = 0;
+  const props = { count: 1, onImportant: () => marked++ };
+  let tree = SelectionBar(props);
+  assert.equal(
+    find(tree, (node) => node.type === 'Dialog'),
+    undefined,
+  );
+  find(tree, (node) => node.props?.title === '더보기').props.onPress();
+  cursor = 0;
+  tree = SelectionBar(props);
+  const dialog = find(tree, (node) => node.type === 'Dialog');
+  assert.ok(dialog);
+  find(dialog, (node) => node.props?.title === '중요 일정 등록').props.onPress();
+  assert.equal(marked, 1);
+  cursor = 0;
+  assert.equal(
+    find(SelectionBar(props), (node) => node.type === 'Dialog'),
+    undefined,
+  );
+});
+test('alarm marks follow schedule chips in both preview and editing', () => {
+  const preview = SchedulePreview({
+    note: '회의,식사',
+    date: '2026-11-08',
+    noteAlarms: [true, false],
+    onEdit() {},
+  });
+  const chip = find(preview, (node) => node.type === ScheduleChip);
+  assert.equal(chip.props.alarm, true);
+  assert.match(ScheduleChip(chip.props).props.accessibilityLabel, /알람 설정됨/);
+  const editor = renderInput('회의,식사', 1, () => {}, { noteAlarms: [true, false] });
+  assert.equal(find(editor.tree, (node) => node.type === ScheduleChip).props.alarm, true);
 });

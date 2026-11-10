@@ -46,6 +46,7 @@ export interface DayRowProps {
   noteIds: string[];
   noteTimes: (string | null)[];
   noteImportant?: readonly boolean[];
+  noteAlarms?: readonly boolean[];
   timeFormat: TimeFormat;
   selectedIds: ReadonlySet<string>;
   selecting: boolean;
@@ -73,6 +74,7 @@ export interface ScheduleInputProps {
   initialIndex?: number;
   noteTimes?: readonly (string | null)[];
   noteImportant?: readonly boolean[];
+  noteAlarms?: readonly boolean[];
   timeFormat?: TimeFormat;
   initialSlot?: number;
   onSelect?(index: number, begin?: boolean): void;
@@ -86,6 +88,7 @@ export interface SchedulePreviewProps {
   note: string;
   noteTimes?: readonly (string | null)[];
   noteImportant?: readonly boolean[];
+  noteAlarms?: readonly boolean[];
   timeFormat?: TimeFormat;
   date: string;
   onEdit(index?: number): void;

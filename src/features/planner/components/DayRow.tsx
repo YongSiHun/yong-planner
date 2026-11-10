@@ -17,6 +17,7 @@ export const DayRow = memo(function DayRow({
   noteIds,
   noteTimes = [],
   noteImportant = [],
+  noteAlarms = [],
   timeFormat = '24h',
   selectedIds,
   selecting,
@@ -110,6 +111,7 @@ export const DayRow = memo(function DayRow({
             note={note}
             noteTimes={noteTimes}
             noteImportant={noteImportant}
+            noteAlarms={noteAlarms}
             timeFormat={timeFormat}
             initialIndex={initialIndex}
             initialSlot={initialSlot}
@@ -127,6 +129,7 @@ export const DayRow = memo(function DayRow({
             note={note}
             noteTimes={noteTimes}
             noteImportant={noteImportant}
+            noteAlarms={noteAlarms}
             timeFormat={timeFormat}
             onEdit={startEditing}
             onInsert={startInsertion}

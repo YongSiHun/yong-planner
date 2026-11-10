@@ -33,9 +33,9 @@ function summaryForDate(
   const lines = plansForDate(data, date, holidays)
     .filter((item) => item.content.trim())
     .map((item) => {
-      const star = item.important ? '☆ ' : '';
+      const alarmMark = item.alarm ? '⏰ ' : '';
 
-      return star + displayPlanEntry(item, data.settings.timeFormat);
+      return alarmMark + displayPlanEntry(item, data.settings.timeFormat);
     });
   const body = lines.length > 0 ? lines.join('\n') : '등록된 일정이 없어요.';
 
@@ -68,7 +68,7 @@ function alarmForEntry(
     id: NOTIFICATION_PREFIX + 'alarm:' + date + ':' + encodeURIComponent(entry.id),
     kind: 'alarm',
     date,
-    title: entry.important ? '☆ 중요 일정' : '일정 알람',
+    title: '일정 알람',
     body: displayPlanEntry(entry, data.settings.timeFormat),
     at: at.getTime(),
   };
@@ -108,12 +108,13 @@ export function buildNotificationPlan(
   now: Date,
   holidays: HolidayService,
 ): NotificationPlan {
-  const summaries = preferences.summary ? futureSummaries(data, now, holidays) : [];
+  const showSummary = preferences.summary || preferences.lockScreen;
+  const summaries = showSummary ? futureSummaries(data, now, holidays) : [];
   const alarms = preferences.alarms ? futureAlarms(data, now, holidays) : [];
   const available = MAX_PENDING_NOTIFICATIONS - summaries.length;
 
   return {
-    summary: preferences.summary ? summaryForDate(data, dateKey(now), holidays, null) : null,
+    summary: showSummary ? summaryForDate(data, dateKey(now), holidays, null) : null,
     pending: [...summaries, ...alarms.slice(0, available)].sort((a, b) => a.at! - b.at!),
     truncated: alarms.length > available,
   };

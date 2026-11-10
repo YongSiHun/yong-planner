@@ -114,6 +114,7 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.settingsScreenScrollViewContentContainerStyle}
       >
         <ThemeSettings />
+        <View style={styles.settingsScreenViewStyle(theme)} />
         <TimeFormatSettings />
         <View style={styles.settingsScreenViewStyle(theme)} />
 

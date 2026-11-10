@@ -51,7 +51,7 @@ function scheduleSync(force = false): void {
   clearTimeout(timer);
   const preferences = ui.getState().preferences;
   const enabled =
-    preferences.summary ||
+    displayEnabled(preferences) ||
     preferences.alarms ||
     usePlanner.getState().data.dailyPlanItems.some((item) => item.alarm);
 
@@ -100,6 +100,7 @@ function effectivePreferences(
   return {
     ...preferences,
     summary: preferences.summary && permission.granted,
+    lockScreen: preferences.lockScreen && permission.granted,
     alarms: permission.granted,
     exact: preferences.exact && permission.exact,
   };
@@ -108,7 +109,7 @@ function effectivePreferences(
 export function flushEnabledNotifications(): Promise<void> {
   const preferences = ui.getState().preferences;
   const enabled =
-    preferences.summary ||
+    displayEnabled(preferences) ||
     preferences.alarms ||
     usePlanner.getState().data.dailyPlanItems.some((item) => item.alarm);
 
@@ -146,4 +147,8 @@ function alarmMatcher(ids: ReadonlySet<string> | undefined) {
   return (id: string) =>
     id.startsWith(NOTIFICATION_PREFIX + 'alarm:') &&
     (!suffixes || suffixes.has(id.slice(id.lastIndexOf(':') + 1)));
+}
+
+function displayEnabled(preferences: NotificationPreferences): boolean {
+  return preferences.summary || preferences.lockScreen;
 }

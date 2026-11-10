@@ -7,7 +7,6 @@ import { SelectionBar } from './SelectionBar';
 
 export function PlannerFooter({
   selection,
-  month,
   keyboardVisible,
   onToday,
 }: {
@@ -41,8 +40,6 @@ export function PlannerFooter({
         onTime={selection.openTime}
         onAlarm={selection.toggleAlarm}
         onDelete={selection.requestDelete}
-        onSelectAll={() => selection.selectAll(month)}
-        onCancel={selection.clear}
       />
     );
   }

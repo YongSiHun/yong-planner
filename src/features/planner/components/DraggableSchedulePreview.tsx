@@ -32,6 +32,7 @@ export function DraggableSchedulePreview({
                 <ScheduleChip
                   content={props.note.split(',')[index]!}
                   important={props.noteImportant?.[index]}
+                  alarm={props.noteAlarms?.[index]}
                   time={props.noteTimes?.[index]}
                   timeFormat={props.timeFormat}
                   onPress={noop}

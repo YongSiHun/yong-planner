@@ -14,6 +14,7 @@ export function ScheduleInput({
   initialIndex,
   noteTimes = [],
   noteImportant = [],
+  noteAlarms = [],
   timeFormat = '24h',
   initialSlot,
   onSelect = () => {},
@@ -62,6 +63,9 @@ export function ScheduleInput({
         content={part}
         important={
           noteImportant[storedNoteIndex(edit, index)] && !(edit.draftSlot && index === edit.index)
+        }
+        alarm={
+          noteAlarms[storedNoteIndex(edit, index)] && !(edit.draftSlot && index === edit.index)
         }
         timeFormat={timeFormat}
         onLongPress={() => handleLongPress(index)}

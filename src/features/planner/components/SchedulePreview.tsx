@@ -8,6 +8,7 @@ export function SchedulePreview({
   note,
   noteTimes = [],
   noteImportant = [],
+  noteAlarms = [],
   timeFormat = '24h',
   date,
   onEdit,
@@ -54,6 +55,7 @@ export function SchedulePreview({
           <ScheduleChip
             content={part}
             important={noteImportant[index]}
+            alarm={noteAlarms[index]}
             time={noteTimes[index]}
             timeFormat={timeFormat}
             selected={selectedIndexes.has(index)}

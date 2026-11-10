@@ -27,7 +27,7 @@ export async function refreshNotificationPermissions(): Promise<void> {
     ui.setState({ permission: await readNotificationPermissions() });
     const preferences = ui.getState().preferences;
     const enabled =
-      preferences.summary ||
+      displayEnabled(preferences) ||
       preferences.alarms ||
       usePlanner.getState().data.dailyPlanItems.some((item) => item.alarm);
 
@@ -44,7 +44,7 @@ async function preparePreferenceChange(
   enabled: boolean,
 ): Promise<NotificationPreferences> {
   const next = { ...ui.getState().preferences, [key]: enabled };
-  const needsPermission = enabled && ['summary', 'alarms'].includes(key);
+  const needsPermission = enabled && ['summary', 'alarms', 'lockScreen'].includes(key);
 
   if (needsPermission) {
     await ensurePermission(next);
@@ -60,4 +60,8 @@ async function preparePreferenceChange(
 
 function normalizePreferences(preferences: NotificationPreferences): NotificationPreferences {
   return { ...preferences, exact: preferences.exact && preferences.alarms };
+}
+
+function displayEnabled(preferences: NotificationPreferences): boolean {
+  return preferences.summary || preferences.lockScreen;
 }

@@ -7,6 +7,7 @@ function buildDay(data: PlannerData, date: string, holidays: HolidayService) {
   const daily = entries.filter((entry) => entry.kind === 'daily');
 
   return {
+    noteAlarms: daily.map((entry) => Boolean(entry.alarm)),
     noteImportant: daily.map((entry) => Boolean(entry.important)),
     noteTimes: daily.map((entry) => entry.time),
     noteIds: daily.map((entry) => entry.sourceId),
