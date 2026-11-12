@@ -4,10 +4,8 @@ export {
   startNotificationSync,
   flushEnabledNotifications,
 } from './notificationSync';
-export {
-  requestStartupNotificationPermission,
-  authorizeScheduleAlarm,
-} from './notificationPermissions';
+export { requestStartupNotificationPermission } from './notificationStartup';
+export { authorizeScheduleAlarm } from './alarmAuthorization';
 export {
   changeNotificationPreference,
   refreshNotificationPermissions,

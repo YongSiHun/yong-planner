@@ -22,7 +22,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/*.test.cjs"
+    "test": "node tests/run.cjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
