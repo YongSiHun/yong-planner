@@ -12,3 +12,11 @@ export const description = {
   fontSize: design.type.small,
   lineHeight: design.lineHeights.small,
 } as const;
+
+export function validation(theme: import('../../../components/ui/palette').Theme) {
+  return {
+    color: theme.red,
+    fontSize: design.type.small,
+    lineHeight: design.lineHeights.small,
+  } as const;
+}

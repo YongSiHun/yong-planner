@@ -75,7 +75,12 @@ function setup() {
   const calls = [];
   // React 훅: mock 하네스 실행.
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const controller = useInlineKeyboard({ current: { scrollTo: (options) => calls.push(options) } });
+  const controller = useInlineKeyboard({
+    current: {
+      scrollTo: (options) => calls.push(options),
+      measureInWindow: (callback) => callback(0, 0, 360, windowHeight),
+    },
+  });
   return { calls, controller };
 }
 afterEach(() => {
@@ -194,7 +199,10 @@ test('shared modal input focus automatically reveals covered fields in its own s
   InputFocusContext.value = provider.props.value;
   const scroll = provider.props.children;
   const calls = [];
-  scroll.props.ref.current = { scrollTo: (options) => calls.push(options) };
+  scroll.props.ref.current = {
+    scrollTo: (options) => calls.push(options),
+    measureInWindow: (callback) => callback(0, 0, 360, windowHeight),
+  };
   scroll.props.onScroll({ nativeEvent: { contentOffset: { y: 100 } } });
   const focusEvents = [];
   const input = Input({ onInputFocus: (value) => focusEvents.push(value) });
@@ -223,4 +231,40 @@ test('modal docks near the keyboard while open and centers when the keyboard is 
   assert.equal(centered.props.style.justifyContent, 'center');
   assert.equal(centered.props.style.paddingBottom, 16);
   assert.equal(centered.props.edges, undefined);
+});
+
+test('a scroll viewport above the keyboard also limits the visible input area', () => {
+  keyboard.visible = true;
+  const calls = [];
+
+  const controller = useInlineKeyboard({
+    current: {
+      measureInWindow: (callback) => callback(0, 80, 360, 260),
+      scrollTo: (options) => calls.push(options),
+    },
+  });
+  controller.handleKeyboardScroll({ nativeEvent: { contentOffset: { y: 100 } } });
+  controller.handleInputFocus({ measureInWindow: (callback) => callback(0, 300, 200, 80) });
+  flushFrames();
+  assert.deepEqual(calls, [{ y: 156, animated: false }]);
+});
+
+test('switching focus while viewport measurement is pending cannot scroll the previous field', () => {
+  keyboard.visible = true;
+  let measured;
+  const calls = [];
+
+  const controller = useInlineKeyboard({
+    current: {
+      measureInWindow: (callback) => {
+        measured = callback;
+      },
+      scrollTo: (options) => calls.push(options),
+    },
+  });
+  controller.handleInputFocus({ measureInWindow: (callback) => callback(0, 450, 200, 80) });
+  flushFrames();
+  controller.handleInputFocus(null);
+  measured(0, 0, 360, 340);
+  assert.deepEqual(calls, []);
 });

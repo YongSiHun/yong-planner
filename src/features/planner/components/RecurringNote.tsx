@@ -46,22 +46,27 @@ export function RecurringNote({
   }
 
   function save() {
-    const isValid = title.trim().length > 0 && validTime(time || null);
+    const savedTime = time || null;
+    const isValid = title.trim().length > 0 && validTime(savedTime);
 
     if (!isValid) {
       report(new Error('제목과 시간(HH:mm)을 확인해 주세요.'));
 
       return;
     }
-    saveException(entry.sourceId, date, {
-      recurringPlanId: entry.sourceId,
-      date,
-      cancelled: false,
-      title,
-      time: time || null,
-    });
-    Keyboard.dismiss();
-    setEditing(false);
+    try {
+      saveException(entry.sourceId, date, {
+        recurringPlanId: entry.sourceId,
+        date,
+        cancelled: false,
+        title,
+        time: savedTime,
+      });
+      Keyboard.dismiss();
+      setEditing(false);
+    } catch (error) {
+      report(error);
+    }
   }
 
   if (!editing) {

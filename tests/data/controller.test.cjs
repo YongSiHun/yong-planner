@@ -97,3 +97,51 @@ test('changing selected times clears only alarms whose scheduled times change', 
     [true, false, true, false],
   );
 });
+
+test('invalid user input is rejected before planner state or persistence changes', async () => {
+  const {
+    saveHolidayOverride,
+    saveRecurring,
+    saveException,
+  } = require('../../src/features/planner/controllers/planner.ts');
+  const data = emptyData();
+  usePlanner.setState({ ready: true, restoring: false, data, dirty: false });
+  const plan = {
+    id: 'validation',
+    title: '정상 일정',
+    time: '09:00',
+    startDate: '2026-11-01',
+    endDate: null,
+    weekdays: [1],
+    holidayPolicy: 'include',
+  };
+  const invalid = [
+    () => saveDailyNote('2026-02-30', '날짜 오류'),
+    () => saveDailyNote('2026-11-12', '가'.repeat(256)),
+    () => saveHolidayOverride('2026-02-30', '날짜 오류'),
+    () => saveHolidayOverride('2026-11-12', ' '),
+    () => saveHolidayOverride('2026-11-12', '😀'.repeat(256)),
+    () => saveRecurring({ ...plan, title: '가'.repeat(256) }),
+    () => saveRecurring({ ...plan, title: ' ' }),
+    () => saveRecurring({ ...plan, time: '24:00' }),
+    () => saveRecurring({ ...plan, weekdays: [] }),
+    () => saveRecurring({ ...plan, endDate: '2026-10-31' }),
+    () =>
+      saveException('validation', '2026-11-12', {
+        recurringPlanId: 'validation',
+        date: '2026-11-12',
+        cancelled: false,
+        title: '가'.repeat(256),
+      }),
+  ];
+  for (const action of invalid) {
+    assert.throws(action);
+    assert.equal(usePlanner.getState().data, data);
+    assert.equal(usePlanner.getState().dirty, false);
+  }
+  saveHolidayOverride('2028-02-29', '윤일');
+  saveRecurring(plan);
+  assert.equal(usePlanner.getState().data.holidayOverrides[0].date, '2028-02-29');
+  assert.equal(usePlanner.getState().data.recurringPlans[0].id, 'validation');
+  await flushPlanner();
+});

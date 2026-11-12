@@ -16,3 +16,11 @@ export function noteLengthError(value: string): string | null {
 export function normalizeNoteSeparators(value: string): string {
   return value.replace(/\r\n|[\r\n]/g, ',');
 }
+
+export function ensureScheduleLength(value: string): void {
+  const error = scheduleLengthError(value);
+
+  if (error) {
+    throw new Error(error);
+  }
+}

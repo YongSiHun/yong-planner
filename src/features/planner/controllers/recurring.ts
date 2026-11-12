@@ -1,8 +1,10 @@
+import { ensureScheduleLength } from '../../../services/schedule';
 import { validateData } from '../../../services/backup';
 import { type RecurringPlan, type RecurringPlanException } from '../types';
 import { updatePlanner } from './persistence';
 
 export function saveRecurring(plan: RecurringPlan): void {
+  ensureScheduleLength(plan.title);
   updatePlanner(
     (data) =>
       validateData({
@@ -31,6 +33,12 @@ export function saveException(
   date: string,
   value: RecurringPlanException | null,
 ): void {
+  const title = value?.title;
+  const hasTitle = title !== undefined;
+
+  if (hasTitle) {
+    ensureScheduleLength(title);
+  }
   updatePlanner(
     (data) =>
       validateData({

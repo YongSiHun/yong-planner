@@ -22,22 +22,27 @@ export function useInlineKeyboard(
   }, [scrollKey]);
   const revealInput = useCallback(() => {
     const input = focusedInput.current;
-    const hasInput = input !== null;
+    const scroll = scrollRef.current;
+    const canMeasure = input !== null && scroll !== null;
 
-    if (hasInput) {
+    if (!canMeasure) {
+      return;
+    }
+    scroll.measureInWindow((_, scrollTop, __, scrollHeight) => {
       input.measureInWindow((_, top, __, height) => {
-        const keyboardTop = Math.min(
+        const visibleBottom = Math.min(
+          scrollTop + scrollHeight,
           Keyboard.metrics()?.screenY ?? Infinity,
           Dimensions.get('window').height,
         );
-        const overlap = top + height + 16 - keyboardTop;
+        const overlap = top + height + 16 - visibleBottom;
         const isCovered = overlap > 0 && focusedInput.current === input;
 
         if (isCovered) {
-          scrollRef.current?.scrollTo({ y: offset.current + overlap, animated: false });
+          scroll.scrollTo({ y: offset.current + overlap, animated: false });
         }
       });
-    }
+    });
   }, [scrollRef]);
   const scheduleReveal = useCallback(() => {
     const hasFrame = frame.current !== null;

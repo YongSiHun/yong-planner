@@ -6,6 +6,7 @@ import { Dialog } from '../../../components/ui/Dialog';
 import { usePlanner } from '../../../stores/planner';
 import { today } from '../../../utils/date';
 import { usePlannerActions } from '../../planner/hooks/usePlannerActions';
+import { holidayDateSelection, holidayNameError } from '../services/holidayValidation';
 import { HolidayDateInput } from './HolidayDateInput';
 import * as styles from './HolidayOverrides.styles';
 
@@ -16,10 +17,16 @@ export function HolidayOverrides() {
   const [isEditorOpen, setEditorOpen] = useState(false);
   const [date, setDate] = useState(today);
   const [name, setName] = useState('');
+  const validation = holidayDateSelection(date);
+  const validationError = validation.error ?? holidayNameError(name);
+  const invalid = validationError !== null;
 
   function handleSave() {
+    if (invalid) {
+      return;
+    }
     try {
-      saveHolidayOverride(date, name);
+      saveHolidayOverride(validation.date!, name);
       setEditorOpen(false);
       setName('');
     } catch (error) {
@@ -65,6 +72,7 @@ export function HolidayOverrides() {
               title="저장"
               bold
               style={styles.action}
+              disabled={invalid}
               onPress={handleSave}
             />
           }
@@ -76,6 +84,9 @@ export function HolidayOverrides() {
             onChangeText={setName}
             placeholder="임시공휴일 이름 · 비우면 공휴일 해제"
           />
+          {validationError ? (
+            <Label style={styles.validation(theme)}>{validationError}</Label>
+          ) : null}
         </Dialog>
       ) : null}
     </View>

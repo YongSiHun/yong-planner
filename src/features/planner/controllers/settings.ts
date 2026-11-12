@@ -1,4 +1,5 @@
 import { parseDate } from '../../../utils/date';
+import { holidayNameError } from '../../settings/services/holidayValidation';
 import { type PlannerData } from '../types';
 import { updatePlanner } from './persistence';
 
@@ -24,10 +25,10 @@ export function removeHolidayOverride(date: string): void {
 
 export function saveHolidayOverride(date: string, name: string): void {
   parseDate(date);
-  const blankName = name.length > 0 && name.trim().length === 0;
+  const error = holidayNameError(name);
 
-  if (blankName) {
-    throw new Error('공휴일 이름을 확인해 주세요.');
+  if (error) {
+    throw new Error(error);
   }
   updatePlanner(
     (data) => ({

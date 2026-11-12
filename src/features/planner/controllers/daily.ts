@@ -1,5 +1,6 @@
 import { randomUUID } from 'expo-crypto';
-import { validTime } from '../../../utils/date';
+import { noteLengthError } from '../../../services/schedule';
+import { parseDate, validTime } from '../../../utils/date';
 import { timeChangeClearsAlarm, updateDailyAlarms } from '../services/alarms';
 import { applyDailyNote } from '../services/note';
 import { moveDailyNote as reorderDailyNote } from '../services/noteMove';
@@ -7,6 +8,12 @@ import { copyNotesToDates, deleteSelectedNotes } from '../services/noteSelection
 import { updatePlanner } from './persistence';
 
 export function saveDailyNote(date: string, text: string, replaceTimes = false): void {
+  parseDate(date);
+  const error = noteLengthError(text);
+
+  if (error) {
+    throw new Error(error);
+  }
   updatePlanner((data) => applyDailyNote(data, date, text, randomUUID, replaceTimes));
 }
 

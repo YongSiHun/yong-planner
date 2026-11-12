@@ -18,9 +18,14 @@ export function HolidayDateInput({
   const parts = date.split('-');
 
   function changePart(index: number, value: string) {
+    const numeric = /^\d*$/.test(value) && value.length <= dateFields[index]!.length;
+
+    if (!numeric) {
+      return;
+    }
     const next = [...parts];
 
-    next[index] = value.replace(/\D/g, '').slice(0, dateFields[index]!.length);
+    next[index] = value;
     onChange(next.join('-'));
   }
 
