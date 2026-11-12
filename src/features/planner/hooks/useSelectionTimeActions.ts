@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { report } from '../../../components/ui';
+import { showToast } from '../../../components/ui';
 import {
   authorizeScheduleAlarm,
   clearScheduleAlarms,
@@ -25,7 +25,7 @@ export function useSelectionTimeActions(clear: () => void) {
         await applyAlarm(selected, time, setDailyAlarms);
         clear();
       } catch (error) {
-        report(error);
+        showToast(error instanceof Error ? error.message : String(error));
       } finally {
         savingAlarm.current = false;
       }

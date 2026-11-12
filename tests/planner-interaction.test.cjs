@@ -15,6 +15,7 @@ let plannerData;
 let dimensions;
 let toasts = [];
 let alarmPermissionRequests = 0;
+let alarmPermissionError;
 const { emptyData } = require('../src/features/planner/types/index.ts');
 const { applyDailyNote } = require('../src/features/planner/services/note.ts');
 const { deleteSelectedNotes } = require('../src/features/planner/services/noteSelection.ts');
@@ -120,6 +121,7 @@ cacheMock('../src/features/notifications/controllers/notifications.ts', {
   },
   authorizeScheduleAlarm: async () => {
     alarmPermissionRequests++;
+    if (alarmPermissionError) throw alarmPermissionError;
   },
 });
 const plannerActions = {
@@ -242,6 +244,7 @@ function renderGuide() {
 beforeEach(() => {
   slots = [];
   alarmPermissionRequests = 0;
+  alarmPermissionError = null;
   cursor = 0;
   saved = [];
   focused = 0;
@@ -1649,4 +1652,28 @@ test('empty input measures wrapped placeholder text so the hint is not clipped',
     (node) => node.type === 'Text' && node.props.onTextLayout,
   );
   assert.equal(contentMeasurement.props.children, '회의');
+});
+
+test('denied alarm permission keeps the editor and selected schedules unchanged and shows a toast', async () => {
+  toasts = [];
+  plannerData = applyDailyNote(plannerData, '2026-11-08', '회의', () => 'denied-alarm');
+  renderSelection([]).toggle('2026-11-08', 0, true);
+  renderSelection([]).toggleAlarm();
+  const before = plannerData;
+  const selected = renderSelection([]);
+  alarmPermissionError = new Error('알림 권한이 없어 알람을 저장하지 않았어요.');
+  selected.saveTime('13:10');
+  await new Promise((resolve) => setImmediate(resolve));
+  const after = renderSelection([]);
+  assert.equal(after.alarmSetting, true);
+  assert.equal(after.timeSource.id, 'denied-alarm');
+  assert.equal(plannerData, before);
+  assert.deepEqual(toasts, [alarmPermissionError.message]);
+  assert.equal(alerts.length, 0);
+  alarmPermissionError = null;
+  after.saveTime('13:10');
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(plannerData.dailyPlanItems[0].alarm, true);
+  assert.equal(plannerData.dailyPlanItems[0].time, '13:10');
+  assert.equal(renderSelection([]).alarmSetting, false);
 });

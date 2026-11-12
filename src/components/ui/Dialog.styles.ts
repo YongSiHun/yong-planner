@@ -99,3 +99,9 @@ export const fixedBody = {
   width: '100%',
   gap: design.space.sm,
 } as const;
+
+const compactHeadingClose = { marginVertical: -design.space.sm } as const;
+
+export function dialogHeadingCloseStyle(compact: boolean) {
+  return [dialogHeadingPressableStyle, compact && compactHeadingClose];
+}

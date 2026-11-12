@@ -632,3 +632,17 @@ test('lock screen alone creates notifications without changing the status bar pr
   assert.equal(pending.size, 0);
   assert.equal(presented.size, 0);
 });
+
+test('denied exact alarm permission prevents saving alarm preferences and permits retry', async () => {
+  granted = true;
+  allowExact = false;
+  const preferences = useNotificationStore.getState().preferences;
+  await assert.rejects(authorizeScheduleAlarm(), /정확한 알람 권한/);
+  assert.equal(useNotificationStore.getState().preferences, preferences);
+  assert.equal(storedPreferences, null);
+  assert.equal(useNotificationStore.getState().busy, false);
+  allowExact = true;
+  await authorizeScheduleAlarm();
+  assert.equal(useNotificationStore.getState().preferences.alarms, true);
+  assert.equal(useNotificationStore.getState().preferences.exact, true);
+});

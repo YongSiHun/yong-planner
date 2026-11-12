@@ -72,7 +72,7 @@ function BackupSettings() {
         onPress={actions.handleRestore}
       />
       {guideOpen ? (
-        <Dialog title="데이터 백업 방법" onClose={() => setGuideOpen(false)}>
+        <Dialog title="데이터 백업 방법" compactHeader onClose={() => setGuideOpen(false)}>
           <Label>1. 달력에서 백업할 월을 선택하세요.</Label>
           <Label>2. 메뉴 → 내보내기 → JSON 파일 공유로 저장하세요.</Label>
         </Dialog>

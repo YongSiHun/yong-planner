@@ -32,6 +32,14 @@ export async function ensureExactPermission(): Promise<void> {
   if (!android) {
     return;
   }
+  const current = await readNotificationPermissions();
+
+  ui.setState({ permission: current });
+  const alreadyGranted = current.exact;
+
+  if (alreadyGranted) {
+    return;
+  }
   const permission = await askExactAlarmPermission();
 
   ui.setState({ permission });
@@ -62,7 +70,7 @@ export async function authorizeScheduleAlarm(): Promise<void> {
   await runPreferenceChange(async () => {
     await offerAlarmPermission();
     await ensurePermission({ ...ui.getState().preferences, alarms: true });
-    await requestMissingExactPermission();
+    await ensureExactPermission();
     const next = {
       ...ui.getState().preferences,
       alarms: true,

@@ -17,6 +17,7 @@ export function Dialog({
   footer,
   onClose,
   showHeader = true,
+  compactHeader = false,
   dismissOnPress = false,
   height,
   maxWidth,
@@ -32,6 +33,7 @@ export function Dialog({
   footer?: ReactNode;
   onClose(): void;
   showHeader?: boolean;
+  compactHeader?: boolean;
   dismissOnPress?: boolean;
   height?: number;
   maxWidth?: number;
@@ -70,6 +72,7 @@ export function Dialog({
                 titleSize={titleSize}
                 visible={showHeader}
                 showClose={!dismissOnPress}
+                compact={compactHeader}
                 onClose={onClose}
               />
               <DialogBody scrollable={scrollable} showsScrollIndicator={showsScrollIndicator}>
@@ -91,6 +94,7 @@ function DialogHeading({
   titleSize,
   visible,
   showClose,
+  compact,
   onClose,
 }: {
   title: string;
@@ -98,6 +102,7 @@ function DialogHeading({
   titleSize?: number;
   visible: boolean;
   showClose: boolean;
+  compact: boolean;
   onClose(): void;
 }) {
   const theme = useTheme();
@@ -117,7 +122,7 @@ function DialogHeading({
           accessibilityRole="button"
           accessibilityLabel="닫기"
           onPress={onClose}
-          style={styles.dialogHeadingPressableStyle}
+          style={styles.dialogHeadingCloseStyle(compact)}
         >
           <Feather name="x" size={22} color={theme.muted} />
         </Pressable>
