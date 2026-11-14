@@ -56,6 +56,7 @@ function TodayButton({ onPress }: { onPress(): void }) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="오늘 날짜로 이동"
+        hitSlop={styles.todayButtonHitSlop}
         onPress={onPress}
         style={styles.todayButtonPressableStyle(theme)}
       >

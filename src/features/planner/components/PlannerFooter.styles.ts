@@ -16,8 +16,8 @@ export function todayButtonPressableStyle(theme: Theme) {
       borderColor: theme.accent,
       flexDirection: 'row',
       alignItems: 'center',
-      minHeight: design.touchTarget,
-      paddingHorizontal: design.space.md,
+      minHeight: design.touchTarget - design.space.sm,
+      paddingHorizontal: design.space.sm,
       justifyContent: 'center',
       opacity: pressed ? 0.8 : 1,
     }) as const;
@@ -26,8 +26,10 @@ export function todayButtonPressableStyle(theme: Theme) {
 export function todayButtonTextStyle(theme: Theme) {
   return {
     color: theme.onAccent,
-    fontSize: design.type.action,
-    lineHeight: design.lineHeights.action,
+    fontSize: design.type.small,
+    lineHeight: design.lineHeights.small,
     fontFamily: design.font.medium,
   } as const;
 }
+
+export const todayButtonHitSlop = design.space.xs;
