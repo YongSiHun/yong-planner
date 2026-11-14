@@ -8,7 +8,7 @@ import Constants from 'expo-constants';
 import { useState } from 'react';
 import { View } from 'react-native';
 import fontNotice from '../../../../assets/fonts/NOTICE.json';
-import { Button, Label, useTheme } from '../../../components/ui';
+import { Button, Label, design, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
 import * as styles from './AppInfo.styles';
 
@@ -30,7 +30,11 @@ export function AppInfo() {
         />
       </View>
       {licenseOpen ? (
-        <Dialog title="라이선스 정보" onClose={() => setLicenseOpen(false)}>
+        <Dialog
+          titleSize={design.type.title}
+          title="라이선스 정보"
+          onClose={() => setLicenseOpen(false)}
+        >
           <Label style={heading}>Pretendard</Label>
           <Label muted>{fontNotice.copyright}</Label>
           <Label muted style={styles.license}>

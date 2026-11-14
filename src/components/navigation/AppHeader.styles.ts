@@ -1,7 +1,7 @@
 import type { Theme } from '../ui/palette';
 import { design } from '../ui/tokens';
 
-export const HEADER_HEIGHT = 52;
+export const HEADER_HEIGHT = 53;
 export const bar = {
   minHeight: HEADER_HEIGHT,
   width: '100%',

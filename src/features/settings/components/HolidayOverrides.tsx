@@ -1,7 +1,7 @@
 import { buttonLabelSize } from '../../../components/ui/settings.styles';
 import { useState } from 'react';
 import { View } from 'react-native';
-import { Button, Input, Label, report, useTheme } from '../../../components/ui';
+import { Button, Input, Label, design, report, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
 import { usePlanner } from '../../../stores/planner';
 import { today } from '../../../utils/date';
@@ -64,6 +64,7 @@ export function HolidayOverrides() {
 
       {isEditorOpen ? (
         <Dialog
+          titleSize={design.type.title}
           title="공휴일 보정"
           onClose={() => setEditorOpen(false)}
           footer={

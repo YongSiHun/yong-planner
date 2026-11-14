@@ -8,7 +8,7 @@ import {
 import Feather from '@expo/vector-icons/Feather';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { Button, Label, useTheme } from '../../../components/ui';
+import { Button, Label, design, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
 import { usePlanner } from '../../../stores/planner';
 import { useBackupState } from '../hooks/useBackupState';
@@ -50,7 +50,12 @@ export function BackupSettings() {
       />
       <Label muted>JSON은 월별 일정 또는 메모 복원, ZIP은 전체 데이터 복원입니다.</Label>
       {guideOpen ? (
-        <Dialog title="데이터 백업 방법" compactHeader onClose={() => setGuideOpen(false)}>
+        <Dialog
+          titleSize={design.type.title}
+          title="데이터 백업 방법"
+          compactHeader
+          onClose={() => setGuideOpen(false)}
+        >
           <Label>1. 달력에서 백업할 월을 선택하세요.</Label>
           <Label>2. 메뉴 → 내보내기 → JSON 파일 공유로 저장하세요.</Label>
           <Label>메모는 전체 데이터 백업에 함께 저장됩니다.</Label>

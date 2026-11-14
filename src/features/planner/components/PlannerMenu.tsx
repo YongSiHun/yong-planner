@@ -29,11 +29,12 @@ export function PlannerMenu({ type, month, onClose, onShowExport, onExport }: Pl
     <Dialog
       title={title}
       onClose={onClose}
-      showHeader={false}
-      maxWidth={design.layout.menuMaxWidth}
-      paddingVertical={isNavigationMenu ? undefined : design.space.sm}
+      showHeader={!isNavigationMenu}
+      titleSize={design.type.title}
+      maxWidth={isNavigationMenu ? design.layout.menuMaxWidth - 6 : undefined}
+      paddingVertical={isNavigationMenu ? design.space.md - 3 : undefined}
     >
-      <View style={isNavigationMenu ? styles.plannerMenuViewStyle : styles.exportMenu}>
+      <View style={styles.plannerMenuViewStyle}>
         {isNavigationMenu ? (
           <>
             <Button
@@ -70,28 +71,28 @@ export function PlannerMenu({ type, month, onClose, onShowExport, onExport }: Pl
             <Button
               bold
               labelSize={design.type.action}
-              style={styles.exportButton}
+              style={styles.plannerMenuButtonStyle}
               title="내용 복사"
               onPress={() => onExport('clipboard')}
             />
             <Button
               bold
               labelSize={design.type.action}
-              style={styles.exportButton}
+              style={styles.plannerMenuButtonStyle}
               title="TXT 파일 공유"
               onPress={() => onExport('txt')}
             />
             <Button
               bold
               labelSize={design.type.action}
-              style={styles.exportButton}
+              style={styles.plannerMenuButtonStyle}
               title="JSON 파일 공유"
               onPress={() => onExport('json')}
             />
             <Button
               bold
               labelSize={design.type.action}
-              style={styles.exportButton}
+              style={styles.plannerMenuButtonStyle}
               title="CSV 파일 공유"
               onPress={() => onExport('csv')}
             />
