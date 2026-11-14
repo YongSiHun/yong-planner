@@ -131,3 +131,46 @@ test('alarm marks follow schedule chips in both preview and editing', () => {
   const editor = renderInput('회의,식사', 1, () => {}, { noteAlarms: [true, false] });
   assert.equal(find(editor.tree, (node) => node.type === ScheduleChip).props.alarm, true);
 });
+
+test('unselected dates use the latest global selection mode without rerendering their row', () => {
+  const edits = [];
+  const selected = [];
+  let dismissed = 0;
+  const tree = SchedulePreview({
+    note: '다른 날짜 일정',
+    date: '2026-11-08',
+    selecting: false,
+    onEdit: (index) => edits.push(index),
+    onSelect: (index) => selected.push(index),
+    onInsert: (index) => edits.push(index),
+    onOutsidePress: () => dismissed++,
+  });
+  state.selectionState = { ...state.selectionState, active: true };
+  const chip = find(tree, (node) => node.type === ScheduleChip);
+  chip.props.onPress();
+  chip.props.onBefore();
+  chip.props.onAfter();
+  tree.props.onPress();
+  assert.deepEqual(selected, [0, 0, 0]);
+  assert.deepEqual(edits, []);
+  assert.equal(dismissed, 1);
+  assert.equal(ScheduleChip(chip.props).props.accessibilityRole, 'checkbox');
+  state.selectionState = { ...state.selectionState, active: false };
+  chip.props.onPress();
+  assert.deepEqual(edits, [0]);
+});
+
+test('blank stored items create no phantom gaps and visible chip events retain their original indexes', () => {
+  const edited = [];
+  const tree = SchedulePreview({
+    note: '회의, ,운동,,',
+    date: '2026-11-07',
+    onEdit: (index) => edited.push(index),
+  });
+  const wrappers = tree.props.children[0];
+  assert.equal(wrappers.length, 2);
+  const second = find(wrappers[1], (node) => node.type === ScheduleChip);
+  assert.equal(second.props.content, '운동');
+  second.props.onPress();
+  assert.deepEqual(edited, [2]);
+});

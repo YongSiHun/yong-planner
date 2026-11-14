@@ -1,12 +1,38 @@
-import type { DailyPlanItem, PlannerData } from '../types';
+import type { DailyPlanItem, DailyPlanOrder, PlannerData } from '../types';
 import { reconcileOrder } from './order';
 import { dailyItemsForDate } from './plans';
+import { orderIndex } from './planIndex';
 import { parseScheduleTimePrefix } from './time';
 import { splitNote } from './noteText';
 import { preserveNoteItems } from './noteIdentity';
 
+const orderedNotes = new WeakMap<
+  DailyPlanItem[],
+  { order: DailyPlanOrder | undefined; result: DailyPlanItem[] }
+>();
+
 export function dailyNoteItems(data: PlannerData, date: string): DailyPlanItem[] {
   const items = dailyItemsForDate(data, date);
+  const empty = items.length === 0;
+
+  if (empty) {
+    return items;
+  }
+  const order = orderIndex(data.dailyPlanOrders).get(date)?.[0];
+  const cached = orderedNotes.get(items);
+  const unchanged = cached !== undefined && cached.order === order;
+
+  if (unchanged) {
+    return cached.result;
+  }
+  const result = sortedDailyNotes(items, order?.itemIds);
+
+  orderedNotes.set(items, { order, result });
+
+  return result;
+}
+
+function sortedDailyNotes(items: DailyPlanItem[], custom: string[] | undefined): DailyPlanItem[] {
   const byId = new Map(items.map((item) => [item.id, item]));
   const entries = items.map((item) => ({
     id: 'daily:' + item.id,
@@ -16,7 +42,6 @@ export function dailyNoteItems(data: PlannerData, date: string): DailyPlanItem[]
     time: item.time ?? null,
     sortKey: item.createdAt + ':' + item.id,
   }));
-  const custom = data.dailyPlanOrders.find((order) => order.date === date)?.itemIds;
 
   return reconcileOrder(entries, custom).map((entry) => byId.get(entry.sourceId)!);
 }
@@ -124,4 +149,60 @@ function latestForNewItems(data: PlannerData, preserved: (DailyPlanItem | undefi
     (value, item) => Math.max(value, Date.parse(item.createdAt)),
     Date.now(),
   );
+}
+
+export function finalizeDailyNote(data: PlannerData, date: string): PlannerData {
+  const existing = dailyItemsForDate(data, date);
+  const committed = new Map(existing.map((item) => [item.id, committedItem(item)]));
+  const changed = existing.some((item) => committed.get(item.id) !== item);
+
+  if (!changed) {
+    return data;
+  }
+  const removed = new Set(
+    [...committed].filter(([, item]) => item === null).map(([id]) => 'daily:' + id),
+  );
+
+  return {
+    ...data,
+    dailyPlanItems: data.dailyPlanItems.flatMap((item) => committedItems(item, committed)),
+    dailyPlanOrders: data.dailyPlanOrders.map((order) => committedOrder(order, date, removed)),
+  };
+}
+
+function committedItem(item: DailyPlanItem): DailyPlanItem | null {
+  const content = item.content.trim();
+  const empty = content.length === 0;
+
+  if (empty) {
+    return null;
+  }
+
+  return content === item.content ? item : { ...item, content };
+}
+
+function committedItems(
+  item: DailyPlanItem,
+  committed: ReadonlyMap<string, DailyPlanItem | null>,
+): DailyPlanItem[] {
+  const next = committed.get(item.id);
+  const empty = next === null;
+
+  return empty ? [] : [next ?? item];
+}
+
+function committedOrder(
+  order: DailyPlanOrder,
+  date: string,
+  removed: ReadonlySet<string>,
+): DailyPlanOrder {
+  const otherDate = order.date !== date;
+
+  if (otherDate) {
+    return order;
+  }
+  const itemIds = order.itemIds.filter((id) => !removed.has(id));
+  const unchanged = itemIds.length === order.itemIds.length;
+
+  return unchanged ? order : { ...order, itemIds };
 }

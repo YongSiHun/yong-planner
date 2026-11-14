@@ -62,6 +62,8 @@ export function exceptionsForDate(data: PlannerData, date: string): RecurringPla
   return dateExceptionIndex(data.recurringPlanExceptions).get(date) ?? [];
 }
 
+const NO_DAILY_ITEMS: DailyPlanItem[] = [];
+
 export function dailyItemsForDate(data: PlannerData, date: string): DailyPlanItem[] {
-  return dailyIndex(data.dailyPlanItems).get(date) ?? [];
+  return dailyIndex(data.dailyPlanItems).get(date) ?? NO_DAILY_ITEMS;
 }

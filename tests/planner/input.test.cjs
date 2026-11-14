@@ -183,3 +183,17 @@ test('ordinary caret movement does not request page measurement or reset the nat
   assert.equal(reveals, 0);
   assert.deepEqual(state.selections, []);
 });
+
+test('blur commits trimmed chips without changing intentional spaces inside a schedule', () => {
+  const { applyDailyNote } = require('../../src/features/planner/services/note.ts');
+  const note = ' 회의  내용  , , 운동 ,';
+  let id = 0;
+  state.plannerData = applyDailyNote(state.plannerData, '2026-11-07', note, () => 'commit-' + ++id);
+  const editor = renderInput(note, 0);
+  assert.equal(editor.input.props.value, ' 회의  내용  ');
+  editor.input.props.onBlur();
+  assert.deepEqual(
+    state.plannerData.dailyPlanItems.map((item) => item.content),
+    ['회의  내용', '운동'],
+  );
+});

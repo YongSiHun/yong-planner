@@ -5,10 +5,21 @@ import type { SchedulePreviewProps } from '../types/presentation';
 import * as styles from './DraggableSchedulePreview.styles';
 import { ScheduleChip, SchedulePreview } from './ScheduleInput';
 
-export function DraggableSchedulePreview({
-  onMove,
-  ...props
-}: SchedulePreviewProps & { onMove(from: number, boundary: number): void }) {
+type DraggablePreviewProps = SchedulePreviewProps & {
+  onMove(from: number, boundary: number): void;
+};
+
+export function DraggableSchedulePreview(props: DraggablePreviewProps) {
+  const empty = props.note.trim().length === 0;
+
+  if (empty) {
+    return <SchedulePreview {...props} />;
+  }
+
+  return <DraggableContent {...props} />;
+}
+
+function DraggableContent({ onMove, ...props }: DraggablePreviewProps) {
   const theme = useTheme();
   const drag = useChipDrag(onMove, props.note.split(',').length, props.date);
   const index = drag.index;

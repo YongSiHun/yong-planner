@@ -2,19 +2,17 @@ export interface InputMetrics {
   fontSize: number;
   lineHeight: number;
   minimumHeight: number;
-  widthStep: number;
 }
 
 export interface InputLine {
   width: number;
+  text?: string;
   height?: number;
 }
 
-// 한글 조합 중 지연된 측정값 때문에 입력창 폭이 번갈아 줄지 않도록 여유 폭 확보.
-export function reserveMeasuredWidth(width: number, scale: number, metrics: InputMetrics): number {
-  const headroom = metrics.fontSize * scale * 2;
-
-  return Math.ceil((width + 18 + headroom) / metrics.widthStep) * metrics.widthStep;
+// 저장 칩과 같은 좌우 여백(16)·테두리(2)에 커서 여유만 추가한다.
+export function reserveMeasuredWidth(width: number, scale: number): number {
+  return Math.ceil(width + 18 + 2 * scale);
 }
 
 export function reserveInputWidth(text: string, scale: number, metrics: InputMetrics): number {
@@ -23,7 +21,7 @@ export function reserveInputWidth(text: string, scale: number, metrics: InputMet
     .reduce((maximum, line) => Math.max(maximum, line.replace(/[^\x00-\x7F]/g, 'xx').length), 0);
   const estimatedWidth = units * metrics.fontSize * scale * 0.5;
 
-  return reserveMeasuredWidth(estimatedWidth, scale, metrics);
+  return reserveMeasuredWidth(estimatedWidth, scale);
 }
 
 export function measureInputLines(
@@ -40,5 +38,22 @@ export function measureInputLines(
     ) + 8,
   );
 
-  return { width: reserveMeasuredWidth(width, scale, metrics), height };
+  return { width: reserveMeasuredWidth(width, scale), height };
+}
+
+export function matchesMeasuredContent(lines: readonly InputLine[], content: string): boolean {
+  const hasText = lines.some((line) => line.text !== undefined);
+  const blank = content.length === 0;
+
+  const skipComparison = !hasText || blank;
+
+  if (skipComparison) {
+    return true;
+  }
+  const measured = lines
+    .map((line) => line.text ?? '')
+    .join('')
+    .replace(/\r?\n/g, '');
+
+  return measured === content.replace(/\r?\n/g, '');
 }

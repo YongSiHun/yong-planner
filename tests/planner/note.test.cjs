@@ -163,3 +163,44 @@ test('middle merges preserve surrounding chips and strip copied input boundaries
   assert.equal(edit.text, '처음,회의 추가,산책,끝');
   assert.equal(edit.text.includes(NOTE_INPUT_BOUNDARY), false);
 });
+
+test('finishing input removes edge spaces and empty chips while preserving IDs, metadata and word spaces', () => {
+  const { finalizeDailyNote } = require('../../src/features/planner/services/noteItems.ts');
+  let data = applyDailyNote(emptyData(), date, ' 회의  내용  , ,운동,,', createId);
+  data = applyDailyNote(data, '2026-11-08', ' 다른 날짜 ', createId);
+  const original = dailyNoteItems(data, date);
+  const meeting = { ...original[0], time: '13:10', important: true, alarm: true };
+  data = {
+    ...data,
+    dailyPlanItems: data.dailyPlanItems.map((item) => (item.id === meeting.id ? meeting : item)),
+  };
+  const order = data.dailyPlanOrders.find((item) => item.date === date);
+  data = {
+    ...data,
+    dailyPlanOrders: data.dailyPlanOrders.map((item) =>
+      item === order ? { ...item, itemIds: ['recurring:keep', ...item.itemIds] } : item,
+    ),
+  };
+  const other = data.dailyPlanItems.find((item) => item.date !== date);
+  const committed = finalizeDailyNote(data, date);
+  assert.deepEqual(read(committed), ['회의  내용', '운동']);
+  const actual = dailyNoteItems(committed, date);
+  assert.equal(actual[0].id, meeting.id);
+  assert.equal(actual[0].time, '13:10');
+  assert.equal(actual[0].important, true);
+  assert.equal(actual[0].alarm, true);
+  assert.equal(actual[1].id, original[2].id);
+  assert.equal(
+    committed.dailyPlanItems.find((item) => item.date !== date),
+    other,
+  );
+  assert.deepEqual(committed.dailyPlanOrders.find((item) => item.date === date).itemIds, [
+    'recurring:keep',
+    'daily:' + meeting.id,
+    'daily:' + original[2].id,
+  ]);
+  assert.equal(finalizeDailyNote(committed, date), committed);
+  const empty = finalizeDailyNote(applyDailyNote(emptyData(), date, ' ,  ,, ', createId), date);
+  assert.deepEqual(empty.dailyPlanItems, []);
+  assert.deepEqual(empty.dailyPlanOrders[0].itemIds, []);
+});

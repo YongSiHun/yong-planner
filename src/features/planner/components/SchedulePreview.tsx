@@ -1,5 +1,7 @@
 import { Pressable, View } from 'react-native';
+import { useMemo } from 'react';
 import { NOTE_SEPARATOR } from '../services/note';
+import { useNoteSelectionStore } from '../../../stores/noteSelection';
 import type { SchedulePreviewProps } from '../types/presentation';
 import * as styles from './SchedulePreview.styles';
 import { ScheduleChip } from './ScheduleChip';
@@ -22,15 +24,47 @@ export function SchedulePreview({
   selectedIndexes = new Set<number>(),
   onSelect = () => {},
 }: SchedulePreviewProps) {
-  const hasContent = note.split(NOTE_SEPARATOR).some((part) => part.trim().length > 0);
+  const parts = useMemo(
+    () =>
+      note
+        .split(NOTE_SEPARATOR)
+        .map((part, index) => ({ part, index }))
+        .filter(({ part }) => part.trim().length > 0),
+    [note],
+  );
+  const hasContent = parts.length > 0;
 
   function handleBlankPress() {
-    if (selecting) {
+    const active = selecting || useNoteSelectionStore.getState().active;
+
+    if (active) {
       onOutsidePress?.();
 
       return;
     }
     onEdit(hasContent ? undefined : 0);
+  }
+
+  function handleChipPress(index: number) {
+    const active = selecting || useNoteSelectionStore.getState().active;
+
+    if (active) {
+      onSelect(index);
+
+      return;
+    }
+    onEdit(index);
+  }
+
+  function handleInsertion(index: number, boundary: number) {
+    const active = selecting || useNoteSelectionStore.getState().active;
+
+    if (active) {
+      onSelect(index);
+
+      return;
+    }
+    onInsert?.(boundary);
   }
 
   if (!hasContent) {
@@ -46,7 +80,7 @@ export function SchedulePreview({
 
   return (
     <Pressable accessible={false} onPress={handleBlankPress} style={styles.preview}>
-      {note.split(NOTE_SEPARATOR).map((part, index) => (
+      {parts.map(({ part, index }) => (
         <View
           key={index}
           onLayout={(event) => onChipLayout?.(index, event)}
@@ -64,9 +98,9 @@ export function SchedulePreview({
               onSelect(index, true);
               onArm?.(index);
             }}
-            onPress={() => (selecting ? onSelect(index) : onEdit(index))}
-            onBefore={() => onInsert?.(index)}
-            onAfter={() => onInsert?.(index + 1)}
+            onPress={() => handleChipPress(index)}
+            onBefore={() => handleInsertion(index, index)}
+            onAfter={() => handleInsertion(index, index + 1)}
           />
         </View>
       ))}

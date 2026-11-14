@@ -11,6 +11,7 @@ import {
 import { NOTIFICATION_PREFIX, buildNotificationPlan } from '../services/plan';
 import { reconcileNotifications } from '../services/reconcile';
 import type { NotificationPreferences } from '../types';
+import type { PlannerData } from '../../planner/types';
 import { initializeNotifications, reportFailure } from './notificationState';
 
 const queue = new WriteQueue();
@@ -69,7 +70,8 @@ export function startNotificationSync(): () => void {
   let disposed = false;
 
   const unsubscribe = usePlanner.subscribe((state, previous) => {
-    const changed = state.ready && (state.data !== previous.data || !previous.ready);
+    const changed =
+      state.ready && (!previous.ready || notificationDataChanged(state.data, previous.data));
 
     if (changed) {
       scheduleSync(true);
@@ -151,4 +153,19 @@ function alarmMatcher(ids: ReadonlySet<string> | undefined) {
 
 function displayEnabled(preferences: NotificationPreferences): boolean {
   return preferences.summary;
+}
+
+function notificationDataChanged(current: PlannerData, previous: PlannerData): boolean {
+  const keys = [
+    'dailyPlanItems',
+    'recurringPlans',
+    'recurringPlanExceptions',
+    'dailyPlanOrders',
+    'holidayOverrides',
+  ] as const;
+
+  return (
+    current.settings.timeFormat !== previous.settings.timeFormat ||
+    keys.some((key) => current[key] !== previous[key])
+  );
 }

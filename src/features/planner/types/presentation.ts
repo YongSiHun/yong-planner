@@ -6,6 +6,7 @@ export interface NoteSelectionModel {
   active: boolean;
   selected: ReadonlySet<string>;
   selectedItems: readonly DailyPlanItem[];
+  selectedByDate: ReadonlyMap<string, ReadonlySet<string>>;
   copySource: DailyPlanItem | undefined;
   copySourceDate: string | undefined;
   hasSelectedTime: boolean;

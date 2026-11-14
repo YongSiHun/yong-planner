@@ -99,6 +99,10 @@ export function ScheduleInput({
         ref={input}
         multiline
         autoFocus
+        autoCorrect={false}
+        spellCheck={false}
+        autoCapitalize="none"
+        smartInsertDelete={false}
         value={noteInputValue(edit)}
         onChange={handleChange}
         selection={requestedSelection}

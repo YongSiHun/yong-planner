@@ -1,5 +1,6 @@
 import { Keyboard, Pressable, Text, View } from 'react-native';
 import { useTheme } from '../../../components/ui';
+import { useNoteSelectionStore } from '../../../stores/noteSelection';
 import { weekday, weekdays } from '../../../utils/date';
 import { getDateColor } from '../services/presentation';
 import * as styles from './DayDate.styles';
@@ -40,7 +41,9 @@ export function DayDate({
 
       return;
     }
-    if (selecting) {
+    const active = selecting || useNoteSelectionStore.getState().active;
+
+    if (active) {
       onOutsidePress?.();
 
       return;

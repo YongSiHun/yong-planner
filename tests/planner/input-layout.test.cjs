@@ -95,6 +95,10 @@ test('the first keystroke creates a compact chip while keeping the composition i
   changeInput(editor.input, 'ㅎ');
   editor = renderInput('', 0);
   assert.ok(editor.input.props.style.width < before.width);
+  assert.ok(editor.input.props.style.width <= 40);
+  assert.equal(editor.input.props.style.height, 30);
+  assert.equal(editor.input.props.autoCorrect, false);
+  assert.equal(editor.input.props.smartInsertDelete, false);
   assert.equal(editor.input.props.style.borderWidth, 1);
   assert.equal(editor.input.props.value, 'ㅎ');
   assert.equal(editor.input.props.style.fontSize, before.fontSize);
@@ -150,4 +154,16 @@ test('empty input measures wrapped placeholder text so the hint is not clipped',
     (node) => node.type === 'Text' && node.props.onTextLayout,
   );
   assert.equal(contentMeasurement.props.children, '회의');
+  const compact = editor.input.props.style;
+  contentMeasurement.props.onTextLayout({
+    nativeEvent: { lines: [{ width: 230, height: 22, text: measurement.props.children }] },
+  });
+  editor = renderInput('', 0);
+  assert.equal(editor.input.props.style.width, compact.width);
+  assert.equal(editor.input.props.style.height, 30);
+  contentMeasurement.props.onTextLayout({
+    nativeEvent: { lines: [{ width: 30, height: 22, text: '회의' }] },
+  });
+  editor = renderInput('', 0);
+  assert.equal(editor.input.props.style.width, compact.width);
 });

@@ -2,7 +2,7 @@ import { randomUUID } from 'expo-crypto';
 import { noteLengthError } from '../../../services/schedule';
 import { parseDate, validTime } from '../../../utils/date';
 import { timeChangeClearsAlarm, updateDailyAlarms } from '../services/alarms';
-import { applyDailyNote } from '../services/note';
+import { applyDailyNote, finalizeDailyNote } from '../services/noteItems';
 import { moveDailyNote as reorderDailyNote } from '../services/noteMove';
 import { copyNotesToDates, deleteSelectedNotes } from '../services/noteSelection';
 import { updatePlanner } from './persistence';
@@ -62,4 +62,9 @@ export function setDailyImportant(ids: ReadonlySet<string>, important: boolean) 
 
 export function setDailyAlarms(ids: ReadonlySet<string>, alarm: boolean, time?: string) {
   updatePlanner((data) => updateDailyAlarms(data, ids, alarm, time), true);
+}
+
+export function finishDailyNote(date: string): void {
+  parseDate(date);
+  updatePlanner((data) => finalizeDailyNote(data, date));
 }

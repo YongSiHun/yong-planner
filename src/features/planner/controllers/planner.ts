@@ -1,6 +1,7 @@
 export { initializePlanner, updatePlanner, flushPlanner, restorePlanner } from './persistence';
 export {
   saveDailyNote,
+  finishDailyNote,
   deleteDailyNotes,
   moveDailyNote,
   copyDailyNotes,

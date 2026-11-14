@@ -2,16 +2,16 @@ import { useMemo } from 'react';
 import { useNoteSelectionStore } from '../../../stores/noteSelection';
 import { usePlanner } from '../../../stores/planner';
 import { useSelectionActions } from './useSelectionActions';
+import { createSelectedDateIndex, selectedDailyItems } from '../services/selectionProjection';
 
 // 조회 모델 전담; 명령은 Store 구독 없음.
 export function useNoteSelection(onBegin: () => void) {
   const active = useNoteSelectionStore((state) => state.active);
   const selected = useNoteSelectionStore((state) => state.selected);
   const data = usePlanner((state) => (selected.size > 0 ? state.data.dailyPlanItems : undefined));
-  const items = useMemo(
-    () => data?.filter((item) => selected.has(item.id)) ?? [],
-    [data, selected],
-  );
+  const items = useMemo(() => selectedDailyItems(data, selected), [data, selected]);
+  const indexSelection = useMemo(() => createSelectedDateIndex(), []);
+  const selectedByDate = useMemo(() => indexSelection(items), [indexSelection, items]);
   const deleteIds = useNoteSelectionStore((state) => state.deleteIds);
   const timeId = useNoteSelectionStore((state) => state.timeId);
   const copyId = useNoteSelectionStore((state) => state.copyId);
@@ -28,6 +28,7 @@ export function useNoteSelection(onBegin: () => void) {
 
   return {
     selectedItems: items,
+    selectedByDate,
     alarmSetting,
     hasSelectedAlarm,
     hasSelectedTime,

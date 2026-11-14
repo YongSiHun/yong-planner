@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, report, showDialog, useTheme } from '../../../components/ui';
 import { type ExportFormat } from '../../../services/export/files';
 import { usePlanner } from '../../../stores/planner';
+import { useNoteSelectionStore } from '../../../stores/noteSelection';
 import { monthDates, today } from '../../../utils/date';
 import { PlannerDay } from '../components/PlannerDay';
 import { PlannerDialogs } from '../components/PlannerDialogs';
@@ -20,6 +21,8 @@ import { usePlannerActions } from '../hooks/usePlannerActions';
 import { usePlannerGuide } from '../hooks/usePlannerGuide';
 import { useToday } from '../hooks/useToday';
 import * as styles from './PlannerScreen.styles';
+
+const NO_SELECTED_IDS: ReadonlySet<string> = new Set();
 
 export default function PlannerScreen() {
   const theme = useTheme();
@@ -53,12 +56,14 @@ export default function PlannerScreen() {
     setEditingDate(null);
   }, []);
   const selection = useNoteSelection(beginSelection);
-  const { active: isSelecting, clear: clearSelection } = selection;
+  const { clear: clearSelection } = selection;
   const dismissSelection = useCallback(() => {
-    if (isSelecting) {
+    const active = useNoteSelectionStore.getState().active;
+
+    if (active) {
       clearSelection();
     }
-  }, [isSelecting, clearSelection]);
+  }, [clearSelection]);
   const handleEditDate = useCallback((date: string) => {
     setEditingDate(date);
   }, []);
@@ -140,8 +145,6 @@ export default function PlannerScreen() {
               onScroll={handleKeyboardScroll}
               scrollEventThrottle={16}
               contentContainerStyle={styles.plannerScreenScrollViewContentContainerStyle(
-                selection.active,
-                selection.copySource !== undefined,
                 navigationPadding,
               )}
               onContentSizeChange={(width, height) => {
@@ -157,11 +160,11 @@ export default function PlannerScreen() {
                   timeFormat={timeFormat}
                   isToday={date === currentDate}
                   isEditing={editingDate === date}
-                  selectedIds={selection.selected}
-                  selecting={selection.active}
+                  selectedIds={selection.selectedByDate.get(date) ?? NO_SELECTED_IDS}
+                  selecting={selection.selectedByDate.has(date)}
                   copying={selection.copySource !== undefined}
                   copyTarget={selection.copyDates.has(date)}
-                  copySourceDate={selection.copySourceDate}
+                  copySourceDate={selection.copySource ? selection.copySourceDate : undefined}
                   onCopyDate={selection.toggleCopyDate}
                   onSelect={selection.toggle}
                   onOutsidePress={dismissSelection}
@@ -173,12 +176,14 @@ export default function PlannerScreen() {
                 />
               ))}
             </ScrollView>
-            <PlannerFooter
-              selection={selection}
-              month={month}
-              keyboardVisible={keyboardVisible}
-              onToday={handleToday}
-            />
+            <View pointerEvents="box-none" style={styles.footerOverlay}>
+              <PlannerFooter
+                selection={selection}
+                month={month}
+                keyboardVisible={keyboardVisible}
+                onToday={handleToday}
+              />
+            </View>
             <PlannerDialogs
               guide={guide}
               selection={selection}

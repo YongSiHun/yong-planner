@@ -27,6 +27,7 @@ const { usePlanner } = require('../../src/stores/planner.ts');
 const {
   initializePlanner,
   saveDailyNote,
+  finishDailyNote,
   flushPlanner,
   restorePlanner,
   setDailyAlarms,
@@ -144,4 +145,21 @@ test('invalid user input is rejected before planner state or persistence changes
   assert.equal(usePlanner.getState().data.holidayOverrides[0].date, '2028-02-29');
   assert.equal(usePlanner.getState().data.recurringPlans[0].id, 'validation');
   await flushPlanner();
+});
+
+test('finishing a schedule persists clean content and removes trailing empty items', async () => {
+  const date = '2026-11-19';
+  saveDailyNote(date, '13:10 회의  내용  , , 운동 ,');
+  const original = usePlanner.getState().data.dailyPlanItems.filter((item) => item.date === date);
+  setDailyAlarms(new Set([original[0].id]), true, '13:10');
+  finishDailyNote(date);
+  await flushPlanner();
+  const saved = writes.at(-1).dailyPlanItems.filter((item) => item.date === date);
+  assert.deepEqual(
+    saved.map((item) => item.content),
+    ['회의  내용', '운동'],
+  );
+  assert.equal(saved[0].id, original[0].id);
+  assert.equal(saved[0].alarm, true);
+  assert.equal(saved[0].time, '13:10');
 });

@@ -91,3 +91,38 @@ test('removed lock screen choice does not enable status bar notifications', asyn
   assert.equal(pending.size, 0);
   assert.equal(presented.size, 0);
 });
+
+test('memo and theme edits do not reschedule calendar notifications', async (context) => {
+  context.mock.timers.enable({ apis: ['setTimeout', 'setInterval'] });
+  state.granted = true;
+  useNotificationStore.setState({
+    preferences: { ...defaultNotificationPreferences, summary: true },
+  });
+  const stop = startNotificationSync();
+  try {
+    await new Promise((resolve) => setImmediate(resolve));
+    context.mock.timers.tick(1000);
+    await new Promise((resolve) => setImmediate(resolve));
+    const before = events.filter((event) => event.type === 'pending').length;
+    const current = usePlanner.getState().data;
+    usePlanner.setState({
+      data: {
+        ...current,
+        memos: [{ id: 'memo', content: '기록', updatedAt: new Date().toISOString() }],
+        settings: { ...current.settings, theme: 'dark' },
+      },
+    });
+    context.mock.timers.tick(1000);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(events.filter((event) => event.type === 'pending').length, before);
+    usePlanner.setState({
+      data: { ...usePlanner.getState().data, settings: { theme: 'dark', timeFormat: '12h' } },
+    });
+    context.mock.timers.tick(1000);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(events.filter((event) => event.type === 'pending').length, before + 1);
+  } finally {
+    stop();
+    context.mock.timers.reset();
+  }
+});

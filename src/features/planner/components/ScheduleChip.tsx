@@ -1,4 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
+import { useMemo } from 'react';
+import { useNoteSelectionStore } from '../../../stores/noteSelection';
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../../../components/ui';
 import { formatScheduleContent, parseScheduleTimePrefix } from '../services/time';
@@ -32,8 +34,22 @@ export function ScheduleChip({
 }) {
   const theme = useTheme();
   const hasContent = content.trim().length > 0;
-  const parsed = parseScheduleTimePrefix(content.trim());
-  const label = formatScheduleContent(parsed.content, parsed.time ?? time, timeFormat);
+  const selectionActive = useNoteSelectionStore((state) => state.active);
+  const isSelecting = selecting || selectionActive;
+  const label = useMemo(() => {
+    const parsed = parseScheduleTimePrefix(content.trim());
+
+    return formatScheduleContent(parsed.content, parsed.time ?? time, timeFormat);
+  }, [content, time, timeFormat]);
+
+  const chipStyle = useMemo(
+    () => styles.chip(selected, theme, important),
+    [selected, theme, important],
+  );
+  const labelNode = useMemo(
+    () => <Text style={styles.chipLabel(selected, theme, important)}>{label}</Text>,
+    [selected, theme, important, label],
+  );
 
   if (!hasContent) {
     return null;
@@ -41,18 +57,18 @@ export function ScheduleChip({
 
   return (
     <Pressable
-      accessibilityRole={selecting ? 'checkbox' : 'button'}
+      accessibilityRole={isSelecting ? 'checkbox' : 'button'}
       accessibilityLabel={chipAccessibilityLabel(label, important) + (alarm ? ', 알람 설정됨' : '')}
       accessibilityState={{ selected, checked: selected }}
       accessibilityHint="길게 누르면 여러 일정을 선택할 수 있어요."
       onPress={onPress}
       onLongPress={onLongPress}
-      style={styles.chip(selected, theme, important)}
+      style={chipStyle}
     >
       <AlarmMark alarm={alarm} selected={selected} />
-      <Text style={styles.chipLabel(selected, theme, important)}>{label}</Text>
+      {labelNode}
       <ChipEdges
-        selecting={selecting}
+        selecting={isSelecting}
         content={content}
         onBefore={onBefore}
         onAfter={onAfter}

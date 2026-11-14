@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { useWindowDimensions, type LayoutChangeEvent, type TextLayoutEvent } from 'react-native';
 import { design } from '../../../components/ui/tokens';
-import { measureInputLines, reserveInputWidth } from '../services/inputGeometry';
+import {
+  matchesMeasuredContent,
+  measureInputLines,
+  reserveInputWidth,
+} from '../services/inputGeometry';
 
 const metrics = {
   fontSize: design.type.body,
   lineHeight: design.lineHeight,
-  minimumHeight: design.rowMinHeight,
-  widthStep: design.space.lg * 2,
+  minimumHeight: design.lineHeight + design.space.sm,
 };
 
 export function useInputGeometry({
@@ -42,7 +45,8 @@ export function useInputGeometry({
   }
 
   function handleTextLayout(event: TextLayoutEvent) {
-    const isCurrent = getContent() === content;
+    const isCurrent =
+      getContent() === content && matchesMeasuredContent(event.nativeEvent.lines, content);
 
     if (!isCurrent) {
       return;
@@ -61,7 +65,7 @@ export function useInputGeometry({
     height,
     maximumHeight,
     availableWidth,
-    inputWidth: Math.min(availableWidth, reservedWidth),
+    inputWidth: Math.max(30, Math.min(availableWidth, reservedWidth)),
     resize,
     handleTextLayout,
     handleFlowLayout,

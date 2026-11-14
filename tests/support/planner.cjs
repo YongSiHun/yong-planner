@@ -146,6 +146,13 @@ const plannerActions = {
     );
   },
   saveDailyNote: (date, text) => state.saved.push(text),
+  finishDailyNote: (date) => {
+    state.plannerData =
+      require('../../src/features/planner/services/noteItems.ts').finalizeDailyNote(
+        state.plannerData,
+        date,
+      );
+  },
   setDailyImportant: (ids, important) => {
     state.plannerData = {
       ...state.plannerData,

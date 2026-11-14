@@ -1,6 +1,6 @@
 import { useScheduleText } from '../../../hooks/useScheduleText';
 import { router } from 'expo-router';
-import { useRef, useState, type ComponentRef } from 'react';
+import { memo, useRef, useState, type ComponentRef } from 'react';
 import { Keyboard, Pressable, Text, TextInput, View } from 'react-native';
 import { Button, report, useTheme } from '../../../components/ui';
 import { usePlanner } from '../../../stores/planner';
@@ -10,7 +10,7 @@ import { displayPlanEntry } from '../services/time';
 import type { PlanEntry } from '../types';
 import * as styles from './RecurringNote.styles';
 
-export function RecurringNote({
+export const RecurringNote = memo(function RecurringNote({
   entry,
   date,
   onInputFocus,
@@ -150,4 +150,4 @@ export function RecurringNote({
       </View>
     </View>
   );
-}
+});

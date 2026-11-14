@@ -28,7 +28,11 @@ export function useSelectionActions(onBegin: () => void) {
 
         return;
       }
-      onBegin();
+      const starting = !ui.getState().active;
+
+      if (starting) {
+        onBegin();
+      }
       ui.setState({ active: true, selected });
     },
     [clear, onBegin],
