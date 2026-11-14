@@ -20,8 +20,8 @@
 
 ```sh
 yarn install                # deps 설치
-npx expo install --check    # SDK 호환 검사
-npx expo install --fix --yarn # SDK 호환 보정
+expo install --check    # SDK 호환 검사
+expo install --fix --yarn # SDK 호환 보정
 yarn start                  # dev 서버·캐시 초기화
 yarn android                # Android 실행
 yarn ios                    # iOS 실행
