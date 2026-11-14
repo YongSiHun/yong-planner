@@ -15,7 +15,7 @@ export function parseBackup(json: string): PlannerBackup {
 
   const root = readRecord(JSON.parse(json));
   const isSupportedVersion =
-    [1, 2, 3, 4, 5].includes(Number(root.version)) && typeof root.version === 'number';
+    [1, 2, 3, 4, 5, 6].includes(Number(root.version)) && typeof root.version === 'number';
 
   ensureValid(isSupportedVersion, '지원하지 않는 백업 버전입니다.');
   readTimestamp(root.exportedAt);
@@ -25,6 +25,20 @@ export function parseBackup(json: string): PlannerBackup {
 
   ensureValid(isMonthly || root.month === undefined, '지원하지 않는 월별 백업 형식입니다.');
 
+  return backupContent(root, data, isMonthly);
+}
+
+function backupContent(
+  root: Record<string, unknown>,
+  data: PlannerData,
+  isMonthly: boolean,
+): PlannerBackup {
+  const notes = root.version === 6 && root.kind === 'notes';
+
+  if (notes) {
+    return { ...data, kind: 'notes' };
+  }
+
   return isMonthly ? monthData(data, backupMonth(root.month)) : data;
 }
 
@@ -32,7 +46,7 @@ export function createBackup(data: PlannerData, month?: string): string {
   const validated = validateData(data);
   const content = month === undefined ? validated : monthData(validated, month);
   const backup = {
-    version: month === undefined ? 4 : 5,
+    version: month === undefined ? 6 : 5,
     exportedAt: new Date().toISOString(),
     ...content,
   };

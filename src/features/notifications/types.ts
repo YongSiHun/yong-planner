@@ -24,6 +24,7 @@ export interface PlannedNotification {
   title: string;
   body: string;
   at: number | null;
+  hasSchedules?: boolean;
 }
 export interface NotificationPlan {
   summary: PlannedNotification | null;

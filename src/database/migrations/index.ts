@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export const initialSchema = `CREATE TABLE daily_plan_items (id TEXT PRIMARY KEY NOT NULL, date TEXT NOT NULL, content TEXT NOT NULL, createdAt TEXT NOT NULL);
 CREATE INDEX daily_date ON daily_plan_items(date, createdAt);
@@ -65,7 +65,16 @@ export async function migrate(db: MigrationDatabase): Promise<void> {
     if (needsImportance) {
       await db.execAsync(addDailyImportance);
     }
-    await db.execAsync(addDailyAlarm);
-    await db.execAsync('PRAGMA user_version = 5;');
+    await migrateAlarm(db, version);
+    await db.execAsync('CREATE TABLE memos (id TEXT PRIMARY KEY NOT NULL, payload TEXT NOT NULL);');
+    await db.execAsync('PRAGMA user_version = 6;');
   });
+}
+
+async function migrateAlarm(db: MigrationDatabase, version: number) {
+  const needsAlarm = version < 5;
+
+  if (needsAlarm) {
+    await db.execAsync(addDailyAlarm);
+  }
 }

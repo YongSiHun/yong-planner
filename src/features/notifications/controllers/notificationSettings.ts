@@ -59,9 +59,9 @@ async function preparePreferenceChange(
 }
 
 function normalizePreferences(preferences: NotificationPreferences): NotificationPreferences {
-  return { ...preferences, exact: preferences.exact && preferences.alarms };
+  return { ...preferences, lockScreen: false, exact: preferences.exact && preferences.alarms };
 }
 
 function displayEnabled(preferences: NotificationPreferences): boolean {
-  return preferences.summary || preferences.lockScreen;
+  return preferences.summary;
 }

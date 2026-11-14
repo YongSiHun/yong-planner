@@ -4,7 +4,6 @@ import { styles as layoutStyles, useTheme } from '../../../components/ui';
 import { AppInfo } from '../components/AppInfo';
 import { BackupSettings } from '../components/BackupSettings';
 import { HolidayOverrides } from '../components/HolidayOverrides';
-import { NotificationSettings } from '../components/NotificationSettings';
 import { ThemeSettings } from '../components/ThemeSettings';
 import { TimeFormatSettings } from '../components/TimeFormatSettings';
 import * as styles from './SettingsScreen.styles';
@@ -18,9 +17,6 @@ export default function SettingsScreen() {
         <ThemeSettings />
         <View style={styles.divider(theme)} />
         <TimeFormatSettings />
-        <View style={styles.divider(theme)} />
-
-        <NotificationSettings />
         <View style={styles.divider(theme)} />
 
         <BackupSettings />

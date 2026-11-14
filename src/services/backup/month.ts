@@ -2,7 +2,7 @@ import type { PlannerData, RecurringPlan } from '../../features/planner/types';
 import { monthDates, parseDate } from '../../utils/date';
 import { validateData } from './validation';
 
-export type PlannerBackup = PlannerData & { month?: string };
+export type PlannerBackup = PlannerData & { month?: string; kind?: 'notes' | 'full' };
 
 export function backupMonth(value: unknown): string {
   const valid = typeof value === 'string' && /^\d{4}-\d{2}$/.test(value);
@@ -33,6 +33,7 @@ export function monthData(data: PlannerData, month: string): PlannerBackup {
   return {
     ...data,
     month: key,
+    memos: [],
     dailyPlanItems: data.dailyPlanItems.filter(inMonth),
     recurringPlans,
     recurringPlanExceptions: data.recurringPlanExceptions.filter(

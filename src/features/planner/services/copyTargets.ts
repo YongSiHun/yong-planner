@@ -3,7 +3,6 @@ import type { PlannerData } from '../types';
 import { plansForDate } from './plans';
 import { parseScheduleTimePrefix } from './time';
 
-export const COPY_SINGLE_MESSAGE = '일정 복사는 하나만 가능해요.';
 export const COPY_DUPLICATE_MESSAGE = '이미 같은 일정이 있는 날짜에는 복사할 수 없어요.';
 
 export function copyScheduleKey(item: {

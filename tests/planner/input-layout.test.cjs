@@ -89,12 +89,14 @@ test('large font line measurements keep enough height for every explicit line', 
   assert.equal(editor.input.props.style.height, 96);
 });
 
-test('the first keystroke keeps the empty editor width and font stable', () => {
+test('the first keystroke creates a compact chip while keeping the composition input and font stable', () => {
   let editor = renderInput('', 0);
   const before = editor.input.props.style;
   changeInput(editor.input, 'ㅎ');
   editor = renderInput('', 0);
-  assert.equal(editor.input.props.style.width, before.width);
+  assert.ok(editor.input.props.style.width < before.width);
+  assert.equal(editor.input.props.style.borderWidth, 1);
+  assert.equal(editor.input.props.value, 'ㅎ');
   assert.equal(editor.input.props.style.fontSize, before.fontSize);
   assert.equal(editor.input.props.style.lineHeight, before.lineHeight);
 });

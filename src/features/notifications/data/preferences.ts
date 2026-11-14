@@ -16,7 +16,7 @@ export async function loadNotificationPreferences(): Promise<NotificationPrefere
     summary:
       typeof input.summary === 'boolean' ? input.summary : defaultNotificationPreferences.summary,
     alarms,
-    lockScreen: input.lockScreen === true,
+    lockScreen: false,
     exact: alarms && input.exact === true,
   };
 }

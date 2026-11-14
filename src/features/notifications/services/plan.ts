@@ -37,11 +37,12 @@ function summaryForDate(
 
       return alarmMark + displayPlanEntry(item, data.settings.timeFormat);
     });
-  const body = lines.length > 0 ? lines.join('\n') : '등록된 일정이 없어요.';
+  const body = lines.length > 0 ? lines.join(', ') : '등록된 일정이 없어요.';
 
   return {
     id: NOTIFICATION_PREFIX + 'summary:' + date,
     kind: 'summary',
+    hasSchedules: lines.length > 0,
     date,
     title: date + ' 일정',
     body: body.slice(0, 3000),
@@ -108,7 +109,7 @@ export function buildNotificationPlan(
   now: Date,
   holidays: HolidayService,
 ): NotificationPlan {
-  const showSummary = preferences.summary || preferences.lockScreen;
+  const showSummary = preferences.summary;
   const summaries = showSummary ? futureSummaries(data, now, holidays) : [];
   const alarms = preferences.alarms ? futureAlarms(data, now, holidays) : [];
   const available = MAX_PENDING_NOTIFICATIONS - summaries.length;

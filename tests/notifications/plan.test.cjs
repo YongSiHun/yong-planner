@@ -248,3 +248,23 @@ test('default display includes summaries and keeps lock screen hidden', () => {
   assert.equal(plan.pending.filter((item) => item.kind === 'summary').length, 7);
   assert.equal(plan.pending.filter((item) => item.kind === 'alarm').length, 0);
 });
+
+test('status bar summaries use commas and explicitly mark empty schedules as non-expandable', () => {
+  const populated = buildNotificationPlan(
+    seed(),
+    defaultNotificationPreferences,
+    now,
+    holidays,
+  ).summary;
+  assert.equal(populated.hasSchedules, true);
+  assert.ok(populated.body.includes(', '));
+  assert.ok(!populated.body.includes('\n'));
+  const empty = buildNotificationPlan(
+    emptyData(),
+    defaultNotificationPreferences,
+    now,
+    holidays,
+  ).summary;
+  assert.equal(empty.hasSchedules, false);
+  assert.equal(empty.body, '등록된 일정이 없어요.');
+});

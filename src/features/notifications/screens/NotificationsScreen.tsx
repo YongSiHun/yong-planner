@@ -77,12 +77,6 @@ export default function NotificationsScreen() {
               disabled={!state.ready}
               onChange={(value) => toggle('summary', value)}
             />
-            <PreferenceSwitch
-              title="잠금 화면에 표시"
-              value={state.preferences.lockScreen}
-              disabled={!state.ready}
-              onChange={(value) => toggle('lockScreen', value)}
-            />
           </View>
         </View>
         <View style={styles.divider(theme)} />

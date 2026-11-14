@@ -31,6 +31,7 @@ export default function PlannerScreen() {
   const holidays = useHolidays();
   const {
     month,
+    navigationPadding,
     scrollRef,
     showDate,
     handleMonthChange,
@@ -141,6 +142,7 @@ export default function PlannerScreen() {
               contentContainerStyle={styles.plannerScreenScrollViewContentContainerStyle(
                 selection.active,
                 selection.copySource !== undefined,
+                navigationPadding,
               )}
               onContentSizeChange={(width, height) => {
                 handleContentSizeChange(width, height);

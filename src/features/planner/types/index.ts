@@ -37,7 +37,13 @@ export interface Settings {
   theme: 'system' | 'light' | 'dark';
   timeFormat?: TimeFormat;
 }
+export interface Memo {
+  id: string;
+  content: string;
+  updatedAt: string;
+}
 export interface PlannerData {
+  memos?: Memo[];
   dailyPlanItems: DailyPlanItem[];
   recurringPlans: RecurringPlan[];
   recurringPlanExceptions: RecurringPlanException[];
@@ -56,6 +62,7 @@ export interface PlanEntry {
   sortKey: string;
 }
 export const emptyData = (): PlannerData => ({
+  memos: [],
   dailyPlanItems: [],
   recurringPlans: [],
   recurringPlanExceptions: [],

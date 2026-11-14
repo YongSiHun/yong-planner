@@ -61,7 +61,9 @@ export function useScheduleInputState({
   });
 
   function applyEdit(next: NoteEdit, persist = true) {
-    const changedIndex = next.index !== currentEdit.current.index;
+    const changedIndex =
+      next.index !== currentEdit.current.index ||
+      currentContent(currentEdit.current).trim().length === 0;
 
     resize(currentContent(next), changedIndex);
     currentEdit.current = next;

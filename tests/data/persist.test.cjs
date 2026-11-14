@@ -12,7 +12,12 @@ const { replaceRows } = require('../../src/database/repositories/transactions.ts
 const { emptyData } = require('../../src/features/planner/types/index.ts');
 const sqlite = new DatabaseSync(':memory:');
 sqlite.exec(
-  'PRAGMA foreign_keys = ON;' + initialSchema + addDailyTime + addDailyImportance + addDailyAlarm,
+  'PRAGMA foreign_keys = ON;' +
+    initialSchema +
+    addDailyTime +
+    addDailyImportance +
+    addDailyAlarm +
+    'CREATE TABLE memos (id TEXT PRIMARY KEY NOT NULL, payload TEXT NOT NULL);',
 );
 const statements = [];
 let failNextWrite = false;
@@ -206,4 +211,22 @@ test('per-chip alarm flags survive writes and restore and can be disabled indepe
     dailyPlanItems: next.dailyPlanItems.map((p) => ({ ...p, alarm: false })),
   });
   assert.equal(sqlite.prepare('SELECT SUM(alarm) AS n FROM daily_plan_items').get().n, 0);
+});
+
+test('notes persist, update and delete alongside schedules and survive a failed transaction', async () => {
+  const base = await seed();
+  const memo = { id: 'memo', content: '장기 계획', updatedAt: '2026-11-14T00:00:00Z' };
+  await persistData({ ...base, memos: [memo] });
+  assert.deepEqual(JSON.parse(sqlite.prepare('SELECT payload FROM memos').get().payload), memo);
+  const updated = { ...memo, content: '수정', updatedAt: '2026-11-15T00:00:00Z' };
+  failNextWrite = true;
+  await assert.rejects(persistData({ ...base, memos: [updated] }));
+  assert.equal(
+    JSON.parse(sqlite.prepare('SELECT payload FROM memos').get().payload).content,
+    '장기 계획',
+  );
+  await persistData({ ...base, memos: [updated] });
+  assert.deepEqual(JSON.parse(sqlite.prepare('SELECT payload FROM memos').get().payload), updated);
+  await persistData({ ...base, memos: [] });
+  assert.equal(sqlite.prepare('SELECT count(*) AS count FROM memos').get().count, 0);
 });

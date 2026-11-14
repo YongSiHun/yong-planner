@@ -5,9 +5,10 @@ export interface WriteDatabase {
 }
 export async function replaceRows(tx: WriteDatabase, data: PlannerData): Promise<void> {
   await tx.execAsync(
-    'DELETE FROM recurring_plan_exceptions; DELETE FROM recurring_plans; DELETE FROM daily_plan_items; DELETE FROM daily_plan_orders; DELETE FROM settings; DELETE FROM holiday_overrides;',
+    'DELETE FROM recurring_plan_exceptions; DELETE FROM recurring_plans; DELETE FROM daily_plan_items; DELETE FROM daily_plan_orders; DELETE FROM settings; DELETE FROM holiday_overrides; DELETE FROM memos;',
   );
   await insertDailyRows(tx, data.dailyPlanItems);
+  await insertMemoRows(tx, data);
   for (const p of data.recurringPlans) {
     await tx.runAsync(
       'INSERT INTO recurring_plans VALUES (?, ?, ?, ?)',
@@ -49,5 +50,11 @@ async function insertDailyRows(
       Number(Boolean(p.important)),
       Number(Boolean(p.alarm)),
     );
+  }
+}
+
+async function insertMemoRows(tx: WriteDatabase, data: PlannerData) {
+  for (const memo of data.memos ?? []) {
+    await tx.runAsync('INSERT INTO memos VALUES (?, ?)', memo.id, JSON.stringify(memo));
   }
 }

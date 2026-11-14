@@ -80,13 +80,12 @@ test('stopping sync before initialization settles leaves no delayed synchronizat
   context.mock.timers.reset();
 });
 
-test('lock screen alone creates notifications without changing the status bar preference', async () => {
+test('removed lock screen choice does not enable status bar notifications', async () => {
   await changeNotificationPreference('lockScreen', true);
   assert.equal(useNotificationStore.getState().preferences.summary, false);
-  assert.equal(useNotificationStore.getState().preferences.lockScreen, true);
-  assert.equal(pending.size, 7);
-  assert.equal(presented.size, 1);
-  assert.ok([...pending.values()].every((request) => request.trigger.channelId.includes('public')));
+  assert.equal(useNotificationStore.getState().preferences.lockScreen, false);
+  assert.equal(pending.size, 0);
+  assert.equal(presented.size, 0);
   state.granted = false;
   await syncNotifications();
   assert.equal(pending.size, 0);

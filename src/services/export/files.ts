@@ -6,6 +6,7 @@ import type { PlannerData } from '../../features/planner/types';
 import { createBackup, MAX_BACKUP_BYTES, parseBackup, type PlannerBackup } from '../backup';
 import { createHolidayService } from '../holiday';
 import { monthCsv, monthTxt } from './index';
+import { zipJson, unzipJson } from '../backup/zip';
 
 export type ExportFormat = keyof typeof monthExporters;
 type MonthExporter = (
@@ -31,10 +32,15 @@ function monthFilename(month: string, extension: string): string {
 
 const fileTypes: Record<string, string> = {
   'application/json': 'public.json',
+  'application/zip': 'public.zip-archive',
   'text/csv': 'public.comma-separated-values-text',
 };
 
-export async function shareFile(name: string, content: string, mimeType: string): Promise<void> {
+export async function shareFile(
+  name: string,
+  content: string | Uint8Array,
+  mimeType: string,
+): Promise<void> {
   const canShare = await Sharing.isAvailableAsync();
 
   if (!canShare) {
@@ -62,7 +68,13 @@ export async function exportMonth(
 
 export async function chooseBackup(): Promise<PlannerBackup | null> {
   const result = await DocumentPicker.getDocumentAsync({
-    type: ['application/json', 'text/plain', 'application/octet-stream'],
+    type: [
+      'application/json',
+      'application/zip',
+      'application/x-zip-compressed',
+      'text/plain',
+      'application/octet-stream',
+    ],
     copyToCacheDirectory: true,
   });
   const isCancelled = result.canceled;
@@ -72,11 +84,37 @@ export async function chooseBackup(): Promise<PlannerBackup | null> {
   }
 
   const asset = result.assets[0]!;
-  const exceedsSizeLimit = (asset.size ?? 0) > MAX_BACKUP_BYTES;
+  const file = new File(asset.uri);
+  const zipped = asset.name.toLowerCase().endsWith('.zip');
+  const limit = zipped ? MAX_BACKUP_BYTES + 1024 * 1024 : MAX_BACKUP_BYTES;
+  const exceedsSizeLimit = file.size > limit;
 
   if (exceedsSizeLimit) {
     throw new Error('백업 파일은 50MB 이하여야 합니다.');
   }
 
-  return parseBackup(await new File(asset.uri).text());
+  if (zipped) {
+    return readFullZip(file);
+  }
+
+  return parseBackup(await file.text());
+}
+
+export async function exportFullBackup(data: PlannerData): Promise<void> {
+  // Sparse months stay sparse; recurring rules remain intact, including open-ended rules.
+  const months = [...new Set(data.dailyPlanItems.map((item) => item.date.slice(0, 7)))].sort();
+  const json = JSON.stringify({ ...JSON.parse(createBackup(data)), months });
+
+  await shareFile('yongplanner-backup.zip', zipJson(json), 'application/zip');
+}
+
+async function readFullZip(file: File): Promise<PlannerBackup> {
+  const backup = parseBackup(unzipJson(await file.bytes()));
+  const entire = backup.month === undefined && backup.kind !== 'notes';
+
+  if (!entire) {
+    throw new Error('전체 백업 ZIP 파일을 선택해 주세요.');
+  }
+
+  return { ...backup, kind: 'full' };
 }

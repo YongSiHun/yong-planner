@@ -24,7 +24,7 @@ export function BackupSettings() {
   return (
     <View style={section}>
       <View style={headingRow}>
-        <Label style={heading}>데이터 복원</Label>
+        <Label style={heading}>데이터 백업 · 복원</Label>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="데이터 백업 방법"
@@ -36,15 +36,29 @@ export function BackupSettings() {
       </View>
       <Button
         labelSize={buttonLabelSize}
-        title="JSON 백업에서 복원"
+        title="JSON / ZIP 파일로 복원"
         style={filledButton(theme)}
         disabled={isDisabled}
         onPress={actions.handleRestore}
       />
+      <Button
+        labelSize={buttonLabelSize}
+        title={actions.isBusy ? '처리 중…' : '전체 데이터 백업 (ZIP)'}
+        style={filledButton(theme)}
+        disabled={isDisabled}
+        onPress={actions.handleBackup}
+      />
+      <Label muted>JSON은 월별 일정 또는 메모 복원, ZIP은 전체 데이터 복원입니다.</Label>
       {guideOpen ? (
         <Dialog title="데이터 백업 방법" compactHeader onClose={() => setGuideOpen(false)}>
           <Label>1. 달력에서 백업할 월을 선택하세요.</Label>
           <Label>2. 메뉴 → 내보내기 → JSON 파일 공유로 저장하세요.</Label>
+          <Label>메모 화면에서 메모를 JSON으로 내보낼 수 있습니다.</Label>
+          <Label>
+            전체 데이터 백업은 일정·메모·설정을 ZIP으로 저장합니다. 데이터가 많으면 시간이 오래 걸릴
+            수 있습니다.
+          </Label>
+          <Label>ZIP 전체 복원은 현재의 모든 데이터를 덮어씁니다.</Label>
         </Dialog>
       ) : null}
     </View>

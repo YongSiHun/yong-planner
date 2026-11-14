@@ -16,13 +16,16 @@ export function plannerScreenSafeAreaViewStyle(theme: Theme) {
 export function plannerScreenScrollViewContentContainerStyle(
   selectionActive: boolean,
   selectionCopySource: boolean,
+  navigationPadding = 0,
 ) {
   return {
     paddingHorizontal: design.space.xs,
-    paddingBottom:
+    paddingBottom: Math.max(
+      navigationPadding,
       selectionActive || selectionCopySource
         ? design.space.md
         : design.touchTarget + design.space.md * 2,
+    ),
   } as const;
 }
 

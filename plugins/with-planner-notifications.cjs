@@ -19,6 +19,7 @@ module.exports = function withPlannerNotifications(config) {
   return withDangerousMod(config, [
     'android',
     async (mod) => {
+      await require('./patch-notification-presentation.cjs')(mod.modRequest.projectRoot);
       const folder = path.join(mod.modRequest.platformProjectRoot, 'app/src/main/res/drawable');
 
       await fs.mkdir(folder, { recursive: true });

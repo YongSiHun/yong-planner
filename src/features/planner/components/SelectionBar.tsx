@@ -26,7 +26,7 @@ export function SelectionBar({
         <SheetAction
           icon="copy"
           title="일정 복사"
-          disabled={count !== 1}
+          disabled={count === 0}
           onDisabledPress={onCopy}
           onPress={onCopy}
         />

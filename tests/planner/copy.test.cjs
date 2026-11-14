@@ -83,7 +83,7 @@ test('copy mode picks a visible day row and makes existing schedules read only',
   assert.equal(badge.props.accessibilityState.checked, true);
 });
 
-test('multiple selected schedules show a disabled copy button with a toast on tap', () => {
+test('multiple selected schedules enable copying and append behind existing target schedules', () => {
   let id = 0;
   state.plannerData = applyDailyNote(
     state.plannerData,
@@ -91,40 +91,34 @@ test('multiple selected schedules show a disabled copy button with a toast on ta
     '회의,운동',
     () => 'source-' + ++id,
   );
+  state.plannerData = applyDailyNote(state.plannerData, '2026-11-09', '기존', () => 'existing');
   renderSelection().toggle('2026-11-08', 0, true);
   renderSelection().toggle('2026-11-08', 1);
-  let selection = renderSelection();
+  const selection = renderSelection();
   const bar = SelectionBar({ count: 2, onCopy: selection.openCopy });
   const copy = find(
     bar,
     (node) => node.type?.name === 'SheetAction' && node.props.title === '일정 복사',
   );
-  assert.equal(copy.props.disabled, true);
-  copy.props.onDisabledPress();
-  selection = renderSelection();
-  assert.match(state.toasts.at(-1), /일정 복사는 하나만 가능해요/);
-  assert.equal(selection.copySource, undefined);
-  assert.equal(selection.active, true);
-  assert.equal(state.plannerData.dailyPlanItems.length, 2);
-  selection.toggle('2026-11-08', 1);
-  selection = renderSelection();
-  const singleBar = SelectionBar({ count: 1, onCopy: selection.openCopy });
-  const enabledCopy = find(
-    singleBar,
-    (node) => node.type?.name === 'SheetAction' && node.props.title === '일정 복사',
-  );
-  assert.equal(enabledCopy.props.disabled, false);
-  enabledCopy.props.onPress();
+  assert.equal(copy.props.disabled, false);
+  copy.props.onPress();
+  assert.equal(renderSelection().active, false);
   renderSelection().toggleCopyDate('2026-11-09');
-  renderSelection().toggleCopyDate('2026-11-10');
+  renderSelection().toggleCopyDate('2026-12-10');
   renderSelection().copySelected();
-  assert.equal(state.plannerData.dailyPlanItems.length, 4);
   assert.deepEqual(
     state.plannerData.dailyPlanItems
-      .filter((item) => item.date !== '2026-11-08')
+      .filter((item) => item.date === '2026-11-09')
       .map((item) => item.content),
-    ['회의', '회의'],
+    ['기존', '회의', '운동'],
   );
+  assert.deepEqual(
+    state.plannerData.dailyPlanItems
+      .filter((item) => item.date === '2026-12-10')
+      .map((item) => item.content),
+    ['회의', '운동'],
+  );
+  assert.equal(renderSelection().copySource, undefined);
 });
 
 test('copy selection spans month and year boundaries and retains all chosen dates', () => {

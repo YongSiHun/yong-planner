@@ -1,7 +1,7 @@
 import { parseDate } from '../../../utils/date';
 import type { PlannerData } from '../types';
 import { dailyNoteItems } from './note';
-import { COPY_DUPLICATE_MESSAGE, COPY_SINGLE_MESSAGE, hasCopyConflict } from './copyTargets';
+import { COPY_DUPLICATE_MESSAGE, hasCopyConflict } from './copyTargets';
 
 export function deleteSelectedNotes(data: PlannerData, ids: ReadonlySet<string>): PlannerData {
   const items = data.dailyPlanItems.filter((item) => !ids.has(item.id));
@@ -25,12 +25,12 @@ export function copyNotesToDates(
   dates: string[],
   createId: () => string,
 ): PlannerData {
-  const multipleSources = ids.size > 1;
-
-  if (multipleSources) {
-    throw new Error(COPY_SINGLE_MESSAGE);
-  }
-  const sources = data.dailyPlanItems.filter((item) => ids.has(item.id));
+  const sourceDates = [
+    ...new Set(data.dailyPlanItems.filter((item) => ids.has(item.id)).map((item) => item.date)),
+  ].sort();
+  const sources = sourceDates.flatMap((date) =>
+    dailyNoteItems(data, date).filter((item) => ids.has(item.id)),
+  );
   const targets = [...new Set(dates)];
 
   targets.forEach(parseDate);

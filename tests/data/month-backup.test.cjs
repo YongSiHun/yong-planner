@@ -149,7 +149,7 @@ function seedBatch() {
 test('important schedules survive backup round trips and old backups remain compatible', () => {
   const data = seedBatch();
   const backup = createBackup(data);
-  assert.equal(JSON.parse(backup).version, 4);
+  assert.equal(JSON.parse(backup).version, 6);
   assert.equal(parseBackup(backup).dailyPlanItems[0].important, true);
   for (const version of [1, 2, 3]) {
     const legacy = { ...emptyData(), version, exportedAt: new Date().toISOString() };

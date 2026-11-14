@@ -74,7 +74,7 @@ beforeEach(() => {
     openSettings() {},
   };
 });
-test('a pending save reflects the tapped value immediately without disabling either switch', async () => {
+test('a pending save reflects the tapped value immediately without disabling the status bar switch', async () => {
   let finish;
   state.change = () =>
     new Promise((resolve) => {
@@ -84,7 +84,7 @@ test('a pending save reflects the tapped value immediately without disabling eit
   state.busy = true;
   assert.equal(renderSwitch().props.value, true);
   assert.equal(preference('상태바에 표시').props.disabled, false);
-  assert.equal(preference('잠금 화면에 표시').props.disabled, false);
+  assert.equal(preference('잠금 화면에 표시'), undefined);
   state.preferences.summary = true;
   finish();
   await new Promise((resolve) => setImmediate(resolve));

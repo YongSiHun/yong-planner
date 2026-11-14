@@ -29,11 +29,9 @@ export async function prepareNotificationChannels(
     return;
   }
   const native = await notificationRuntime();
-  const visibility = preferences.lockScreen
-    ? native.AndroidNotificationVisibility.PUBLIC
-    : native.AndroidNotificationVisibility.SECRET;
+  const visibility = native.AndroidNotificationVisibility.SECRET;
 
-  await native.setNotificationChannelAsync(channelId('summary', preferences.lockScreen), {
+  await native.setNotificationChannelAsync(channelId('summary', false), {
     name: '오늘 일정',
     importance: native.AndroidImportance.LOW,
     sound: null,
@@ -41,7 +39,7 @@ export async function prepareNotificationChannels(
     showBadge: false,
     lockscreenVisibility: visibility,
   });
-  await native.setNotificationChannelAsync(channelId('alarm', preferences.lockScreen), {
+  await native.setNotificationChannelAsync(channelId('alarm', false), {
     name: '일정 알람',
     importance: native.AndroidImportance.HIGH,
     enableVibrate: false,
@@ -124,7 +122,7 @@ function triggerFor(
   item: PlannedNotification,
   preferences: NotificationPreferences,
 ): Notifications.NotificationTriggerInput {
-  const channel = channelId(item.kind, preferences.lockScreen);
+  const channel = channelId(item.kind, false);
   const immediate = item.at === null;
 
   if (immediate) {
@@ -156,7 +154,12 @@ export async function createNativeNotificationPort(
           title: item.title,
           body: item.body,
           sound: item.kind === 'alarm',
-          data: { kind: item.kind, date: item.date, fingerprint },
+          data: {
+            kind: item.kind,
+            date: item.date,
+            fingerprint,
+            hasSchedules: item.hasSchedules ?? true,
+          },
           threadIdentifier: 'yong-' + item.kind,
         },
         trigger: triggerFor(native, item, preferences),

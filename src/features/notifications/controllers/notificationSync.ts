@@ -100,7 +100,7 @@ function effectivePreferences(
   return {
     ...preferences,
     summary: preferences.summary && permission.granted,
-    lockScreen: preferences.lockScreen && permission.granted,
+    lockScreen: false,
     alarms: permission.granted,
     exact: preferences.exact && permission.exact,
   };
@@ -150,5 +150,5 @@ function alarmMatcher(ids: ReadonlySet<string> | undefined) {
 }
 
 function displayEnabled(preferences: NotificationPreferences): boolean {
-  return preferences.summary || preferences.lockScreen;
+  return preferences.summary;
 }

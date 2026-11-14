@@ -48,12 +48,12 @@ beforeEach(() => {
   cursor = 0;
 });
 
-test('middle dates are centered for different row and screen heights', () => {
+test('dates start at the upper 20 percent for different row and screen heights', () => {
   for (const viewport of [320, 600, 900]) {
     for (const height of [44, 88, 180]) {
       const y = 1000;
       const offset = centeredDateOffset(y, height, viewport, 3000);
-      assert.equal(y + height / 2 - offset, viewport / 2);
+      assert.equal(y - offset, viewport * 0.2);
     }
   }
 });
@@ -75,10 +75,10 @@ test('initial navigation waits for row, viewport and content measurements', () =
   controller = render();
   assert.deepEqual(calls, []);
   controller.handleContentSizeChange(320, 1400);
-  assert.deepEqual(calls, [{ y: 322, animated: false }]);
+  assert.deepEqual(calls, [{ y: 480, animated: false }]);
   calls.length = 0;
   controller.showDate(target);
-  assert.deepEqual(calls, [{ y: 322, animated: true }]);
+  assert.deepEqual(calls, [{ y: 480, animated: true }]);
 });
 
 test('month transitions reset old content limits and resize uses the new viewport', () => {
@@ -91,12 +91,12 @@ test('month transitions reset old content limits and resize uses the new viewpor
   controller = render();
   controller.handleMeasure('2027-02-28', 1188, 44);
   assert.deepEqual(calls, []);
-  controller.handleContentSizeChange(320, 1308);
-  assert.deepEqual(calls, [{ y: 708, animated: false }]);
+  controller.handleContentSizeChange(320, 1788);
+  assert.deepEqual(calls, [{ y: 1068, animated: false }]);
   calls.length = 0;
   controller.handleViewportLayout({ nativeEvent: { layout: { height: 400 } } });
   controller.showDate('2027-02-28');
-  assert.deepEqual(calls, [{ y: 908, animated: true }]);
+  assert.deepEqual(calls, [{ y: 1108, animated: true }]);
 });
 
 test('header month navigation at supported year boundaries reports an error without moving', () => {
@@ -111,4 +111,19 @@ test('header month navigation at supported year boundaries reports an error with
   view.handleMonthChange(1);
   assert.equal(render().month, '9999-12-01');
   assert.equal(notices.length, 2);
+});
+
+test('month-end navigation retries after the bottom spacer has been laid out', () => {
+  let controller = render();
+  const calls = [];
+  controller.scrollRef.current = { scrollTo: (options) => calls.push(options) };
+  controller.handleViewportLayout({ nativeEvent: { layout: { height: 600 } } });
+  assert.equal(render().navigationPadding, 480);
+  controller.showDate('2027-02-28');
+  controller = render();
+  controller.handleMeasure('2027-02-28', 1188, 44);
+  controller.handleContentSizeChange(320, 1308);
+  assert.deepEqual(calls.at(-1), { y: 708, animated: false });
+  controller.handleContentSizeChange(320, 1788);
+  assert.deepEqual(calls.at(-1), { y: 1068, animated: false });
 });

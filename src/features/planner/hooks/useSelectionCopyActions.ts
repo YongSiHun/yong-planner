@@ -1,10 +1,6 @@
 import { useCallback } from 'react';
 import { showToast } from '../../../components/ui';
-import {
-  COPY_DUPLICATE_MESSAGE,
-  COPY_SINGLE_MESSAGE,
-  hasCopyConflict,
-} from '../services/copyTargets';
+import { COPY_DUPLICATE_MESSAGE, hasCopyConflict } from '../services/copyTargets';
 import { useNoteSelectionStore as ui } from '../../../stores/noteSelection';
 import { usePlanner } from '../../../stores/planner';
 import { toggled } from '../services/selectionSet';
@@ -18,7 +14,7 @@ export function useSelectionCopyActions(clear: () => void) {
 
     try {
       if (hasSource) {
-        copyDailyNotes(new Set([copyId!]), [...copyDates].sort());
+        copyDailyNotes(ui.getState().selected, [...copyDates].sort());
       }
       clear();
     } catch (error) {
@@ -27,11 +23,9 @@ export function useSelectionCopyActions(clear: () => void) {
   }, [clear, copyDailyNotes]);
   const openCopy = useCallback(() => {
     const selected = ui.getState().selected;
-    const hasSingleSelection = selected.size === 1;
+    const hasSingleSelection = selected.size > 0;
 
     if (!hasSingleSelection) {
-      showToast(COPY_SINGLE_MESSAGE);
-
       return;
     }
     ui.setState({ copyId: [...selected][0]!, copyDates: new Set(), active: false });

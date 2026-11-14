@@ -116,7 +116,7 @@ export function ScheduleInput({
         textAlignVertical="top"
         scrollEnabled={height > maximumHeight}
         onContentSizeChange={onInputLayout}
-        style={styles.input(theme, height, maximumHeight, inputWidth)}
+        style={styles.input(theme, height, maximumHeight, inputWidth, content.trim().length > 0)}
       />
       {parts.slice(edit.index + 1).map((part, offset) => renderChip(part, edit.index + 1 + offset))}
     </Pressable>

@@ -49,7 +49,6 @@ export function ScheduleChip({
       onLongPress={onLongPress}
       style={styles.chip(selected, theme, important)}
     >
-      {selected ? <Feather name="check" size={14} color={theme.onAccent} /> : null}
       <AlarmMark alarm={alarm} selected={selected} />
       <Text style={styles.chipLabel(selected, theme, important)}>{label}</Text>
       <ChipEdges

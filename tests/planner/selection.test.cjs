@@ -224,3 +224,31 @@ test('selection bar has four evenly spaced actions without more', () => {
     undefined,
   );
 });
+
+test('selecting a chip only changes colors and never adds a checkmark or changes geometry', () => {
+  const props = { content: '회의', important: true, alarm: true, onPress() {}, onLongPress() {} };
+  const normal = ScheduleChip({ ...props, selected: false });
+  const selected = ScheduleChip({ ...props, selected: true });
+  const {
+    backgroundColor: normalColor,
+    borderColor: normalBorder,
+    ...normalLayout
+  } = normal.props.style({ pressed: false });
+  const {
+    backgroundColor: selectedColor,
+    borderColor: selectedBorder,
+    ...selectedLayout
+  } = selected.props.style({ pressed: false });
+  assert.notEqual(normalColor, selectedColor);
+  assert.deepEqual(normalLayout, selectedLayout);
+  assert.equal(
+    normal.props.children.filter(Boolean).length,
+    selected.props.children.filter(Boolean).length,
+  );
+  assert.equal(
+    find(selected, (node) => node.props?.name === 'check'),
+    undefined,
+  );
+  assert.ok(normalBorder);
+  assert.ok(selectedBorder);
+});

@@ -55,6 +55,7 @@ export async function loadData(): Promise<PlannerData> {
       (r) => JSON.parse(r.payload) as T,
     );
 
+  result.memos = await payloads('memos');
   result.recurringPlans = await payloads('recurring_plans');
   result.recurringPlanExceptions = await payloads('recurring_plan_exceptions');
   result.dailyPlanOrders = await payloads('daily_plan_orders');

@@ -93,26 +93,26 @@ test('malformed device preferences fall back safely and cannot enable exact alar
   });
 });
 
-test('saved display choices survive new defaults and missing choices use new defaults', async () => {
+test('saved status bar choice survives while removed lock screen choice is disabled', async () => {
   const {
     loadNotificationPreferences,
   } = require('../../src/features/notifications/data/preferences.ts');
   state.storedPreferences = JSON.stringify({ summary: false, lockScreen: true });
   const saved = await loadNotificationPreferences();
   assert.equal(saved.summary, false);
-  assert.equal(saved.lockScreen, true);
+  assert.equal(saved.lockScreen, false);
   state.storedPreferences = '{}';
   assert.deepEqual(await loadNotificationPreferences(), defaultNotificationPreferences);
 });
 
-test('concurrent display changes are saved in order without dropping either choice', async () => {
+test('concurrent display changes keep status bar choice and disable the removed lock screen choice', async () => {
   await Promise.all([
     changeNotificationPreference('summary', true),
     changeNotificationPreference('lockScreen', true),
   ]);
   const preferences = useNotificationStore.getState().preferences;
   assert.equal(preferences.summary, true);
-  assert.equal(preferences.lockScreen, true);
+  assert.equal(preferences.lockScreen, false);
   assert.deepEqual(JSON.parse(state.storedPreferences), preferences);
   assert.equal(useNotificationStore.getState().busy, false);
 });
@@ -150,7 +150,7 @@ test('alarm authorization and display changes share the same persistence queue',
     await Promise.all([alarm, display]);
     const preferences = useNotificationStore.getState().preferences;
     assert.equal(preferences.alarms, true);
-    assert.equal(preferences.lockScreen, true);
+    assert.equal(preferences.lockScreen, false);
     assert.deepEqual(JSON.parse(state.storedPreferences), preferences);
   } finally {
     release();

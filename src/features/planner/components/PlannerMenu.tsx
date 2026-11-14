@@ -20,7 +20,7 @@ export function PlannerMenu({ type, month, onClose, onShowExport, onExport }: Pl
   const isNavigationMenu = type === 'menu';
   const title = isNavigationMenu ? '메뉴' : monthLabel(month) + ' 내보내기';
 
-  function handleNavigate(path: '/settings' | '/notifications') {
+  function handleNavigate(path: '/settings' | '/notifications' | '/notes') {
     onClose();
     router.push(path);
   }
@@ -42,6 +42,13 @@ export function PlannerMenu({ type, month, onClose, onShowExport, onExport }: Pl
               style={styles.plannerMenuButtonStyle}
               title="내보내기"
               onPress={onShowExport}
+            />
+            <Button
+              bold
+              labelSize={design.type.title}
+              style={styles.plannerMenuButtonStyle}
+              title="메모"
+              onPress={() => handleNavigate('/notes')}
             />
             <Button
               bold

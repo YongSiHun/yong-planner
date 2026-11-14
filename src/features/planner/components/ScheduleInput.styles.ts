@@ -29,13 +29,23 @@ export function measurement(availableWidth: number) {
   } as const;
 }
 
-export function input(theme: Theme, height: number, maximumHeight: number, inputWidth: number) {
+export function input(
+  theme: Theme,
+  height: number,
+  maximumHeight: number,
+  inputWidth: number,
+  hasContent = false,
+) {
   return {
     fontFamily: design.font.regular,
     fontSize: design.type.body,
     lineHeight: design.lineHeights.body,
     includeFontPadding: false,
     color: theme.text,
+    borderWidth: 1,
+    borderColor: hasContent ? theme.line : 'transparent',
+    borderRadius: design.radius.pill,
+    backgroundColor: hasContent ? theme.bg : 'transparent',
     paddingHorizontal: 8,
     paddingVertical: 4,
     height: Math.min(height, maximumHeight),

@@ -105,6 +105,18 @@ export async function persistData(input: PlannerData): Promise<void> {
           JSON.stringify(p),
         ),
     );
+    await synchronizeRows(
+      before.memos ?? [],
+      data.memos ?? [],
+      (memo) => memo.id,
+      (memo) => db.runAsync('DELETE FROM memos WHERE id = ?', memo.id),
+      (memo) =>
+        db.runAsync(
+          'INSERT INTO memos VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload',
+          memo.id,
+          JSON.stringify(memo),
+        ),
+    );
     const settingsChanged = JSON.stringify(before.settings) !== JSON.stringify(data.settings);
 
     if (settingsChanged) {

@@ -21,7 +21,7 @@ export function PlannerFooter({
   if (isCopying) {
     return (
       <CopyBar
-        content={source.content}
+        content={selection.selectedItems.map((item) => item.content).join(', ')}
         count={selection.copyDates.size}
         onCopy={selection.copySelected}
         onCancel={selection.closeCopy}

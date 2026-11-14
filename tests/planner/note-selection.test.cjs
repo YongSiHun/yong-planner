@@ -173,14 +173,15 @@ test('visible recurring schedules block duplicates while cancelled occurrences a
   );
 });
 
-test('multiple sources are rejected before creating copies', () => {
+test('multiple sources are copied in source order with fresh identifiers', () => {
   const data = applyDailyNote(emptyData(), '2026-11-07', '회의,운동', id);
   const ids = new Set(data.dailyPlanItems.map((item) => item.id));
   let created = 0;
-  assert.throws(
-    () => copyNotesToDates(data, ids, ['2026-11-09'], () => String(++created)),
-    /일정 복사는 하나만 가능해요/,
+  const copied = copyNotesToDates(data, ids, ['2026-11-09'], () => 'copy-' + ++created);
+  assert.deepEqual(
+    dailyNoteItems(copied, '2026-11-09').map((item) => item.content),
+    ['회의', '운동'],
   );
-  assert.equal(created, 0);
+  assert.equal(created, 2);
   assert.equal(data.dailyPlanItems.length, 2);
 });
