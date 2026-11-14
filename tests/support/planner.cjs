@@ -146,6 +146,8 @@ const plannerActions = {
     );
   },
   saveDailyNote: (date, text) => state.saved.push(text),
+  stageDailyNote: (date, text) => state.saved.push(text),
+  commitPlannerChanges() {},
   finishDailyNote: (date) => {
     state.plannerData =
       require('../../src/features/planner/services/noteItems.ts').finalizeDailyNote(

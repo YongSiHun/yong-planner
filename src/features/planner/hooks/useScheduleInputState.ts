@@ -30,7 +30,7 @@ export function useScheduleInputState({
   onInputFocus,
   onInputLayout,
 }: ScheduleInputProps) {
-  const { saveDailyNote, finishDailyNote } = usePlannerActions();
+  const { stageDailyNote, finishDailyNote } = usePlannerActions();
   const [edit, setEdit] = useState<NoteEdit>(() =>
     initialNoteEdit(noteEditText(note, noteTimes), initialIndex, initialSlot),
   );
@@ -69,7 +69,7 @@ export function useScheduleInputState({
     currentEdit.current = next;
     setEdit(next);
     if (persist) {
-      saveDailyNote(date, next.text, true);
+      stageDailyNote(date, next.text, true);
     }
   }
 

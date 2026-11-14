@@ -5,16 +5,26 @@ import { timeChangeClearsAlarm, updateDailyAlarms } from '../services/alarms';
 import { applyDailyNote, finalizeDailyNote } from '../services/noteItems';
 import { moveDailyNote as reorderDailyNote } from '../services/noteMove';
 import { copyNotesToDates, deleteSelectedNotes } from '../services/noteSelection';
-import { updatePlanner } from './persistence';
+import { stagePlannerChange, updatePlanner } from './persistence';
+import type { PlannerData } from '../types';
 
 export function saveDailyNote(date: string, text: string, replaceTimes = false): void {
+  updatePlanner(dailyNoteChange(date, text, replaceTimes));
+}
+
+export function stageDailyNote(date: string, text: string, replaceTimes = false): void {
+  stagePlannerChange(date, dailyNoteChange(date, text, replaceTimes));
+}
+
+function dailyNoteChange(date: string, text: string, replaceTimes: boolean) {
   parseDate(date);
   const error = noteLengthError(text);
 
   if (error) {
     throw new Error(error);
   }
-  updatePlanner((data) => applyDailyNote(data, date, text, randomUUID, replaceTimes));
+
+  return (data: PlannerData) => applyDailyNote(data, date, text, randomUUID, replaceTimes);
 }
 
 export function deleteDailyNotes(ids: ReadonlySet<string>) {

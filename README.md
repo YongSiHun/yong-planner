@@ -25,7 +25,7 @@ npx expo install --fix --yarn # SDK 호환 보정
 yarn start                  # dev 서버·캐시 초기화
 yarn android                # Android 실행
 yarn ios                    # iOS 실행
-yarn prebuild               # Expo 설정에서 native 재생성
+yarn rebuild               # Expo 설정에서 native 재생성
 yarn apk                    # 로컬 APK 빌드
 yarn ipa                    # 로컬 IPA 빌드
 yarn submit-ipa ./app.ipa    # IPA 제출

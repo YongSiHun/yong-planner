@@ -1,6 +1,13 @@
-export { initializePlanner, updatePlanner, flushPlanner, restorePlanner } from './persistence';
+export {
+  initializePlanner,
+  updatePlanner,
+  flushPlanner,
+  restorePlanner,
+  commitPlannerChanges,
+} from './persistence';
 export {
   saveDailyNote,
+  stageDailyNote,
   finishDailyNote,
   deleteDailyNotes,
   moveDailyNote,

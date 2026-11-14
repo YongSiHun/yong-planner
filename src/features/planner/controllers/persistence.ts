@@ -9,6 +9,29 @@ import { WriteQueue } from '../../../services/WriteQueue';
 const queue = new WriteQueue();
 
 let timer: ReturnType<typeof setTimeout> | undefined;
+let draftTimer: ReturnType<typeof setTimeout> | undefined;
+const pendingChanges = new Map<string, (data: PlannerData) => PlannerData>();
+
+// Publish only the latest draft after a pause, keeping keystrokes local to the editor.
+export function stagePlannerChange(key: string, change: (data: PlannerData) => PlannerData) {
+  const state = usePlanner.getState();
+  const unavailable = !state.ready || state.restoring;
+
+  if (unavailable) {
+    return;
+  }
+  pendingChanges.set(key, change);
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(commitPlannerChanges, 250);
+}
+
+function applyPendingChanges(data: PlannerData): PlannerData {
+  return [...pendingChanges.values()].reduce((current, change) => change(current), data);
+}
+
+export function commitPlannerChanges(): void {
+  updatePlanner((data) => data);
+}
 
 let initializing: Promise<void> | undefined;
 
@@ -48,7 +71,10 @@ export const updatePlanner = (change: (data: PlannerData) => PlannerData, immedi
   if (isUnavailable) {
     return;
   }
-  const data = change(state.data);
+  const data = change(applyPendingChanges(state.data));
+
+  clearTimeout(draftTimer);
+  pendingChanges.clear();
   const isUnchanged = data === state.data;
 
   if (isUnchanged) {
@@ -69,6 +95,7 @@ export const updatePlanner = (change: (data: PlannerData) => PlannerData, immedi
 };
 
 export const flushPlanner = async () => {
+  commitPlannerChanges();
   clearTimeout(timer);
   await queue.enqueue(async () => {
     const hasPendingChanges = usePlanner.getState().dirty;
@@ -83,6 +110,7 @@ export const flushPlanner = async () => {
         const snapshot = usePlanner.getState();
 
         await persistData(snapshot.data);
+        commitPlannerChanges();
         usePlanner.setState({
           dirty: usePlanner.getState().revision !== snapshot.revision,
           error: null,
@@ -106,6 +134,7 @@ export const restorePlanner = async (input: unknown) => {
   if (isRestoring) {
     throw new Error('이미 복원 중입니다.');
   }
+  commitPlannerChanges();
   usePlanner.setState({ restoring: true });
   try {
     await flushPlanner();

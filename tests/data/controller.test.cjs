@@ -163,3 +163,98 @@ test('finishing a schedule persists clean content and removes trailing empty ite
   assert.equal(saved[0].alarm, true);
   assert.equal(saved[0].time, '13:10');
 });
+
+test('typing a burst publishes once and flush includes drafts before the debounce expires', async () => {
+  const { stageDailyNote } = require('../../src/features/planner/controllers/planner.ts');
+  usePlanner.setState({ ready: true, restoring: false, data: emptyData(), dirty: false });
+  const before = usePlanner.getState().data;
+  let publications = 0;
+  const unsubscribe = usePlanner.subscribe((state, previous) => {
+    if (state.data !== previous.data) publications++;
+  });
+  for (let index = 1; index <= 100; index++) {
+    stageDailyNote('2026-11-20', 'a'.repeat(index), true);
+  }
+  assert.equal(usePlanner.getState().data, before);
+  assert.equal(publications, 0);
+  await flushPlanner(); // Also used when the app goes into the background.
+  assert.equal(publications, 1);
+  assert.equal(writes.at(-1).dailyPlanItems[0].content, 'a'.repeat(100));
+  assert.equal(usePlanner.getState().dirty, false);
+  unsubscribe();
+});
+
+test('drafts from multiple dates commit before a subsequent command and retain selection IDs', async () => {
+  const {
+    stageDailyNote,
+    commitPlannerChanges,
+  } = require('../../src/features/planner/controllers/planner.ts');
+  usePlanner.setState({ ready: true, restoring: false, data: emptyData(), dirty: false });
+  saveDailyNote('2026-11-21', '13:10 meeting,meal');
+  const id = usePlanner.getState().data.dailyPlanItems[0].id;
+  stageDailyNote('2026-11-21', '13:10 updated meeting,meal', true);
+  stageDailyNote('2026-11-22', 'next day', true);
+  commitPlannerChanges();
+  setDailyAlarms(new Set([id]), true);
+  assert.equal(
+    usePlanner.getState().data.dailyPlanItems.find((item) => item.id === id).content,
+    'updated meeting',
+  );
+  assert.equal(
+    usePlanner.getState().data.dailyPlanItems.find((item) => item.id === id).alarm,
+    true,
+  );
+  stageDailyNote('2026-11-22', ' trimmed , ,', true);
+  finishDailyNote('2026-11-22');
+  assert.deepEqual(
+    usePlanner
+      .getState()
+      .data.dailyPlanItems.filter((item) => item.date === '2026-11-22')
+      .map((item) => item.content),
+    ['trimmed'],
+  );
+  await flushPlanner();
+});
+
+test('a pause publishes the latest draft automatically and restore cannot resurrect stale drafts', async () => {
+  const { stageDailyNote } = require('../../src/features/planner/controllers/planner.ts');
+  usePlanner.setState({ ready: true, restoring: false, data: emptyData(), dirty: false });
+  stageDailyNote('2026-11-23', 'autosave', true);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  assert.equal(usePlanner.getState().data.dailyPlanItems[0].content, 'autosave');
+  stageDailyNote('2026-11-23', 'pending before restore', true);
+  await restorePlanner(emptyData());
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  assert.deepEqual(usePlanner.getState().data, emptyData());
+  assert.throws(() => stageDailyNote('2026-02-30', 'invalid'));
+  await flushPlanner();
+});
+
+test('an in-flight save drains newly staged keystrokes before resolving', async () => {
+  const { stageDailyNote } = require('../../src/features/planner/controllers/planner.ts');
+  usePlanner.setState({ ready: true, restoring: false, data: emptyData(), dirty: false });
+  let release;
+  block = new Promise((resolve) => {
+    release = resolve;
+  });
+  stageDailyNote('2026-11-24', 'first', true);
+  const saving = flushPlanner();
+  await new Promise((resolve) => setImmediate(resolve));
+  stageDailyNote('2026-11-24', 'latest', true);
+  block = null;
+  release();
+  await saving;
+  assert.equal(writes.at(-1).dailyPlanItems[0].content, 'latest');
+  assert.equal(usePlanner.getState().dirty, false);
+});
+
+test('a rejected command retains pending input for the next save', async () => {
+  const { stageDailyNote } = require('../../src/features/planner/controllers/planner.ts');
+  usePlanner.setState({ ready: true, restoring: false, data: emptyData(), dirty: false });
+  saveDailyNote('2026-11-25', 'existing');
+  const id = usePlanner.getState().data.dailyPlanItems[0].id;
+  stageDailyNote('2026-11-25', 'keep this draft', true);
+  assert.throws(() => setDailyAlarms(new Set([id]), true), /알람 시간/);
+  await flushPlanner();
+  assert.equal(writes.at(-1).dailyPlanItems[0].content, 'keep this draft');
+});

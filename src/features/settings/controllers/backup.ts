@@ -7,6 +7,7 @@ import { restorePlanner } from '../../planner/controllers/planner';
 
 export const choosePlannerBackup = chooseBackup;
 export async function restorePlannerBackup(backup: PlannerBackup): Promise<void> {
+  await flushPlanner();
   const current = usePlanner.getState().data;
   const data = restoredData(current, backup);
 

@@ -8,12 +8,13 @@ import { useSelectionCopyActions } from './useSelectionCopyActions';
 import { useSelectionTimeActions } from './useSelectionTimeActions';
 
 export function useSelectionActions(onBegin: () => void) {
-  const { deleteDailyNotes, setDailyImportant } = usePlannerActions();
+  const { deleteDailyNotes, setDailyImportant, commitPlannerChanges } = usePlannerActions();
   const clear = useCallback(() => ui.setState(emptySelection()), []);
   const copy = useSelectionCopyActions(clear);
   const time = useSelectionTimeActions(clear);
   const toggle = useCallback(
     (date: string, index: number, begin = false) => {
+      commitPlannerChanges();
       const item = dailyNoteItems(usePlanner.getState().data, date)[index];
       const hasItem = item !== undefined;
 
@@ -35,7 +36,7 @@ export function useSelectionActions(onBegin: () => void) {
       }
       ui.setState({ active: true, selected });
     },
-    [clear, onBegin],
+    [clear, onBegin, commitPlannerChanges],
   );
   const deleteSelected = useCallback(() => {
     const pending = ui.getState().deleteIds;
@@ -54,6 +55,7 @@ export function useSelectionActions(onBegin: () => void) {
     clear,
     selectAll: useCallback(
       (month: string) => {
+        commitPlannerChanges();
         const items = usePlanner.getState().data.dailyPlanItems;
         const selected = new Set(
           items
@@ -68,7 +70,7 @@ export function useSelectionActions(onBegin: () => void) {
         onBegin();
         ui.setState({ ...emptySelection(), active: true, selected });
       },
-      [onBegin],
+      [onBegin, commitPlannerChanges],
     ),
     toggleImportant: useCallback(() => {
       const selected = ui.getState().selected;
