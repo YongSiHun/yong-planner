@@ -17,7 +17,7 @@ export function Dialog({
   footer,
   onClose,
   showHeader = true,
-  compactHeader = false,
+  compactHeader = true,
   dismissOnPress = false,
   height,
   maxWidth,
@@ -124,7 +124,7 @@ function DialogHeading({
           onPress={onClose}
           style={styles.dialogHeadingCloseStyle(compact)}
         >
-          <Feather name="x" size={22} color={theme.muted} />
+          <Feather name="x" size={20} color={theme.muted} />
         </Pressable>
       ) : null}
     </View>

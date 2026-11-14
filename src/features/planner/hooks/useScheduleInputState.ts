@@ -1,6 +1,6 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TextInputChangeEvent } from 'react-native';
-import { showToast } from '../../../components/ui';
+import { report, showToast } from '../../../components/ui';
 import {
   insertNoteSlot,
   NOTE_SEPARATOR,
@@ -30,7 +30,20 @@ export function useScheduleInputState({
   onInputFocus,
   onInputLayout,
 }: ScheduleInputProps) {
-  const { stageDailyNote, finishDailyNote } = usePlannerActions();
+  const { stageDailyNote, finishDailyNote, flush } = usePlannerActions();
+  const finalized = useRef(false);
+  const finish = useCallback(() => {
+    const isFinalized = finalized.current;
+
+    if (isFinalized) {
+      return;
+    }
+    finalized.current = true;
+    finishDailyNote(date);
+    void flush().catch(report);
+  }, [date, finishDailyNote, flush]);
+
+  useEffect(() => finish, [finish]);
   const [edit, setEdit] = useState<NoteEdit>(() =>
     initialNoteEdit(noteEditText(note, noteTimes), initialIndex, initialSlot),
   );
@@ -69,6 +82,7 @@ export function useScheduleInputState({
     currentEdit.current = next;
     setEdit(next);
     if (persist) {
+      finalized.current = false;
       stageDailyNote(date, next.text, true);
     }
   }
@@ -84,7 +98,7 @@ export function useScheduleInputState({
   }
 
   function handleBlur() {
-    finishDailyNote(date);
+    finish();
     onInputFocus(null);
     onBlur();
   }

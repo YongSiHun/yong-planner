@@ -36,7 +36,6 @@ export default function PlannerScreen() {
   const holidays = useHolidays();
   const {
     month,
-    navigationPadding,
     scrollRef,
     showDate,
     handleMonthChange,
@@ -61,6 +60,7 @@ export default function PlannerScreen() {
   const selection = useNoteSelection(beginSelection);
   const { clear: clearSelection } = selection;
   const dismissSelection = useCallback(() => {
+    Keyboard.dismiss();
     const active = useNoteSelectionStore.getState().active;
 
     if (active) {
@@ -152,9 +152,7 @@ export default function PlannerScreen() {
               }}
               onScroll={handleKeyboardScroll}
               scrollEventThrottle={16}
-              contentContainerStyle={styles.plannerScreenScrollViewContentContainerStyle(
-                navigationPadding,
-              )}
+              contentContainerStyle={styles.plannerScreenScrollViewContentContainerStyle()}
               onContentSizeChange={(width, height) => {
                 handleContentSizeChange(width, height);
                 scheduleReveal();

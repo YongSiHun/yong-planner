@@ -1,3 +1,4 @@
+import { HEADER_HEIGHT } from '../../../components/navigation/AppHeader.styles';
 import type { Theme } from '../../../components/ui/palette';
 import { design } from '../../../components/ui/tokens';
 
@@ -10,7 +11,7 @@ export function icon(
   return ({ pressed }: import('react-native').PressableStateCallbackType) =>
     ({
       width: 36,
-      height: design.touchTarget,
+      height: HEADER_HEIGHT,
       alignItems: headerIconAlignment(edge),
       paddingHorizontal: edge ? 6 : 0,
       justifyContent: 'center',
@@ -51,7 +52,7 @@ export function monthArrow(theme: Theme) {
 export const monthTrigger = {
   flex: 1,
   minWidth: 0,
-  minHeight: design.touchTarget,
+  minHeight: HEADER_HEIGHT,
   justifyContent: 'center',
 } as const;
 

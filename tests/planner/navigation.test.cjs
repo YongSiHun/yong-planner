@@ -113,17 +113,18 @@ test('header month navigation at supported year boundaries reports an error with
   assert.equal(notices.length, 2);
 });
 
-test('month-end navigation retries after the bottom spacer has been laid out', () => {
+test('month-end navigation clamps to real content and does not keep snapping back', () => {
   let controller = render();
   const calls = [];
   controller.scrollRef.current = { scrollTo: (options) => calls.push(options) };
   controller.handleViewportLayout({ nativeEvent: { layout: { height: 600 } } });
-  assert.equal(render().navigationPadding, 480);
   controller.showDate('2027-02-28');
   controller = render();
   controller.handleMeasure('2027-02-28', 1188, 44);
   controller.handleContentSizeChange(320, 1308);
   assert.deepEqual(calls.at(-1), { y: 708, animated: false });
-  controller.handleContentSizeChange(320, 1788);
-  assert.deepEqual(calls.at(-1), { y: 1068, animated: false });
+  calls.length = 0;
+  controller.handleContentSizeChange(320, 1320);
+  controller.handleMeasure('2027-02-28', 1200, 44);
+  assert.deepEqual(calls, []);
 });

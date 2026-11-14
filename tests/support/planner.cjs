@@ -148,6 +148,9 @@ const plannerActions = {
   saveDailyNote: (date, text) => state.saved.push(text),
   stageDailyNote: (date, text) => state.saved.push(text),
   commitPlannerChanges() {},
+  flush: async () => {
+    state.flushes = (state.flushes ?? 0) + 1;
+  },
   finishDailyNote: (date) => {
     state.plannerData =
       require('../../src/features/planner/services/noteItems.ts').finalizeDailyNote(
@@ -269,6 +272,7 @@ beforeEach(() => {
   state.alarmPermissionError = null;
   state.cursor = 0;
   state.saved = [];
+  state.flushes = 0;
   state.focused = 0;
   state.preferences = {};
   state.layoutEffects = [];

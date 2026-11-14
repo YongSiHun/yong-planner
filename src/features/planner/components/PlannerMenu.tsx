@@ -38,28 +38,28 @@ export function PlannerMenu({ type, month, onClose, onShowExport, onExport }: Pl
           <>
             <Button
               bold
-              labelSize={design.type.title}
+              labelSize={design.type.action}
               style={styles.plannerMenuButtonStyle}
               title="내보내기"
               onPress={onShowExport}
             />
             <Button
               bold
-              labelSize={design.type.title}
+              labelSize={design.type.action}
               style={styles.plannerMenuButtonStyle}
               title="메모"
               onPress={() => handleNavigate('/notes')}
             />
             <Button
               bold
-              labelSize={design.type.title}
+              labelSize={design.type.action}
               style={styles.plannerMenuButtonStyle}
               title="알림"
               onPress={() => handleNavigate('/notifications')}
             />
             <Button
               bold
-              labelSize={design.type.title}
+              labelSize={design.type.action}
               style={styles.plannerMenuButtonStyle}
               title="설정"
               onPress={() => handleNavigate('/settings')}

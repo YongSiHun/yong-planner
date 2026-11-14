@@ -30,10 +30,10 @@ export function dialogViewStyle(
 ) {
   return {
     backgroundColor: theme.bg,
-    borderRadius: design.radius.dialog,
+    borderRadius: design.space.lg,
     borderWidth: 1,
     borderColor: theme.line,
-    padding: design.space.lg,
+    padding: design.space.md,
     paddingVertical,
     height,
     maxHeight: '85%',
@@ -58,7 +58,7 @@ export const dialogHeadingViewStyle = {
 
 export const dialogHeadingContent = { flex: 1, minWidth: 0, gap: design.space.xs } as const;
 
-export function dialogHeadingLabelStyle(size: number = design.type.title) {
+export function dialogHeadingLabelStyle(size: number = design.type.action) {
   return {
     fontSize: size,
     lineHeight: design.lineHeights.title + size - design.type.title,

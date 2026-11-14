@@ -22,10 +22,10 @@ export const timePickerViewStyle3 = { flex: 1, minWidth: 0 } as const;
 
 export const timePickerInputStyle = {
   textAlign: 'center',
-  fontSize: design.type.title,
-  lineHeight: design.lineHeights.title,
+  fontSize: design.type.action,
+  lineHeight: design.lineHeights.action,
   fontFamily: design.font.medium,
-  minHeight: design.controlHeight + design.space.sm,
+  minHeight: design.touchTarget,
   paddingHorizontal: design.space.sm,
   paddingVertical: design.space.sm,
 } as const;

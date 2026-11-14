@@ -6,10 +6,10 @@ export const plannerMenuViewStyle = {
 } as const;
 
 export const plannerMenuButtonStyle = {
-  minHeight: 48,
+  minHeight: design.touchTarget,
   alignItems: 'center',
   paddingHorizontal: 0,
-  paddingVertical: design.space.md,
+  paddingVertical: design.space.sm,
 } as const;
 
 export const exportMenu = {

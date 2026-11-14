@@ -1,6 +1,6 @@
 import { memo, useCallback, useState } from 'react';
 import { Keyboard, Pressable, Text, View, type LayoutChangeEvent } from 'react-native';
-import { Button, report, useTheme } from '../../../components/ui';
+import { Button, useTheme } from '../../../components/ui';
 import { usePlannerActions } from '../hooks/usePlannerActions';
 import type { DayRowProps } from '../types/presentation';
 import { DateInfo } from './DateInfo';
@@ -39,7 +39,7 @@ export const DayRow = memo(function DayRow({
   onInputLayout,
 }: DayRowProps) {
   const theme = useTheme();
-  const { saveException, flush, moveDailyNote } = usePlannerActions();
+  const { saveException, moveDailyNote } = usePlannerActions();
   const handleMove = useCallback(
     (from: number, boundary: number) => moveDailyNote(date, from, boundary),
     [date, moveDailyNote],
@@ -75,7 +75,6 @@ export const DayRow = memo(function DayRow({
 
   function handleBlur() {
     onFinish(date);
-    void flush().catch(report);
   }
 
   function handleLayout(event: LayoutChangeEvent) {

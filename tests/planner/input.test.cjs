@@ -197,3 +197,28 @@ test('blur commits trimmed chips without changing intentional spaces inside a sc
     ['회의  내용', '운동'],
   );
 });
+
+test('leaving an editor without native blur commits its chips and flushes once', () => {
+  const { applyDailyNote } = require('../../src/features/planner/services/note.ts');
+  let id = 0;
+  state.plannerData = applyDailyNote(
+    state.plannerData,
+    '2026-11-07',
+    ' meeting , , exercise ,',
+    () => 'leave-' + ++id,
+  );
+  renderInput(' meeting , , exercise ,', 0);
+  for (const slot of state.slots) slot?.cleanup?.();
+  assert.deepEqual(
+    state.plannerData.dailyPlanItems.map((item) => item.content),
+    ['meeting', 'exercise'],
+  );
+  assert.equal(state.flushes, 1);
+});
+
+test('blur followed by unmount does not save the same edit twice', () => {
+  const editor = renderInput('meeting', 0);
+  editor.input.props.onBlur();
+  for (const slot of state.slots) slot?.cleanup?.();
+  assert.equal(state.flushes, 1);
+});

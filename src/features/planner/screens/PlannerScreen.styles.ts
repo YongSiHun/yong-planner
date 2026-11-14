@@ -13,10 +13,10 @@ export function plannerScreenSafeAreaViewStyle(theme: Theme) {
   } as const;
 }
 
-export function plannerScreenScrollViewContentContainerStyle(navigationPadding = 0) {
+export function plannerScreenScrollViewContentContainerStyle() {
   return {
     paddingHorizontal: design.space.xs,
-    paddingBottom: Math.max(navigationPadding, design.touchTarget * 4),
+    paddingBottom: design.touchTarget + design.space.md * 2,
   } as const;
 }
 

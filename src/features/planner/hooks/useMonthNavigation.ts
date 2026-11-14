@@ -11,7 +11,6 @@ interface RowPosition {
 
 export function useMonthNavigation() {
   const [month, setMonth] = useState(today);
-  const [navigationPadding, setNavigationPadding] = useState(0);
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const positions = useRef(new Map<string, RowPosition>());
   const viewportHeight = useRef(0);
@@ -36,10 +35,7 @@ export function useMonthNavigation() {
       ),
       animated,
     });
-    const desired = Math.max(0, position.y - viewportHeight.current * 0.2);
-    const maximum = Math.max(0, contentHeight.current - viewportHeight.current);
-
-    pendingDate.current = desired <= maximum ? null : date;
+    pendingDate.current = null;
   }, []);
 
   const finishPendingNavigation = useCallback(() => {
@@ -104,7 +100,6 @@ export function useMonthNavigation() {
   const handleViewportLayout = useCallback(
     (event: LayoutChangeEvent) => {
       viewportHeight.current = event.nativeEvent.layout.height;
-      setNavigationPadding(viewportHeight.current * 0.8);
       finishPendingNavigation();
     },
     [finishPendingNavigation],
@@ -112,7 +107,6 @@ export function useMonthNavigation() {
 
   return {
     month,
-    navigationPadding,
     scrollRef,
     showDate,
     handleMonthChange,
