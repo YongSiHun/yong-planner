@@ -18,6 +18,7 @@ export const design = {
     pickerHeight: 380,
     previewRows: 4,
   },
+  icon: { header: 20 },
   controlHeight: 48,
   touchTarget: 44,
   rowMinHeight: 38,

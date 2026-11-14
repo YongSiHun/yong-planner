@@ -39,7 +39,7 @@ export function Toggle({
       style={styles.control(disabled)}
     >
       <View pointerEvents="none" style={styles.track(theme, value)}>
-        <Animated.View style={styles.thumb(position)} />
+        <Animated.View style={styles.thumb(position, theme)} />
       </View>
     </Pressable>
   );

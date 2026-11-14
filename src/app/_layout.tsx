@@ -57,6 +57,7 @@ function RootNavigation() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="recurring" options={{ title: '반복 일정' }} />
       <Stack.Screen name="notes" options={{ title: '메모' }} />
+      <Stack.Screen name="search" options={{ title: '일정 검색' }} />
       <Stack.Screen name="settings" options={{ title: '설정' }} />
       <Stack.Screen name="notifications" options={{ title: '알림' }} />
     </Stack>

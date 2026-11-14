@@ -9,7 +9,7 @@ export function icon(
 ) {
   return ({ pressed }: import('react-native').PressableStateCallbackType) =>
     ({
-      width: design.touchTarget,
+      width: 36,
       height: design.touchTarget,
       alignItems: headerIconAlignment(edge),
       paddingHorizontal: edge ? 6 : 0,

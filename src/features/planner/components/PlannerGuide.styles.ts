@@ -70,6 +70,6 @@ export const guideContent = {
 } as const;
 
 export const dontShowAgainLabel = {
-  fontSize: design.type.small + 1,
+  fontSize: design.type.small,
   lineHeight: design.lineHeights.small,
 } as const;

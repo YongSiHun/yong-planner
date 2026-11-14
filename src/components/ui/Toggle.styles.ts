@@ -25,12 +25,12 @@ export function track(theme: Theme, enabled: boolean) {
   } as const;
 }
 
-export function thumb(position: Animated.Value) {
+export function thumb(position: Animated.Value, theme: Theme) {
   return {
     width: 20,
     height: 20,
     borderRadius: design.radius.pill,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.toggleThumb,
     transform: [{ translateX: position.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) }],
   } as const;
 }

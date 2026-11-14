@@ -1,3 +1,4 @@
+import { memoInputError } from '../../features/notes/services/validation';
 import type { PlannerData, RecurringPlanException } from '../../features/planner/types';
 import {
   readRecord,
@@ -43,9 +44,15 @@ export { ensureValid, readRecord, readText, readTimestamp } from './readers';
 function readMemo(input: unknown) {
   const memo = readRecord(input);
   const content = readText(memo.content);
-  const validLength = content.trim().length > 0 && content.length <= 100000;
+  const title = memo.title === undefined ? undefined : readText(memo.title);
+  const error = memoInputError(content, title);
 
-  ensureValid(validLength, '메모는 1~100,000자여야 합니다.');
+  ensureValid(error === null, error ?? '메모가 올바르지 않습니다.');
 
-  return { id: readIdentifier(memo.id), content, updatedAt: readTimestamp(memo.updatedAt) };
+  return {
+    id: readIdentifier(memo.id),
+    content,
+    updatedAt: readTimestamp(memo.updatedAt),
+    ...(title === undefined ? {} : { title }),
+  };
 }

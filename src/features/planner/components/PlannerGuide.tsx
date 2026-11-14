@@ -29,7 +29,7 @@ export function PlannerGuide({
     <Dialog
       title="사용 가이드"
       showsScrollIndicator={false}
-      titleSize={design.type.title + 1}
+      titleSize={design.type.title}
       onClose={onClose}
       footer={
         <GuideFooter onClose={onClose} checked={dontShowAgain} onChange={onDontShowAgainChange} />

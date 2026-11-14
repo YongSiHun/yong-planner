@@ -1,6 +1,7 @@
 import Feather from '@expo/vector-icons/Feather';
+import { HeaderBar } from '../../../components/navigation/HeaderBar';
 import { Keyboard, Pressable, Text, View } from 'react-native';
-import { useTheme } from '../../../components/ui';
+import { design, useTheme } from '../../../components/ui';
 import { monthLabel } from '../../../utils/date';
 import * as styles from './PlannerHeader.styles';
 
@@ -43,18 +44,20 @@ export function PlannerHeader({
   onMonth,
   onMenu,
   onGuide,
+  onSearch,
   onChooseMonth,
 }: {
   month: string;
   onMonth(amount: number): void;
   onMenu(): void;
   onGuide(): void;
+  onSearch(): void;
   onChooseMonth(): void;
 }) {
   const theme = useTheme();
 
   return (
-    <View style={styles.header(theme)}>
+    <HeaderBar>
       <View style={styles.navigation}>
         <HeaderIcon
           edge="left"
@@ -93,16 +96,15 @@ export function PlannerHeader({
           <Text style={styles.plannerHeaderTextStyle3(theme)}>›</Text>
         </HeaderIcon>
       </View>
-      <HeaderIcon feedback={false} edge="right" label="사용 가이드 열기" onPress={onGuide}>
-        <Feather name="help-circle" size={22} color={theme.accent} />
+      <HeaderIcon feedback={false} label="일정 검색" onPress={onSearch}>
+        <Feather name="search" size={design.icon.header} color={theme.accent} />
+      </HeaderIcon>
+      <HeaderIcon feedback={false} label="사용 가이드 열기" onPress={onGuide}>
+        <Feather name="help-circle" size={design.icon.header} color={theme.accent} />
       </HeaderIcon>
       <HeaderIcon feedback={false} label="메뉴 열기" onPress={onMenu}>
-        <View style={styles.menuLines}>
-          {[0, 1, 2].map((line) => (
-            <View key={line} style={styles.menuLine(theme)} />
-          ))}
-        </View>
+        <Feather name="menu" size={design.icon.header} color={theme.accent} />
       </HeaderIcon>
-    </View>
+    </HeaderBar>
   );
 }

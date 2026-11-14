@@ -11,6 +11,8 @@ import { PlannerDay } from '../components/PlannerDay';
 import { PlannerDialogs } from '../components/PlannerDialogs';
 import { PlannerFooter } from '../components/PlannerFooter';
 import { PlannerHeader } from '../components/PlannerHeader';
+import { router } from 'expo-router';
+import { useSearchDate } from '../hooks/useSearchDate';
 import { type PlannerMenuType } from '../components/PlannerMenu';
 import { useExportActions } from '../hooks/useExportActions';
 import { useHolidays } from '../hooks/useHolidays';
@@ -44,6 +46,7 @@ export default function PlannerScreen() {
   } = useMonthNavigation();
 
   useNotificationDate(showDate);
+  useSearchDate(showDate);
   const { keyboardVisible, handleInputFocus, scheduleReveal, handleKeyboardScroll } =
     useInlineKeyboard(scrollRef, month.slice(0, 7));
   const guide = usePlannerGuide();
@@ -122,6 +125,11 @@ export default function PlannerScreen() {
               onMenu={() => {
                 dismissSelection();
                 setMenu('menu');
+              }}
+              onSearch={() => {
+                dismissSelection();
+                Keyboard.dismiss();
+                router.push('/search');
               }}
               onGuide={() => {
                 dismissSelection();

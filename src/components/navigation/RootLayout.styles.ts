@@ -1,3 +1,4 @@
+import { AppHeader } from './AppHeader';
 import type { Theme } from '../ui/palette';
 import { design } from '../ui/tokens';
 
@@ -13,6 +14,7 @@ export function loadingScreenViewStyle(theme: Theme) {
 
 export function rootNavigationStackScreenOptions(theme: Theme) {
   return {
+    header: AppHeader,
     headerStyle: { backgroundColor: theme.bg } as const,
     headerTintColor: theme.accent,
     headerTitleStyle: {
