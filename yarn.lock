@@ -3231,9 +3231,9 @@ expo-updates-interface@~58.0.1:
   resolved "https://registry.npmjs.org/expo-updates-interface/-/expo-updates-interface-58.0.1.tgz"
   integrity sha512-OF+3BtMXtUsXWDfpHVNus9yHpx7WjMwjxDfeeN9LQBYSq/UtYmNNHBSfzChYTuqljWFSOAHRfsDykV9EB73Wlg==
 
-expo@~58.0.23:
+expo@^58.0.25:
   version "58.0.25"
-  resolved "https://registry.npmjs.org/expo/-/expo-58.0.25.tgz"
+  resolved "https://registry.yarnpkg.com/expo/-/expo-58.0.25.tgz#617a7c19c307d3e82993176f399fe5db43612a44"
   integrity sha512-Ih7pQYPS+2ZFS5APNtgOUp2AK/M+zfILK9Z5/wh6PoLn6XF3dh+nlcvugotytVzf8jX5/NBMcB7xJT+97oaNvw==
   dependencies:
     "@babel/runtime" "^7.20.0"
