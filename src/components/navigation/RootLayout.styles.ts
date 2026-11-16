@@ -20,7 +20,7 @@ export function rootNavigationStackScreenOptions(theme: Theme) {
     headerTitleStyle: {
       fontFamily: design.font.bold,
       fontWeight: 'normal',
-      fontSize: design.type.title,
+      fontSize: design.type.title + 1,
       lineHeight: design.lineHeights.title,
     } as const,
     contentStyle: { backgroundColor: theme.bg } as const,

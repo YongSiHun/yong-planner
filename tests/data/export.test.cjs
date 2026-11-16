@@ -9,6 +9,7 @@ let requested;
 const files = [];
 const fileShares = [];
 let copied;
+let writeFailure;
 const mock = createModuleMock(require);
 mock('expo-file-system', {
   File: class {
@@ -30,7 +31,9 @@ mock('expo-file-system', {
     store(value) {
       content.set(this.uri, Buffer.from(value));
     }
-    write(content) {
+    async write(content) {
+      await new Promise((resolve) => setImmediate(resolve));
+      if (writeFailure) throw writeFailure;
       this.content = content;
       this.store(content);
     }
@@ -39,7 +42,10 @@ mock('expo-file-system', {
 });
 mock('expo-sharing', {
   isAvailableAsync: async () => true,
-  shareAsync: async (uri, options) => fileShares.push({ uri, ...options }),
+  shareAsync: async (uri, options) => {
+    assert.ok(content.has(uri), 'share must wait until the file write finishes');
+    fileShares.push({ uri, ...options });
+  },
 });
 mock('expo-clipboard', {
   setStringAsync: async (text) => {
@@ -73,6 +79,7 @@ function fixture() {
 }
 beforeEach(() => {
   copied = undefined;
+  writeFailure = undefined;
   content.clear();
   picked = undefined;
   requested = undefined;
@@ -165,4 +172,10 @@ test('restore controller routes notes, months and whole backups without crossing
   await restorePlannerBackup({ ...emptyData(), kind: 'full' });
   assert.deepEqual(restoredData.memos, []);
   assert.deepEqual(restoredData.settings, { theme: 'system' });
+});
+
+test('failed file writes reject the export without opening the share sheet', async () => {
+  writeFailure = new Error('disk full');
+  await assert.rejects(exportMonth(fixture(), '2026-11-01', 'txt'), /disk full/);
+  assert.equal(fileShares.length, 0);
 });

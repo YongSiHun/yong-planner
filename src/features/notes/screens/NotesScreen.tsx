@@ -1,5 +1,5 @@
 import Feather from '@expo/vector-icons/Feather';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import {
   BackHandler,
@@ -13,7 +13,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { HEADER_HEIGHT } from '../../../components/navigation/AppHeader.styles';
+import { HeaderBar } from '../../../components/navigation/HeaderBar';
+import * as headerStyles from '../../../components/navigation/AppHeader.styles';
 import { design, Label, useTheme } from '../../../components/ui';
 import type { Memo } from '../../planner/types';
 import { useMemoState } from '../hooks/useMemoState';
@@ -32,8 +33,9 @@ export default function NotesScreen() {
   useNotesBack(state);
 
   return (
-    <SafeAreaView style={styles.screen(theme)} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.screen(theme)} edges={['top', 'left', 'right', 'bottom']}>
       <NotesNavigation state={state} />
+      <NotesHeader state={state} />
       <MemoEditorMenu state={state} />
       {state.error ? <Label style={styles.notice}>{state.error}</Label> : null}
       {editorOpen ? <MemoEditor state={state} /> : <MemoList state={state} />}
@@ -71,37 +73,45 @@ function NotesNavigation({ state }: { state: MemoState }) {
       options={{
         title: '메모',
         gestureEnabled: !editorOpen && !state.selecting,
-        headerLeft: notesHeaderLeft(state),
-        headerTitle: () => <NotesHeading state={state} />,
-        headerRight: () => <HeaderActions state={state} />,
+        headerShown: false,
       }}
     />
   );
 }
 
-function notesHeaderLeft(state: MemoState) {
-  const selecting = state.selecting;
+function NotesHeader({ state }: { state: MemoState }) {
+  return (
+    <HeaderBar>
+      <NotesBack state={state} />
+      <View style={headerStyles.heading}>
+        <NotesHeading state={state} />
+      </View>
+      <View style={headerStyles.actions}>
+        <HeaderActions state={state} />
+      </View>
+    </HeaderBar>
+  );
+}
+
+function NotesBack({ state }: { state: MemoState }) {
   const editorOpen = state.editing !== undefined;
+  const selecting = state.selecting;
 
   if (editorOpen) {
-    return function SaveAction() {
-      return <EditorSave state={state} />;
-    };
+    return <EditorSave state={state} />;
   }
   if (selecting) {
-    return function SelectionBack() {
-      return (
-        <HeaderAction
-          label="메모 선택 해제"
-          icon="chevron-left"
-          disabled={state.busy}
-          onPress={state.cancelSelection}
-        />
-      );
-    };
+    return (
+      <HeaderAction
+        label="메모 선택 해제"
+        icon="chevron-left"
+        disabled={state.busy}
+        onPress={state.cancelSelection}
+      />
+    );
   }
 
-  return undefined;
+  return <HeaderAction label="뒤로" icon="chevron-left" onPress={() => router.back()} />;
 }
 
 function NotesHeading({ state }: { state: MemoState }) {
@@ -375,7 +385,7 @@ function MemoEditor({ state }: { state: MemoState }) {
     <KeyboardAvoidingView
       style={styles.page}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={insets.top + HEADER_HEIGHT + 1}
+      keyboardVerticalOffset={insets.top + headerStyles.HEADER_HEIGHT + 1}
     >
       <TextInput
         multiline

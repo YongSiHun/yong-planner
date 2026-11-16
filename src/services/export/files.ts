@@ -50,7 +50,7 @@ export async function shareFile(
   const file = new File(Paths.cache, name);
 
   file.create({ overwrite: true });
-  file.write(content);
+  await file.write(content);
 
   await Sharing.shareAsync(file.uri, { mimeType, UTI: fileTypes[mimeType] ?? 'public.plain-text' });
 }

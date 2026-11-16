@@ -4,7 +4,7 @@ import { design } from './tokens';
 
 export const content = {
   ...layout.pageContent,
-  paddingTop: design.space.xs,
+  paddingTop: design.space.xs + 1,
   gap: 0,
 } as const;
 

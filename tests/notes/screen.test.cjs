@@ -25,7 +25,7 @@ mock('react-native-safe-area-context', {
   useSafeAreaInsets: () => ({ top: 24, right: 0 }),
 });
 mock('@expo/vector-icons/Feather', 'Feather');
-mock('expo-router', { Stack: { Screen: 'StackScreen' } });
+mock('expo-router', { Stack: { Screen: 'StackScreen' }, router: { back() {} } });
 const theme = require('../../src/components/ui/palette.ts').light;
 mock('../../src/components/ui/index.tsx', {
   Label: 'Label',
@@ -36,8 +36,19 @@ let state;
 mock('../../src/features/notes/hooks/useMemoState.ts', { useMemoState: () => state });
 const NotesScreen = require('../../src/features/notes/screens/NotesScreen.tsx').default;
 function navigation() {
-  const node = find(NotesScreen(), (node) => node.type?.name === 'NotesNavigation');
-  return node.type(node.props).props.options;
+  const screen = NotesScreen();
+  const node = find(screen, (node) => node.type?.name === 'NotesHeader');
+  const [left, heading, right] = node.type(node.props).props.children;
+  const optionsNode = find(screen, (node) => node.type?.name === 'NotesNavigation');
+  const options = optionsNode.type(optionsNode.props).props.options;
+  assert.equal(options.headerShown, false);
+  assert.equal(options.headerTitle, undefined);
+  return {
+    ...options,
+    headerLeft: () => left,
+    headerTitle: () => heading.props.children,
+    headerRight: () => right.props.children,
+  };
 }
 function expand(node) {
   if (!node || typeof node !== 'object') return node;

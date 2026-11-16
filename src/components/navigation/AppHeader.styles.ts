@@ -1,7 +1,7 @@
 import type { Theme } from '../ui/palette';
 import { design } from '../ui/tokens';
 
-export const HEADER_HEIGHT = 53;
+export const HEADER_HEIGHT = 51;
 export const bar = {
   minHeight: HEADER_HEIGHT,
   width: '100%',
@@ -34,7 +34,7 @@ export function title(theme: Theme) {
   return {
     color: theme.accent,
     fontFamily: design.font.bold,
-    fontSize: design.type.title,
+    fontSize: design.type.title + 1,
     lineHeight: design.lineHeights.title,
   } as const;
 }

@@ -59,7 +59,7 @@ export const monthTrigger = {
 export function monthTitle(theme: Theme) {
   return {
     color: theme.accent,
-    fontSize: design.type.title,
+    fontSize: design.type.title + 1,
     lineHeight: design.lineHeights.title,
     fontFamily: design.font.bold,
     textAlign: 'center',
