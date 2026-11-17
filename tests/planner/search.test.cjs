@@ -93,3 +93,26 @@ test('results group by month without dropping same-day entries or restricting th
     [2, 1],
   );
 });
+
+test('search matches memo titles and bodies, including restorable trash but excluding expired trash', () => {
+  const now = new Date().toISOString();
+  const data = fixture();
+  data.memos = [
+    { id: 'title', title: 'PROJECT 계획', content: '본문', updatedAt: now },
+    { id: 'body', title: '기록', content: 'project 내용', updatedAt: now },
+    { id: 'trash', content: 'Project 휴지통', updatedAt: now, deletedAt: now },
+    { id: 'expired', content: 'Project 만료', updatedAt: now, deletedAt: '2020-01-01T00:00:00Z' },
+  ];
+  const results = searchPlans(data, 'project', holidays);
+  assert.ok(results.some((result) => result.kind === 'daily'));
+  assert.deepEqual(
+    results
+      .filter((result) => result.memoId)
+      .map((result) => result.memoId)
+      .sort(),
+    ['body', 'title', 'trash'],
+  );
+  assert.equal(results.find((result) => result.memoId === 'trash').kind, 'trash');
+  const section = groupSearchResults(results).find((section) => section.month === '메모');
+  assert.equal(section.data.length, 3);
+});

@@ -1,3 +1,4 @@
+import { pruneMemoTrash } from '../../notes/services/trash';
 import { emptySelection, useNoteSelectionStore } from '../../../stores/noteSelection';
 import { persistData, restoreData } from '../../../database/repositories/persist';
 import { loadData } from '../../../database/repositories/planner';
@@ -128,7 +129,7 @@ export const flushPlanner = async () => {
 };
 
 export const restorePlanner = async (input: unknown) => {
-  const data = validateData(input);
+  const data = pruneMemoTrash(validateData(input));
   const isRestoring = usePlanner.getState().restoring;
 
   if (isRestoring) {

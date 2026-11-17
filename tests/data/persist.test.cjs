@@ -230,3 +230,30 @@ test('notes persist, update and delete alongside schedules and survive a failed 
   await persistData({ ...base, memos: [] });
   assert.equal(sqlite.prepare('SELECT count(*) AS count FROM memos').get().count, 0);
 });
+
+test('memo trash metadata survives SQLite persistence, restoration, and permanent expiry removal', async () => {
+  const { pruneMemoTrash } = require('../../src/features/notes/services/trash.ts');
+  const live = { id: 'live', title: '제목', content: '본문', updatedAt: new Date().toISOString() };
+  const trash = { ...live, id: 'trash', deletedAt: new Date().toISOString() };
+  const expired = { ...live, id: 'expired', deletedAt: '2020-01-01T00:00:00Z' };
+  const data = { ...emptyData(), memos: [live, trash, expired] };
+  await restoreData(data);
+  const rows = () =>
+    sqlite
+      .prepare('SELECT payload FROM memos ORDER BY id')
+      .all()
+      .map((row) => JSON.parse(row.payload));
+  assert.deepEqual(
+    rows().find((memo) => memo.id === 'trash'),
+    trash,
+  );
+  const pruned = pruneMemoTrash(data);
+  await persistData(pruned);
+  assert.deepEqual(
+    rows().map((memo) => memo.id),
+    ['live', 'trash'],
+  );
+  const { deletedAt, ...restored } = trash;
+  await persistData({ ...pruned, memos: [live, restored] });
+  assert.equal(rows().find((memo) => memo.id === 'trash').deletedAt, undefined);
+});

@@ -23,7 +23,7 @@ export const emptyTitle = { ...sectionHeading, marginTop: design.space.sm } as c
 export const listContent = {
   flexGrow: 1,
   paddingHorizontal: 0,
-  paddingBottom: design.space.sm,
+  paddingBottom: design.floatingActionSize + design.layout.pagePadding * 2,
 } as const;
 export function screen(theme: Theme) {
   return { flex: 1, backgroundColor: theme.bg } as const;
@@ -152,5 +152,28 @@ export function selectionMark(theme: Theme, selected: boolean) {
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+  } as const;
+}
+
+export const frame = {
+  flex: 1,
+  width: '100%',
+  maxWidth: design.layout.contentMaxWidth,
+  alignSelf: 'center',
+} as const;
+
+export function floatingAction(theme: Theme, disabled: boolean) {
+  return {
+    position: 'absolute',
+    right: design.layout.pagePadding,
+    bottom: design.layout.pagePadding,
+    width: design.floatingActionSize,
+    height: design.floatingActionSize,
+    borderRadius: design.radius.dialog,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.accent,
+    opacity: disabled ? 0.35 : 1,
+    elevation: 4,
   } as const;
 }

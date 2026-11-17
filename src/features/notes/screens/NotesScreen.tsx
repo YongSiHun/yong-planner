@@ -1,6 +1,7 @@
 import Feather from '@expo/vector-icons/Feather';
 import { router, Stack } from 'expo-router';
 import { useEffect } from 'react';
+import { useMemoRoute } from '../hooks/useMemoRoute';
 import {
   BackHandler,
   FlatList,
@@ -19,6 +20,7 @@ import { design, Label, useTheme } from '../../../components/ui';
 import type { Memo } from '../../planner/types';
 import { useMemoState } from '../hooks/useMemoState';
 import { memoFields } from '../services/memo';
+import { MemoListMenu } from '../components/MemoListMenu';
 import { MemoEditorMenu } from '../components/MemoEditorMenu';
 import { MEMO_TITLE_MAX_LENGTH, MEMO_MAX_LENGTH } from '../services/validation';
 import * as styles from './NotesScreen.styles';
@@ -31,38 +33,51 @@ export default function NotesScreen() {
   const editorOpen = state.editing !== undefined;
 
   useNotesBack(state);
+  useMemoRoute(state);
 
   return (
     <SafeAreaView style={styles.screen(theme)} edges={['top', 'left', 'right', 'bottom']}>
-      <NotesNavigation state={state} />
-      <NotesHeader state={state} />
-      <MemoEditorMenu state={state} />
-      {state.error ? <Label style={styles.notice}>{state.error}</Label> : null}
-      {editorOpen ? <MemoEditor state={state} /> : <MemoList state={state} />}
+      <View style={styles.frame}>
+        <NotesNavigation state={state} />
+        <NotesHeader state={state} />
+        <MemoEditorMenu state={state} />
+        <MemoListMenu state={state} />
+        {state.trashOpen ? (
+          <Label muted style={styles.notice}>
+            휴지통의 메모는 삭제 후 30일 동안 보관되며 복구할 수 있어요.
+          </Label>
+        ) : null}
+        {state.error ? <Label style={styles.notice}>{state.error}</Label> : null}
+        {editorOpen ? <MemoEditor state={state} /> : <MemoList state={state} />}
+      </View>
     </SafeAreaView>
   );
 }
 
-function useNotesBack({ editing, selecting, closeEditor, cancelSelection }: MemoState) {
+function useNotesBack({
+  editing,
+  selecting,
+  trashOpen,
+  closeEditor,
+  cancelSelection,
+  closeTrash,
+}: MemoState) {
   const editorOpen = editing !== undefined;
-  const active = editorOpen || selecting;
+  const active = editorOpen || selecting || trashOpen;
 
   useEffect(() => {
     if (!active) {
       return;
     }
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (editorOpen) {
-        closeEditor();
-      } else {
-        cancelSelection();
-      }
+    const back = () => {
+      handleNotesBack(editorOpen, selecting, closeEditor, cancelSelection, closeTrash);
 
       return true;
-    });
+    };
+    const subscription = BackHandler.addEventListener('hardwareBackPress', back);
 
     return () => subscription.remove();
-  }, [active, editorOpen, closeEditor, cancelSelection]);
+  }, [active, editorOpen, selecting, closeEditor, cancelSelection, closeTrash]);
 }
 
 function NotesNavigation({ state }: { state: MemoState }) {
@@ -97,6 +112,11 @@ function NotesBack({ state }: { state: MemoState }) {
   const editorOpen = state.editing !== undefined;
   const selecting = state.selecting;
 
+  const trashed = state.editing?.deletedAt !== undefined;
+
+  if (trashed) {
+    return <HeaderAction label="메모 닫기" icon="chevron-left" onPress={state.closeEditor} />;
+  }
   if (editorOpen) {
     return <EditorSave state={state} />;
   }
@@ -111,7 +131,13 @@ function NotesBack({ state }: { state: MemoState }) {
     );
   }
 
-  return <HeaderAction label="뒤로" icon="chevron-left" onPress={() => router.back()} />;
+  return (
+    <HeaderAction
+      label="뒤로"
+      icon="chevron-left"
+      onPress={state.trashOpen ? state.closeTrash : () => router.back()}
+    />
+  );
 }
 
 function NotesHeading({ state }: { state: MemoState }) {
@@ -130,7 +156,7 @@ function NotesHeading({ state }: { state: MemoState }) {
       accessibilityLabel="메모"
       style={styles.headingTarget}
     >
-      <Label style={styles.heading(theme)}>메모</Label>
+      <Label style={styles.heading(theme)}>{state.trashOpen ? '휴지통' : '메모'}</Label>
     </Pressable>
   );
 }
@@ -145,7 +171,7 @@ function TitleInput({ state }: { state: MemoState }) {
       placeholderTextColor={theme.muted}
       value={state.title}
       onChangeText={state.setTitle}
-      editable={!state.disabled}
+      editable={!state.disabled && !state.editing?.deletedAt}
       autoFocus={state.editing === null}
       returnKeyType="next"
       maxLength={MEMO_TITLE_MAX_LENGTH}
@@ -159,6 +185,21 @@ function HeaderActions({ state }: { state: MemoState }) {
   const selecting = state.selecting;
   const editorOpen = state.editing !== undefined;
 
+  const trashed = state.editing?.deletedAt !== undefined;
+
+  if (trashed) {
+    return (
+      <HeaderAction
+        trailing
+        label="복구"
+        icon="rotate-ccw"
+        disabled={state.disabled}
+        onPress={() => {
+          void state.run(state.restore);
+        }}
+      />
+    );
+  }
   if (editorOpen) {
     return (
       <HeaderAction
@@ -184,13 +225,19 @@ function HeaderActions({ state }: { state: MemoState }) {
     );
   }
 
+  const trashOpen = state.trashOpen;
+
+  if (trashOpen) {
+    return null;
+  }
+
   return (
     <HeaderAction
       trailing
-      label="메모 추가"
-      icon="plus"
+      label="메모 메뉴"
+      icon="more-vertical"
       disabled={state.disabled}
-      onPress={() => state.open(null)}
+      onPress={state.openListMenu}
     />
   );
 }
@@ -258,13 +305,37 @@ function MemoList({ state }: { state: MemoState }) {
         }}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => <MemoRow memo={item} state={state} />}
-        ListEmptyComponent={<EmptyMemos />}
+        ListEmptyComponent={<EmptyMemos trashOpen={state.trashOpen} />}
         ListFooterComponent={
           <Pressable accessible={false} onPress={state.cancelSelection} style={styles.blankSpace} />
         }
         ListFooterComponentStyle={styles.listFooter}
       />
       <MemoSelectionActions state={state} />
+      <MemoAddButton state={state} />
+    </Pressable>
+  );
+}
+
+function MemoAddButton({ state }: { state: MemoState }) {
+  const theme = useTheme();
+
+  const hidden = state.selecting || state.trashOpen;
+
+  if (hidden) {
+    return null;
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="메모 추가"
+      accessibilityState={{ disabled: state.disabled }}
+      disabled={state.disabled}
+      onPress={() => state.open(null)}
+      style={styles.floatingAction(theme, state.disabled)}
+    >
+      <Feather name="plus" size={24} color={theme.onAccent} />
     </Pressable>
   );
 }
@@ -280,27 +351,45 @@ function MemoSelectionActions({ state }: { state: MemoState }) {
 
   return (
     <View style={styles.selectionBar(theme)}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="선택한 메모 삭제"
-        accessibilityState={{ disabled }}
-        disabled={disabled}
-        onPress={state.requestDelete}
-        style={styles.deleteAction(disabled)}
-      >
-        <Feather name="trash-2" size={design.icon.header} color={theme.red} />
-      </Pressable>
+      <MemoSelectionButton state={state} disabled={disabled} />
     </View>
   );
 }
 
-function EmptyMemos() {
+function MemoSelectionButton({ state, disabled }: { state: MemoState; disabled: boolean }) {
+  const theme = useTheme();
+  const label = state.trashOpen ? '선택한 메모 복구' : '선택한 메모 삭제';
+  const icon = state.trashOpen ? 'rotate-ccw' : 'trash-2';
+  const color = state.trashOpen ? theme.accent : theme.red;
+  const onPress = state.trashOpen
+    ? () => {
+        void state.run(state.restore);
+      }
+    : state.requestDelete;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={styles.deleteAction(disabled)}
+    >
+      <Feather name={icon} size={design.icon.header} color={color} />
+    </Pressable>
+  );
+}
+
+function EmptyMemos({ trashOpen }: { trashOpen: boolean }) {
   const theme = useTheme();
 
   return (
     <View style={styles.empty}>
       <Feather name="file-text" size={44} color={theme.muted} />
-      <Label style={styles.emptyTitle}>아직 메모가 없어요</Label>
+      <Label style={styles.emptyTitle}>
+        {trashOpen ? '휴지통이 비어 있어요' : '아직 메모가 없어요'}
+      </Label>
     </View>
   );
 }
@@ -365,7 +454,8 @@ function MemoPreview({ memo }: { memo: Memo }) {
         </Text>
       ) : null}
       <Label muted style={styles.timestamp}>
-        {new Date(memo.updatedAt).toLocaleString('ko-KR', {
+        {memo.deletedAt ? '삭제 · ' : ''}
+        {new Date(memo.deletedAt ?? memo.updatedAt).toLocaleString('ko-KR', {
           year: 'numeric',
           month: 'long',
           day: 'numeric',
@@ -394,7 +484,7 @@ function MemoEditor({ state }: { state: MemoState }) {
         placeholderTextColor={theme.muted}
         selectionColor={theme.accent}
         value={state.content}
-        editable={!state.disabled}
+        editable={!state.disabled && !state.editing?.deletedAt}
         maxLength={Math.max(0, MEMO_MAX_LENGTH - state.title.length)}
         onChangeText={state.setContent}
         textAlignVertical="top"
@@ -414,4 +504,24 @@ function MemoValidation({ state }: { state: MemoState }) {
   }
 
   return <Label style={styles.validation(theme, Boolean(state.lengthError))}>{message}</Label>;
+}
+
+function handleNotesBack(
+  editorOpen: boolean,
+  selecting: boolean,
+  closeEditor: () => void,
+  cancelSelection: () => void,
+  closeTrash: () => void,
+) {
+  if (editorOpen) {
+    closeEditor();
+
+    return;
+  }
+  if (selecting) {
+    cancelSelection();
+
+    return;
+  }
+  closeTrash();
 }

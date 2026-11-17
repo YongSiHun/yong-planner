@@ -76,6 +76,37 @@ export function ScheduleInput({
     );
   }
 
+  const editor = (
+    <TextInput
+      key="active-input"
+      ref={input}
+      multiline
+      autoFocus
+      autoCorrect={false}
+      spellCheck={false}
+      autoCapitalize="none"
+      smartInsertDelete={false}
+      value={noteInputValue(edit)}
+      onChange={handleChange}
+      selection={requestedSelection}
+      onSelectionChange={handleSelection}
+      onFocus={() => onInputFocus(input.current)}
+      onBlur={handleBlur}
+      onLayout={onInputLayout}
+      accessibilityLabel={date + ' 일정 입력'}
+      accessibilityHint="쉼표나 엔터를 입력하면 일정이 나뉘어요."
+      placeholder={edit.text.length === 0 ? PLACEHOLDER : undefined}
+      placeholderTextColor={theme.muted}
+      selectionColor={theme.accent}
+      cursorColor={theme.accent}
+      underlineColorAndroid="transparent"
+      textAlignVertical="top"
+      scrollEnabled={height > maximumHeight}
+      onContentSizeChange={onInputLayout}
+      style={styles.input(theme, height, maximumHeight, inputWidth, content.trim().length > 0)}
+    />
+  );
+
   return (
     <Pressable
       accessible={false}
@@ -93,36 +124,14 @@ export function ScheduleInput({
       >
         {edit.text.length === 0 ? PLACEHOLDER : content || ' '}
       </Text>
-      {parts.slice(0, edit.index).map(renderChip)}
       {/* Native 입력 유지: 칩 전환 시 재마운트 방지. */}
-      <TextInput
-        ref={input}
-        multiline
-        autoFocus
-        autoCorrect={false}
-        spellCheck={false}
-        autoCapitalize="none"
-        smartInsertDelete={false}
-        value={noteInputValue(edit)}
-        onChange={handleChange}
-        selection={requestedSelection}
-        onSelectionChange={handleSelection}
-        onFocus={() => onInputFocus(input.current)}
-        onBlur={handleBlur}
-        onLayout={onInputLayout}
-        accessibilityLabel={date + ' 일정 입력'}
-        accessibilityHint="쉼표나 엔터를 입력하면 일정이 나뉘어요."
-        placeholder={edit.text.length === 0 ? PLACEHOLDER : undefined}
-        placeholderTextColor={theme.muted}
-        selectionColor={theme.accent}
-        cursorColor={theme.accent}
-        underlineColorAndroid="transparent"
-        textAlignVertical="top"
-        scrollEnabled={height > maximumHeight}
-        onContentSizeChange={onInputLayout}
-        style={styles.input(theme, height, maximumHeight, inputWidth, content.trim().length > 0)}
-      />
-      {parts.slice(edit.index + 1).map((part, offset) => renderChip(part, edit.index + 1 + offset))}
+      {[
+        ...parts.slice(0, edit.index).map(renderChip),
+        editor,
+        ...parts
+          .slice(edit.index + 1)
+          .map((part, offset) => renderChip(part, edit.index + 1 + offset)),
+      ]}
     </Pressable>
   );
 }

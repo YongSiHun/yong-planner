@@ -69,7 +69,7 @@ test('dedicated search screen renders a scrolling section list and search field 
   const tree = Screen();
   assert.equal(tree.type, 'SafeAreaView');
   const input = find(tree, (node) => node.type === 'Input');
-  assert.equal(input.props.placeholder, '모든 달의 일정 검색');
+  assert.equal(input.props.placeholder, '일정과 메모 검색 (휴지통 포함)');
   const list = find(tree, (node) => node.type === 'SectionList');
   assert.deepEqual(list.props.sections, state.sections);
   assert.equal(list.props.keyboardShouldPersistTaps, 'handled');
@@ -105,4 +105,18 @@ test('returning from search navigates once per selection and rejects invalid dat
   params = { searchDate: ['2026-11-01'], searchKey: 'array' };
   handleDate(navigate);
   assert.deepEqual(dates, ['2020-01-04', '2035-09-12']);
+});
+
+test('memo and trash results open the exact memo instead of navigating to a calendar date', () => {
+  const list = find(Screen(), (node) => node.type === 'SectionList');
+  for (const kind of ['memo', 'trash']) {
+    const row = list.props.renderItem({ item: { ...daily, kind, memoId: 'memo-' + kind } });
+    const rendered = row.type(row.props);
+    assert.match(rendered.props.accessibilityLabel, kind === 'trash' ? /휴지통/ : /메모/);
+    rendered.props.onPress();
+    const route = routes.at(-1);
+    assert.equal(route.method, 'push');
+    assert.equal(route.route.pathname, '/notes');
+    assert.equal(route.route.params.memoId, 'memo-' + kind);
+  }
 });

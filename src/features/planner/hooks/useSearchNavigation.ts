@@ -5,6 +5,16 @@ import type { SearchResult } from '../services/search';
 export function useSearchNavigation() {
   function openResult(result: SearchResult) {
     Keyboard.dismiss();
+    const isMemo = result.memoId !== undefined;
+
+    if (isMemo) {
+      router.push({
+        pathname: '/notes',
+        params: { memoId: result.memoId, memoKey: String(Date.now()) },
+      });
+
+      return;
+    }
     const isSeries = result.kind === 'recurring';
 
     if (isSeries) {

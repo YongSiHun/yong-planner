@@ -54,5 +54,6 @@ function readMemo(input: unknown) {
     content,
     updatedAt: readTimestamp(memo.updatedAt),
     ...(title === undefined ? {} : { title }),
+    ...(memo.deletedAt === undefined ? {} : { deletedAt: readTimestamp(memo.deletedAt) }),
   };
 }

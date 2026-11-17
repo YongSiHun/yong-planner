@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { report, showDialog } from '../../../components/ui';
 import { usePlanner } from '../../../stores/planner';
 import type { Memo } from '../../planner/types';
+import { memoExpired } from '../services/trash';
 import { memoFields } from '../services/memo';
 import { memoInputError, memoLengthError, memoLimitNotice } from '../services/validation';
 import { useMemoActions } from './useMemoActions';
@@ -10,12 +11,16 @@ export function useMemoState() {
   const data = usePlanner((state) => state.data.memos);
   const unavailable = usePlanner((state) => state.restoring || !state.ready);
   const error = usePlanner((state) => state.error);
-  const memos = [...(data ?? [])].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const [trashOpen, setTrashOpen] = useState(false);
+  const memos = (data ?? [])
+    .filter((memo) => Boolean(memo.deletedAt) === trashOpen && !memoExpired(memo))
+    .sort((a, b) => (b.deletedAt ?? b.updatedAt).localeCompare(a.deletedAt ?? a.updatedAt));
   const [editing, setEditing] = useState<Memo | null | undefined>();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [busy, setBusy] = useState(false);
   const [editorMenuOpen, setEditorMenuOpen] = useState(false);
+  const [listMenuOpen, setListMenuOpen] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const selected = new Set(memos.filter((memo) => selectedIds.has(memo.id)).map((memo) => memo.id));
@@ -38,6 +43,13 @@ export function useMemoState() {
     const running = operationBusy.current;
 
     if (running) {
+      return;
+    }
+    const trashed = editing?.deletedAt !== undefined;
+
+    if (trashed) {
+      setEditing(undefined);
+
       return;
     }
     const original = memoFields(editing);
@@ -100,6 +112,11 @@ export function useMemoState() {
   }
 
   async function save() {
+    const trashed = editing?.deletedAt !== undefined;
+
+    if (trashed) {
+      return;
+    }
     await actions.saveMemo(editing?.id ?? null, content, title);
     setEditing(undefined);
   }
@@ -112,20 +129,24 @@ export function useMemoState() {
     }
     const ids = new Set(selected);
 
-    showDialog('메모 삭제', `선택한 메모 ${ids.size}개를 삭제할까요?`, [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: () => {
-          void run(async () => {
-            await actions.deleteMemos(ids);
-            setSelecting(false);
-            setSelectedIds(new Set());
-          });
+    showDialog(
+      '휴지통으로 이동',
+      `선택한 메모 ${ids.size}개를 휴지통으로 이동할까요? 30일 동안 복구할 수 있어요.`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => {
+            void run(async () => {
+              await actions.deleteMemos(ids);
+              setSelecting(false);
+              setSelectedIds(new Set());
+            });
+          },
         },
-      },
-    ]);
+      ],
+    );
   }
 
   function openEditorMenu() {
@@ -142,7 +163,9 @@ export function useMemoState() {
       return;
     }
     const id = editing?.id;
-    const message = id ? '이 메모를 삭제할까요?' : '작성 중인 메모를 삭제할까요?';
+    const message = id
+      ? '이 메모를 휴지통으로 이동할까요? 30일 동안 복구할 수 있어요.'
+      : '작성 중인 메모를 삭제할까요?';
 
     setEditorMenuOpen(false);
     showDialog('메모 삭제', message, [
@@ -177,7 +200,38 @@ export function useMemoState() {
     setSelecting(true);
   }
 
+  function openTrash() {
+    setListMenuOpen(false);
+    cancelSelection();
+    setTrashOpen(true);
+  }
+
+  function closeTrash() {
+    cancelSelection();
+    setTrashOpen(false);
+  }
+
+  function openListMenu() {
+    setListMenuOpen(true);
+  }
+
+  async function restore() {
+    const ids = editing?.id ? new Set([editing.id]) : selected;
+
+    await actions.restoreMemos(ids);
+    setEditing(undefined);
+    setSelecting(false);
+    setSelectedIds(new Set());
+  }
+
   return {
+    listMenuOpen,
+    closeListMenu: () => setListMenuOpen(false),
+    trashOpen,
+    openTrash,
+    closeTrash,
+    openListMenu,
+    restore,
     validationError: memoInputError(content, title),
     lengthError: memoLengthError(content, title),
     limitNotice: memoLimitNotice(content, title),

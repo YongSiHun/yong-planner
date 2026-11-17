@@ -28,10 +28,13 @@ mock('@expo/vector-icons/Feather', 'Feather');
 mock('expo-router', { Stack: { Screen: 'StackScreen' }, router: { back() {} } });
 const theme = require('../../src/components/ui/palette.ts').light;
 mock('../../src/components/ui/index.tsx', {
+  Button: 'Button',
   Label: 'Label',
   useTheme: () => theme,
   design: require('../../src/components/ui/tokens.ts').design,
 });
+mock('../../src/features/notes/hooks/useMemoRoute.ts', { useMemoRoute() {} });
+mock('../../src/components/ui/Dialog.tsx', { Dialog: 'Dialog' });
 let state;
 mock('../../src/features/notes/hooks/useMemoState.ts', { useMemoState: () => state });
 const NotesScreen = require('../../src/features/notes/screens/NotesScreen.tsx').default;
@@ -81,12 +84,17 @@ function initialState() {
   };
 }
 
-test('memo list header has only the add action; the empty list has no counter or hint toolbar', () => {
+test('memo list has a kebab menu and a floating add button', () => {
   state = initialState();
   const options = navigation();
   const actions = expand(options.headerRight());
-  assert.equal(actions.props.accessibilityLabel, '메모 추가');
+  assert.equal(actions.props.accessibilityLabel, '메모 메뉴');
+  assert.equal(actions.props.children.props.name, 'more-vertical');
   const tree = expand(NotesScreen());
+  const add = find(tree, (node) => node.props?.accessibilityLabel === '메모 추가');
+  assert.equal(add.props.style.position, 'absolute');
+  assert.equal(add.props.style.right, 16);
+  assert.equal(add.props.style.bottom, 16);
   assert.equal(
     find(tree, (node) => node.props?.children === '메모 0개'),
     undefined,
@@ -180,4 +188,21 @@ test('validation errors disable check-save and appear below the memo editor', ()
   const save = expand(navigation().headerLeft());
   assert.equal(save.props.disabled, true);
   assert.ok(find(expand(NotesScreen()), (node) => node.props?.children === '최대 길이 초과'));
+});
+
+test('trash preview is read-only and offers restore; trash list has no floating add action', () => {
+  state = { ...initialState(), trashOpen: true };
+  assert.equal(
+    find(expand(NotesScreen()), (node) => node.props?.accessibilityLabel === '메모 추가'),
+    undefined,
+  );
+  state.editing = { id: 'trash', deletedAt: new Date().toISOString() };
+  const options = navigation();
+  assert.equal(expand(options.headerRight()).props.accessibilityLabel, '복구');
+  assert.equal(expand(options.headerTitle()).props.editable, false);
+  const body = find(
+    expand(NotesScreen()),
+    (node) => node.props?.accessibilityLabel === '메모 본문',
+  );
+  assert.equal(body.props.editable, false);
 });

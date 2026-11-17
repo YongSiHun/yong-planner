@@ -1,8 +1,9 @@
+import { pruneMemoTrash } from '../../features/notes/services/trash';
 import { emptyData, type PlannerData } from '../../features/planner/types';
 import { validateData } from './validation';
 
 export function createNotesBackup(data: PlannerData): string {
-  const validated = validateData(data);
+  const validated = pruneMemoTrash(validateData(data));
 
   return JSON.stringify(
     {

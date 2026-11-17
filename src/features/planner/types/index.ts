@@ -38,6 +38,7 @@ export interface Settings {
   timeFormat?: TimeFormat;
 }
 export interface Memo {
+  deletedAt?: string;
   id: string;
   title?: string;
   content: string;

@@ -1,5 +1,6 @@
+import { useEditingActions } from '../hooks/useEditingActions';
+import { useEffect, useCallback, useMemo, useState } from 'react';
 import { useNotificationDate } from '../hooks/useNotificationDate';
-import { useCallback, useMemo, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, report, showDialog, useTheme } from '../../../components/ui';
@@ -50,13 +51,15 @@ export default function PlannerScreen() {
     useInlineKeyboard(scrollRef, month.slice(0, 7));
   const guide = usePlannerGuide();
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
-  const [editingDate, setEditingDate] = useState<string | null>(null);
+  const { closePlannerEditor } = useEditingActions();
+
+  useEffect(() => closePlannerEditor, [closePlannerEditor]);
   const [menu, setMenu] = useState<PlannerMenuType | null>(null);
   const dates = useMemo(() => monthDates(month), [month]);
   const beginSelection = useCallback(() => {
     Keyboard.dismiss();
-    setEditingDate(null);
-  }, []);
+    closePlannerEditor();
+  }, [closePlannerEditor]);
   const selection = useNoteSelection(beginSelection);
   const { clear: clearSelection } = selection;
   const dismissSelection = useCallback(() => {
@@ -67,13 +70,6 @@ export default function PlannerScreen() {
       clearSelection();
     }
   }, [clearSelection]);
-  const handleEditDate = useCallback((date: string) => {
-    setEditingDate(date);
-  }, []);
-
-  const finishEditing = useCallback((date: string) => {
-    setEditingDate((current) => (current === date ? null : current));
-  }, []);
 
   function handleRetrySave() {
     void flush().catch(report);
@@ -165,7 +161,6 @@ export default function PlannerScreen() {
                   holidays={holidays}
                   timeFormat={timeFormat}
                   isToday={date === currentDate}
-                  isEditing={editingDate === date}
                   selectedIds={selection.selectedByDate.get(date) ?? NO_SELECTED_IDS}
                   selecting={selection.selectedByDate.has(date)}
                   copying={selection.copySource !== undefined}
@@ -174,8 +169,6 @@ export default function PlannerScreen() {
                   onCopyDate={selection.toggleCopyDate}
                   onSelect={selection.toggle}
                   onOutsidePress={dismissSelection}
-                  onEdit={handleEditDate}
-                  onFinish={finishEditing}
                   onMeasure={handleMeasure}
                   onInputFocus={handleInputFocus}
                   onInputLayout={scheduleReveal}
@@ -200,7 +193,7 @@ export default function PlannerScreen() {
               onCloseMonth={() => setMonthPickerOpen(false)}
               onChooseMonth={(date) => {
                 Keyboard.dismiss();
-                setEditingDate(null);
+                closePlannerEditor();
                 setMonthPickerOpen(false);
                 showDate(date);
               }}

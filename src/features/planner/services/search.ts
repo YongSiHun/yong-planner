@@ -1,3 +1,5 @@
+import { memoExpired } from '../../notes/services/trash';
+import { memoFields } from '../../notes/services/memo';
 import type { HolidayService } from '../../../services/holiday';
 import type { DailyPlanItem, PlannerData, RecurringPlan, RecurringPlanException } from '../types';
 import { recurringEntry } from './recurrence';
@@ -7,7 +9,8 @@ export interface SearchResult {
   date: string;
   content: string;
   time: string | null;
-  kind: 'daily' | 'recurring' | 'exception';
+  kind: 'daily' | 'recurring' | 'exception' | 'memo' | 'trash';
+  memoId?: string;
   recurringId?: string;
   endDate?: string | null;
 }
@@ -32,7 +35,22 @@ export function searchPlans(
     .flatMap((exception) => exceptionResult(exception, plans, holidays))
     .filter((result) => matches(result.content));
 
-  return [...daily, ...recurring, ...exceptions].sort(compareResults);
+  const memos: SearchResult[] = (data.memos ?? [])
+    .filter((memo) => !memoExpired(memo) && matches((memo.title ?? '') + '\n' + memo.content))
+    .map((memo) => {
+      const fields = memoFields(memo);
+
+      return {
+        key: 'memo:' + memo.id,
+        date: memo.updatedAt.slice(0, 10),
+        content: [fields.title, fields.body].filter(Boolean).join('\n'),
+        time: null,
+        kind: memo.deletedAt ? 'trash' : 'memo',
+        memoId: memo.id,
+      };
+    });
+
+  return [...daily, ...recurring, ...exceptions, ...memos].sort(compareResults);
 }
 
 function dailyResult(item: DailyPlanItem): SearchResult {
@@ -98,7 +116,8 @@ export function groupSearchResults(results: SearchResult[]) {
   const groups = new Map<string, SearchResult[]>();
 
   results.forEach((result) => {
-    const month = result.date.slice(0, 7);
+    const isMemo = result.kind === 'memo' || result.kind === 'trash';
+    const month = isMemo ? '메모' : result.date.slice(0, 7);
     const items = groups.get(month) ?? [];
 
     items.push(result);

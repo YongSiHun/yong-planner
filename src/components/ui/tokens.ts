@@ -19,6 +19,7 @@ export const design = {
     previewRows: 4,
   },
   icon: { header: 20 },
+  floatingActionSize: 56,
   controlHeight: 48,
   touchTarget: 44,
   rowMinHeight: 38,

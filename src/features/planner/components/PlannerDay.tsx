@@ -1,3 +1,5 @@
+import { usePlannerEditing } from '../../../stores/plannerEditing';
+import { useEditingActions } from '../hooks/useEditingActions';
 import { memo, useMemo } from 'react';
 import type { HolidayService } from '../../../services/holiday';
 import { usePlanner } from '../../../stores/planner';
@@ -11,9 +13,20 @@ type ModelKeys = 'note' | 'noteIds' | 'noteTimes' | 'recurring' | 'exceptions' |
 export const PlannerDay = memo(function PlannerDay({
   holidays,
   ...props
-}: Omit<DayProps, ModelKeys> & { holidays: HolidayService }) {
+}: Omit<DayProps, ModelKeys | 'isEditing' | 'onEdit' | 'onFinish'> & { holidays: HolidayService }) {
   const selectDay = useMemo(() => createDaySelector(props.date, holidays), [props.date, holidays]);
   const day = usePlanner((state) => selectDay(state.data));
 
-  return <DayRow {...props} {...day} />;
+  const isEditing = usePlannerEditing((state) => state.date === props.date);
+  const { editPlannerDate, finishPlannerDate } = useEditingActions();
+
+  return (
+    <DayRow
+      {...props}
+      {...day}
+      isEditing={isEditing}
+      onEdit={editPlannerDate}
+      onFinish={finishPlannerDate}
+    />
+  );
 });

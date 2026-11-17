@@ -19,8 +19,8 @@ export default function SearchScreen() {
         <View style={styles.searchBox}>
           <Input
             autoFocus
-            accessibilityLabel="일정 검색어"
-            placeholder="모든 달의 일정 검색"
+            accessibilityLabel="일정과 메모 검색어"
+            placeholder="일정과 메모 검색 (휴지통 포함)"
             value={state.query}
             onChangeText={state.setQuery}
             returnKeyType="search"
@@ -35,7 +35,9 @@ export default function SearchScreen() {
           contentContainerStyle={styles.list}
           stickySectionHeadersEnabled
           renderSectionHeader={({ section }) => (
-            <Label style={styles.month(theme)}>{monthLabel(`${section.month}-01`)}</Label>
+            <Label style={styles.month(theme)}>
+              {section.month === '메모' ? '메모 · 휴지통' : monthLabel(`${section.month}-01`)}
+            </Label>
           )}
           renderItem={({ item }) => <ResultRow result={item} onPress={() => openResult(item)} />}
           ListEmptyComponent={<SearchEmpty hasQuery={state.hasQuery} searching={state.searching} />}
@@ -47,8 +49,7 @@ export default function SearchScreen() {
 
 function ResultRow({ result, onPress }: { result: SearchResult; onPress(): void }) {
   const theme = useTheme();
-  const isSeries = result.kind === 'recurring';
-  const date = isSeries ? `반복 · ${result.date} ~ ${result.endDate ?? '계속'}` : result.date;
+  const date = resultLabel(result);
   const time = result.time ? ` · ${result.time}` : '';
 
   return (
@@ -74,7 +75,7 @@ function ResultRow({ result, onPress }: { result: SearchResult; onPress(): void 
 
 function SearchEmpty({ hasQuery, searching }: { hasQuery: boolean; searching: boolean }) {
   const theme = useTheme();
-  const message = hasQuery ? '검색 결과가 없어요.' : '찾고 싶은 일정을 입력하세요.';
+  const message = hasQuery ? '검색 결과가 없어요.' : '찾고 싶은 일정이나 메모를 입력하세요.';
 
   return (
     <View style={styles.empty}>
@@ -82,4 +83,22 @@ function SearchEmpty({ hasQuery, searching }: { hasQuery: boolean; searching: bo
       <Label muted>{searching ? '검색 중…' : message}</Label>
     </View>
   );
+}
+
+function resultLabel(result: SearchResult) {
+  const isSeries = result.kind === 'recurring';
+  const isMemo = result.kind === 'memo' || result.kind === 'trash';
+
+  if (isSeries) {
+    return '반복 · ' + result.date + ' ~ ' + (result.endDate ?? '계속');
+  }
+  if (isMemo) {
+    return memoResultLabel(result);
+  }
+
+  return result.date;
+}
+
+function memoResultLabel(result: SearchResult) {
+  return (result.kind === 'trash' ? '휴지통 · ' : '메모 · ') + result.date;
 }

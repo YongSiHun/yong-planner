@@ -4,7 +4,7 @@ const { beforeEach, test } = require('node:test');
 const React = require('react');
 const { createModuleMock } = require('../support/mock-module.cjs');
 const mock = createModuleMock(require);
-let slots, cursor, dialog, reported, deleted, fail, store;
+let slots, cursor, dialog, reported, deleted, restored, fail, store;
 mock('react', {
   ...React,
   useState(initial) {
@@ -38,6 +38,10 @@ mock('../../src/features/notes/hooks/useMemoActions.ts', {
       if (fail) throw Error('write failed');
       deleted = [...ids];
     },
+    restoreMemos: async (ids) => {
+      if (fail) throw Error('restore failed');
+      restored = [...ids];
+    },
     saveMemo: async () => {
       if (fail) throw Error('write failed');
     },
@@ -55,7 +59,7 @@ async function confirmDelete() {
 beforeEach(() => {
   slots = [];
   cursor = 0;
-  dialog = reported = deleted = undefined;
+  dialog = reported = deleted = restored = undefined;
   fail = false;
   store = {
     ready: true,
@@ -166,4 +170,52 @@ test('failed editor deletion reports the error and retains the open draft', asyn
   assert.match(reported.message, /write failed/);
   assert.equal(render().editing.id, 'a');
   assert.equal(render().content, '수정 중 본문');
+});
+
+test('list menu opens trash, clears selection, and lists only retained deleted memos', () => {
+  const trash = {
+    id: 'trash',
+    title: '삭제한 메모',
+    content: '내용',
+    updatedAt: new Date().toISOString(),
+    deletedAt: new Date().toISOString(),
+  };
+  store.data.memos.push(trash, { ...trash, id: 'expired', deletedAt: '2020-01-01T00:00:00Z' });
+  assert.equal(render().memos.length, 3);
+  render().toggleSelection('a');
+  render().openListMenu();
+  assert.equal(render().listMenuOpen, true);
+  render().openTrash();
+  assert.equal(render().listMenuOpen, false);
+  assert.equal(render().trashOpen, true);
+  assert.equal(render().selecting, false);
+  assert.deepEqual(render().memos, [trash]);
+  render().closeTrash();
+  assert.equal(render().trashOpen, false);
+  assert.equal(render().memos.length, 3);
+});
+
+test('trash supports individual and bulk restore and a failed restore keeps its preview', async () => {
+  const trash = {
+    id: 'trash',
+    title: '제목',
+    content: '본문',
+    updatedAt: new Date().toISOString(),
+    deletedAt: new Date().toISOString(),
+  };
+  store.data.memos.push(trash);
+  render().openTrash();
+  render().open(trash);
+  fail = true;
+  await render().run(render().restore);
+  assert.equal(render().editing.id, 'trash');
+  assert.match(reported.message, /restore failed/);
+  fail = false;
+  await render().run(render().restore);
+  assert.deepEqual(restored, ['trash']);
+  assert.equal(render().editing, undefined);
+  render().toggleSelection('trash');
+  await render().run(render().restore);
+  assert.deepEqual(restored, ['trash']);
+  assert.equal(render().selecting, false);
 });

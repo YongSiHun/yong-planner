@@ -222,3 +222,26 @@ test('blur followed by unmount does not save the same edit twice', () => {
   for (const slot of state.slots) slot?.cleanup?.();
   assert.equal(state.flushes, 1);
 });
+
+test('rapid chip splits and chip switches keep the native editor under one stable sibling key', () => {
+  let editor = renderInput('', 0);
+  const inputRef = editor.input.props.ref;
+  for (const text of ['첫째,', boundary + '둘째,', boundary + '셋째']) {
+    changeInput(editor.input, text);
+    editor = renderInput('', 0);
+    assert.equal(editor.input.key, 'active-input');
+    assert.equal(editor.input.props.ref, inputRef);
+    const flow = editor.tree.props.children.find(Array.isArray);
+    assert.ok(flow.includes(editor.input));
+    assert.equal(new Set(flow.map((node) => node.key)).size, flow.length);
+  }
+  const chip = find(
+    editor.tree,
+    (node) => node.type?.name === 'ScheduleChip' && node.props.content === '첫째',
+  );
+  chip.props.onPress();
+  editor = renderInput('', 0);
+  assert.equal(editor.input.key, 'active-input');
+  assert.equal(editor.input.props.value, '첫째');
+  assert.equal(state.flushes, 0, 'splitting must not blur or finalize the editor');
+});

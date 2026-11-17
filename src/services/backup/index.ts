@@ -1,3 +1,4 @@
+import { pruneMemoTrash } from '../../features/notes/services/trash';
 import { fitsUtf8Limit } from '../../utils/utf8';
 import type { PlannerData } from '../../features/planner/types';
 import { backupMonth, monthData, type PlannerBackup } from './month';
@@ -20,7 +21,7 @@ export function parseBackup(json: string): PlannerBackup {
   ensureValid(isSupportedVersion, '지원하지 않는 백업 버전입니다.');
   readTimestamp(root.exportedAt);
 
-  const data = validateData(root);
+  const data = pruneMemoTrash(validateData(root));
   const isMonthly = root.version === 5;
 
   ensureValid(isMonthly || root.month === undefined, '지원하지 않는 월별 백업 형식입니다.');
@@ -43,7 +44,7 @@ function backupContent(
 }
 
 export function createBackup(data: PlannerData, month?: string): string {
-  const validated = validateData(data);
+  const validated = pruneMemoTrash(validateData(data));
   const content = month === undefined ? validated : monthData(validated, month);
   const backup = {
     version: month === undefined ? 6 : 5,
