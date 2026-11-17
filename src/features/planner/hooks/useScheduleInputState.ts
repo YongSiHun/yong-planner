@@ -15,7 +15,7 @@ import {
 import { NoteInputEvents } from '../services/noteInputEvents';
 import type { ScheduleInputProps } from '../types/presentation';
 import { useInputCaret } from './useInputCaret';
-import { useInputGeometry } from './useInputGeometry';
+import { useNativeInputBuffer } from './useNativeInputBuffer';
 import { usePlannerActions } from './usePlannerActions';
 
 export function useScheduleInputState({
@@ -48,15 +48,13 @@ export function useScheduleInputState({
     initialNoteEdit(noteEditText(note, noteTimes), initialIndex, initialSlot),
   );
   const currentEdit = useRef(edit);
+  const {
+    value: nativeValue,
+    defaultValue: initialValue,
+    accept,
+    replace,
+  } = useNativeInputBuffer(noteInputValue(edit));
   const inputEvents = useRef(new NoteInputEvents(showToast));
-  const parts = edit.text.split(NOTE_SEPARATOR);
-  const content = parts[edit.index]!;
-  const getContent = useCallback(() => currentContent(currentEdit.current), []);
-  const { resize, ...geometry } = useInputGeometry({
-    content,
-    initiallyEmpty: edit.text.length === 0,
-    getContent,
-  });
   const releaseCaret = useCallback((current: NoteEdit) => {
     const next = { ...current, caret: undefined };
 
@@ -73,27 +71,42 @@ export function useScheduleInputState({
     onLayout: onInputLayout,
   });
 
-  function applyEdit(next: NoteEdit, persist = true) {
-    const changedIndex =
-      next.index !== currentEdit.current.index ||
-      currentContent(currentEdit.current).trim().length === 0;
+  const applyEdit = useCallback(
+    (next: NoteEdit, persist = true) => {
+      const current = currentEdit.current;
+      const changedStructure = next.index !== current.index || current.caret !== undefined;
 
-    resize(currentContent(next), changedIndex);
-    currentEdit.current = next;
-    setEdit(next);
-    if (persist) {
-      finalized.current = false;
-      stageDailyNote(date, next.text, true);
-    }
-  }
+      currentEdit.current = next;
+      if (changedStructure) {
+        setEdit(next);
+      }
+      if (persist) {
+        finalized.current = false;
+        stageDailyNote(date, next.text, true);
+      }
+    },
+    [date, stageDailyNote],
+  );
 
   function handleChange(event: TextInputChangeEvent) {
     const { text, eventCount } = event.nativeEvent;
     const next = inputEvents.current.change(currentEdit.current, text, eventCount);
-    const hasChange = next !== null;
+    const ignored = next === null;
 
-    if (hasChange) {
-      applyEdit(next);
+    if (ignored) {
+      restoreRejectedInput();
+
+      return;
+    }
+    accept(text, noteInputValue(next));
+    applyEdit(next);
+  }
+
+  function restoreRejectedInput() {
+    const rejected = inputEvents.current.rejected;
+
+    if (rejected) {
+      replace(noteInputValue(currentEdit.current));
     }
   }
 
@@ -103,35 +116,45 @@ export function useScheduleInputState({
     onBlur();
   }
 
-  function selectEdit(next: NoteEdit) {
-    resize(currentContent(next), true);
-    inputEvents.current.select(noteInputValue(currentEdit.current), noteInputValue(next));
-    applyEdit(next, false);
-  }
+  const selectEdit = useCallback(
+    (next: NoteEdit) => {
+      inputEvents.current.select(noteInputValue(currentEdit.current), noteInputValue(next));
+      replace(noteInputValue(next));
+      currentEdit.current = next;
+      setEdit(next);
+    },
+    [replace],
+  );
+  const handlePartPress = useCallback(
+    (index: number) => {
+      const next = selectNotePart(currentEdit.current, index);
 
-  function handlePartPress(index: number) {
-    const next = selectNotePart(currentEdit.current, index);
-
-    selectEdit(next);
-    onEditPart(next.index);
-  }
+      selectEdit(next);
+      onEditPart(next.index);
+    },
+    [selectEdit, onEditPart],
+  );
+  const insertAt = useCallback(
+    (boundary: number) => selectEdit(insertNoteSlot(currentEdit.current, boundary)),
+    [selectEdit],
+  );
+  const handleLongPress = useCallback(
+    (index: number) => onSelect(storedNoteIndex(currentEdit.current, index), true),
+    [onSelect],
+  );
 
   return {
     edit,
-    parts,
-    content,
-    ...geometry,
+    parts: edit.text.split(NOTE_SEPARATOR),
+    nativeValue,
+    initialValue,
     ...caret,
     handleChange,
     handleBlur,
-    insertAt: (boundary: number) => selectEdit(insertNoteSlot(currentEdit.current, boundary)),
+    insertAt,
     handlePartPress,
-    handleLongPress: (index: number) => onSelect(storedNoteIndex(currentEdit.current, index), true),
+    handleLongPress,
   };
-}
-
-function currentContent(edit: NoteEdit): string {
-  return edit.text.split(NOTE_SEPARATOR)[edit.index] ?? '';
 }
 
 function initialNoteEdit(

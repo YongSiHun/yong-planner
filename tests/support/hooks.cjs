@@ -6,6 +6,7 @@ function createHookHarness() {
   let cursor = 0;
   let effects = [];
   let layouts = [];
+  let stateWrites = 0;
   const changed = (before, after) =>
     !after || !before || after.some((value, i) => !Object.is(value, before[i]));
   const flush = (queue) => queue.splice(0).forEach((effect) => effect());
@@ -15,6 +16,7 @@ function createHookHarness() {
     slots[index] ??= { value: typeof initial === 'function' ? initial() : initial };
     const slot = slots[index];
     slot.set ??= (next) => {
+      stateWrites++;
       slot.value = typeof next === 'function' ? next(slot.value) : next;
     };
     return [slot.value, slot.set];
@@ -69,6 +71,7 @@ function createHookHarness() {
       useLayoutEffect: (callback, deps) => effect(layouts, callback, deps),
     },
     beginRender,
+    getStateWrites: () => stateWrites,
     flushLayoutEffects,
     flushEffects,
     unmount,

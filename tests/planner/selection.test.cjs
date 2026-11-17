@@ -76,7 +76,7 @@ test('an unsaved cursor slot does not shift the ID selected by long press', () =
   assert.deepEqual(selected, [[1, true]]);
   chip.props.onPress();
   editor = renderInput('회의,장보기', 0, onSelect);
-  assert.equal(editor.input.props.value, boundary + '장보기');
+  assert.equal(state.nativeText, boundary + '장보기');
   assert.deepEqual(state.saved, []);
 });
 

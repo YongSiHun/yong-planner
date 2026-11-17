@@ -7,6 +7,8 @@ type Transition = { kind: 'split' | 'merge' | 'select'; before: string; after: s
 export class NoteInputEvents {
   constructor(private onInvalid: (message: string) => void = () => {}) {}
 
+  rejected = false;
+
   private eventCount = -1;
   private lastRaw: string | null = null;
   private transition: Transition | null = null;
@@ -21,6 +23,7 @@ export class NoteInputEvents {
   }
 
   change(edit: NoteEdit, raw: string, eventCount: number): NoteEdit | null {
+    this.rejected = false;
     const canProcess = this.canProcess(raw, eventCount);
 
     if (!canProcess) {
@@ -39,6 +42,7 @@ export class NoteInputEvents {
     const exceedsLimit = error !== null && next.text.length >= edit.text.length;
 
     if (exceedsLimit) {
+      this.rejected = true;
       this.onInvalid(error);
 
       return null;

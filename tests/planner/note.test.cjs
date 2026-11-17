@@ -202,3 +202,10 @@ test('finishing input removes edge spaces and empty chips while preserving IDs, 
   assert.deepEqual(empty.dailyPlanItems, []);
   assert.deepEqual(empty.dailyPlanOrders[0].itemIds, []);
 });
+
+test('multiline chips retain their line breaks through save and reopening', () => {
+  const text = '회의\n안건 정리,운동';
+  const data = applyDailyNote(emptyData(), date, text, createId);
+  assert.deepEqual(read(data), ['회의\n안건 정리', '운동']);
+  assert.equal(applyDailyNote(data, date, text, createId), data);
+});

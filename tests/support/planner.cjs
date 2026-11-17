@@ -2,6 +2,7 @@ const { find } = require('./tree.cjs');
 const { createModuleMock } = require('./mock-module.cjs');
 require('./register.cjs');
 const state = {};
+const noop = () => {};
 
 function createSelection() {
   return {
@@ -26,6 +27,7 @@ const { applyDailyNote } = require('../../src/features/planner/services/note.ts'
 const { deleteSelectedNotes } = require('../../src/features/planner/services/noteSelection.ts');
 
 function changeInput(input, text, eventCount = ++state.nativeEventCount) {
+  state.nativeText = text;
   input.props.onChange({ nativeEvent: { text, eventCount } });
 }
 
@@ -194,23 +196,29 @@ const { SchedulePreview } = require('../../src/features/planner/components/Sched
 const { ScheduleChip } = require('../../src/features/planner/components/ScheduleChip.tsx');
 
 const { usePlannerGuide } = require('../../src/features/planner/hooks/usePlannerGuide.ts');
+
 const { NOTE_INPUT_BOUNDARY: boundary } = require('../../src/features/planner/services/note.ts');
 
-function renderInput(note = '회의,장보기', initialIndex, onSelect = () => {}, options = {}) {
+function renderInput(note = '회의,장보기', initialIndex, onSelect = noop, options = {}) {
   hooks.beginRender();
   const tree = ScheduleInput({
     date: '2026-11-07',
     note,
     initialIndex,
     onSelect,
-    onBlur() {},
-    onEditPart() {},
-    onInputFocus() {},
-    onInputLayout() {},
+    onBlur: noop,
+    onEditPart: noop,
+    onInputFocus: noop,
+    onInputLayout: noop,
     ...options,
   });
   const input = find(tree, (node) => node.type === 'TextInput');
   input.props.ref.current = nativeInput;
+  if (state.nativeText === undefined) state.nativeText = input.props.defaultValue ?? '';
+  if (input.props.value !== undefined) {
+    state.nativeWrites.push(input.props.value);
+    state.nativeText = input.props.value;
+  }
   hooks.flushLayoutEffects();
   hooks.flushEffects();
   return { tree, input };
@@ -229,6 +237,8 @@ beforeEach(() => {
   state.alarmPermissionRequests = 0;
   state.alarmPermissionError = null;
   hooks.beginRender();
+  state.nativeText = undefined;
+  state.nativeWrites = [];
   state.saved = [];
   state.flushes = 0;
   state.focused = 0;

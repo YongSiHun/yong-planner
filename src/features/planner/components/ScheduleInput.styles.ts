@@ -6,56 +6,28 @@ export function field(theme: Theme) {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'flex-start',
-    gap: 4,
-    padding: 4,
-    marginVertical: 3,
+    gap: design.space.xs,
+    padding: design.space.xs,
     minHeight: design.touchTarget,
-    borderWidth: 1,
-    borderColor: theme.accent,
-    borderRadius: design.radius.small,
     backgroundColor: theme.selected,
+    borderRadius: design.radius.small,
   } as const;
 }
 
-export function measurement(availableWidth: number) {
-  return {
-    position: 'absolute',
-    opacity: 0,
-    maxWidth: Math.max(1, availableWidth - 18),
-    includeFontPadding: false,
-    fontFamily: design.font.regular,
-    fontSize: design.type.body,
-    lineHeight: design.lineHeight,
-  } as const;
-}
-
-export function input(
-  theme: Theme,
-  height: number,
-  maximumHeight: number,
-  inputWidth: number,
-  hasContent = false,
-) {
+export function input(theme: Theme) {
   return {
     fontFamily: design.font.regular,
     fontSize: design.type.body,
     lineHeight: design.lineHeights.body,
-    includeFontPadding: false,
+    includeFontPadding: true,
     color: theme.text,
     borderWidth: 1,
-    borderColor: hasContent ? theme.line : 'transparent',
-    borderRadius: design.radius.pill,
-    backgroundColor: hasContent ? theme.bg : 'transparent',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    height: Math.min(height, maximumHeight),
-    minHeight: design.lineHeight + design.space.sm,
-    width: inputWidth,
-    minWidth: 30,
-    maxWidth: '100%',
-    flexGrow: 0,
-    flexShrink: 1,
+    borderColor: theme.accent,
+    borderRadius: design.radius.medium,
+    backgroundColor: theme.bg,
+    padding: design.space.md,
+    marginVertical: design.space.xs,
+    height: design.lineHeights.body * 4 + design.space.md * 2 + 2,
+    width: '100%',
   } as const;
 }
-export { chip, importantMark, chipLabel, chipEdge } from './ScheduleChip.styles';
-export { emptyPreview, preview, chipWrapper } from './SchedulePreview.styles';

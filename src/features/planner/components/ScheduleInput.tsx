@@ -1,12 +1,12 @@
-import { Pressable, Text, TextInput } from 'react-native';
+import { Pressable, TextInput } from 'react-native';
 import { useTheme } from '../../../components/ui';
 import { useScheduleInputState } from '../hooks/useScheduleInputState';
-import { noteInputValue, storedNoteIndex } from '../services/note';
+import { storedNoteIndex } from '../services/note';
 import type { ScheduleInputProps } from '../types/presentation';
 import * as styles from './ScheduleInput.styles';
 import { ScheduleChip } from './ScheduleChip';
 
-const PLACEHOLDER = '일정을 입력하세요. 쉼표(,)나 엔터로 나눌 수 있어요.';
+const PLACEHOLDER = '일정을 입력하세요. 쉼표(,)로 나누고 엔터로 줄바꿈해요.';
 
 export function ScheduleInput({
   date,
@@ -26,22 +26,17 @@ export function ScheduleInput({
   const theme = useTheme();
   const {
     edit,
+    nativeValue,
+    initialValue,
     parts,
-    content,
     input,
-    availableWidth,
     requestedSelection,
-    height,
-    maximumHeight,
-    inputWidth,
     handleChange,
     handleSelection,
     handleBlur,
     insertAt,
     handlePartPress,
     handleLongPress,
-    handleTextLayout,
-    handleFlowLayout,
   } = useScheduleInputState({
     date,
     note,
@@ -81,12 +76,14 @@ export function ScheduleInput({
       key="active-input"
       ref={input}
       multiline
+      submitBehavior="newline"
       autoFocus
       autoCorrect={false}
       spellCheck={false}
       autoCapitalize="none"
       smartInsertDelete={false}
-      value={noteInputValue(edit)}
+      defaultValue={initialValue}
+      value={nativeValue}
       onChange={handleChange}
       selection={requestedSelection}
       onSelectionChange={handleSelection}
@@ -94,16 +91,15 @@ export function ScheduleInput({
       onBlur={handleBlur}
       onLayout={onInputLayout}
       accessibilityLabel={date + ' 일정 입력'}
-      accessibilityHint="쉼표나 엔터를 입력하면 일정이 나뉘어요."
-      placeholder={edit.text.length === 0 ? PLACEHOLDER : undefined}
+      accessibilityHint="쉼표로 새 칩을 만들고 엔터로 줄바꿈해요."
+      placeholder={PLACEHOLDER}
       placeholderTextColor={theme.muted}
       selectionColor={theme.accent}
       cursorColor={theme.accent}
       underlineColorAndroid="transparent"
       textAlignVertical="top"
-      scrollEnabled={height > maximumHeight}
-      onContentSizeChange={onInputLayout}
-      style={styles.input(theme, height, maximumHeight, inputWidth, content.trim().length > 0)}
+      scrollEnabled
+      style={styles.input(theme)}
     />
   );
 
@@ -111,19 +107,8 @@ export function ScheduleInput({
     <Pressable
       accessible={false}
       onPress={() => input.current?.focus()}
-      onLayout={handleFlowLayout}
       style={styles.field(theme)}
     >
-      <Text
-        accessible={false}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        pointerEvents="none"
-        onTextLayout={handleTextLayout}
-        style={styles.measurement(availableWidth)}
-      >
-        {edit.text.length === 0 ? PLACEHOLDER : content || ' '}
-      </Text>
       {/* Native 입력 유지: 칩 전환 시 재마운트 방지. */}
       {[
         ...parts.slice(0, edit.index).map(renderChip),

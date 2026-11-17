@@ -13,8 +13,8 @@ export function noteLengthError(value: string): string | null {
   return tooLong ? SCHEDULE_LENGTH_MESSAGE : null;
 }
 
-export function normalizeNoteSeparators(value: string): string {
-  return value.replace(/\r\n|[\r\n]/g, ',');
+export function normalizeScheduleLineEndings(value: string): string {
+  return value.replace(/\r\n?/g, '\n');
 }
 
 export function ensureScheduleLength(value: string): void {
