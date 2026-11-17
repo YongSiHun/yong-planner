@@ -2,34 +2,36 @@ import type { DayRowProps } from '../types/presentation';
 
 function sameItems<T>(before: T[], after: T[], keys: (keyof T)[]): boolean {
   return (
-    before.length === after.length &&
-    before.every((item, index) => keys.every((key) => item[key] === after[index]![key]))
+    before === after ||
+    (before.length === after.length &&
+      before.every((item, index) => keys.every((key) => item[key] === after[index]![key])))
   );
 }
 
+const VALUE_KEYS = [
+  'date',
+  'note',
+  'timeFormat',
+  'selectedIds',
+  'selecting',
+  'copying',
+  'copyTarget',
+  'copySourceDate',
+  'onCopyDate',
+  'onSelect',
+  'onOutsidePress',
+  'holidayName',
+  'isToday',
+  'isEditing',
+  'onEdit',
+  'onFinish',
+  'onMeasure',
+  'onInputFocus',
+  'onInputLayout',
+] as const;
+
 export function areDayRowsEqual(before: DayRowProps, after: DayRowProps): boolean {
-  const keys = [
-    'date',
-    'note',
-    'timeFormat',
-    'selectedIds',
-    'selecting',
-    'copying',
-    'copyTarget',
-    'copySourceDate',
-    'onCopyDate',
-    'onSelect',
-    'onOutsidePress',
-    'holidayName',
-    'isToday',
-    'isEditing',
-    'onEdit',
-    'onFinish',
-    'onMeasure',
-    'onInputFocus',
-    'onInputLayout',
-  ] as const;
-  const sameValues = keys.every((key) => before[key] === after[key]);
+  const sameValues = VALUE_KEYS.every((key) => before[key] === after[key]);
   const sameRecurring = sameItems(before.recurring, after.recurring, [
     'id',
     'sourceId',

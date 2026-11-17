@@ -11,7 +11,6 @@ export const preview = {
   flexWrap: 'wrap',
   gap: 6,
   paddingVertical: 4,
-  minHeight: design.rowMinHeight,
 } as const;
 
 export function chipWrapper(draggingIndex: number | null | undefined, index: number) {

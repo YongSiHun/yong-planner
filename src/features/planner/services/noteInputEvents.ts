@@ -1,3 +1,4 @@
+import { commonPrefixLength, commonSuffixLength } from '../../../utils/textChange';
 import { noteLengthError } from '../../../services/schedule';
 import { changeNoteInput, noteInputValue, type NoteEdit } from './note';
 
@@ -140,26 +141,4 @@ function editSpanSize(before: string, after: string): number {
   const suffix = commonSuffixLength(before, after, prefix);
 
   return before.length + after.length - 2 * (prefix + suffix);
-}
-
-function commonPrefixLength(before: string, after: string): number {
-  const maximum = Math.min(before.length, after.length);
-  let length = 0;
-
-  while (length < maximum && before[length] === after[length]) {
-    length++;
-  }
-
-  return length;
-}
-
-function commonSuffixLength(before: string, after: string, prefix: number): number {
-  const maximum = Math.min(before.length, after.length) - prefix;
-  let length = 0;
-
-  while (length < maximum && before.at(-length - 1) === after.at(-length - 1)) {
-    length++;
-  }
-
-  return length;
 }

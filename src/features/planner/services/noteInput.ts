@@ -1,3 +1,4 @@
+import { commonSuffixLength } from '../../../utils/textChange';
 import { normalizeScheduleLineEndings } from '../../../services/schedule';
 import { NOTE_SEPARATOR } from './noteText';
 
@@ -8,42 +9,24 @@ export interface NoteEdit {
   draftSlot?: boolean;
 }
 
-function sharedPrefixLength(before: string, after: string): number {
-  let length = 0;
-  const maximum = Math.min(before.length, after.length);
-
-  while (length < maximum && before[length] === after[length]) {
-    length++;
-  }
-
-  return length;
-}
-
-function sharedSuffixLength(before: string, after: string): number {
-  let length = 0;
-  const maximum = Math.min(before.length, after.length) - sharedPrefixLength(before, after);
-
-  while (
-    length < maximum &&
-    before[before.length - length - 1] === after[after.length - length - 1]
-  ) {
-    length++;
-  }
-
-  return length;
-}
-
 export function replaceNotePart(text: string, index: number, value: string): NoteEdit {
   const parts = text.split(NOTE_SEPARATOR);
   const inserted = value.split(NOTE_SEPARATOR);
-  const suffix = sharedSuffixLength(parts[index] ?? '', value);
   const hasSeparator = inserted.length > 1;
   const caret = hasSeparator
-    ? Math.max(0, value.length - suffix - value.lastIndexOf(NOTE_SEPARATOR) - 1)
+    ? Math.max(
+        0,
+        value.length -
+          commonSuffixLength(parts[index] ?? '', value) -
+          value.lastIndexOf(NOTE_SEPARATOR) -
+          1,
+      )
     : undefined;
 
+  parts.splice(index, 1, ...inserted);
+
   return {
-    text: [...parts.slice(0, index), ...inserted, ...parts.slice(index + 1)].join(NOTE_SEPARATOR),
+    text: parts.join(NOTE_SEPARATOR),
     index: index + inserted.length - 1,
     caret,
   };
@@ -79,11 +62,9 @@ export function changeNoteInput(edit: NoteEdit, value: string): NoteEdit {
   const keepsBoundary = value.startsWith(NOTE_INPUT_BOUNDARY);
   const content = normalizeScheduleLineEndings(value.replaceAll(NOTE_INPUT_BOUNDARY, ''));
 
-  if (!hasBoundary) {
-    return replaceNotePart(edit.text, edit.index, content);
-  }
+  const replacesPart = !hasBoundary || keepsBoundary;
 
-  if (keepsBoundary) {
+  if (replacesPart) {
     return replaceNotePart(edit.text, edit.index, content);
   }
 

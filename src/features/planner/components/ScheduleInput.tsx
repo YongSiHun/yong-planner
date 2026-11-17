@@ -1,12 +1,13 @@
 import { Pressable, TextInput } from 'react-native';
 import { useTheme } from '../../../components/ui';
 import { useScheduleInputState } from '../hooks/useScheduleInputState';
+import { useInputHeight } from '../hooks/useInputHeight';
 import { storedNoteIndex } from '../services/note';
 import type { ScheduleInputProps } from '../types/presentation';
 import * as styles from './ScheduleInput.styles';
 import { ScheduleChip } from './ScheduleChip';
 
-const PLACEHOLDER = '일정을 입력하세요. 쉼표(,)로 나누고 엔터로 줄바꿈해요.';
+const PLACEHOLDER = '일정 입력';
 
 export function ScheduleInput({
   date,
@@ -24,6 +25,7 @@ export function ScheduleInput({
   onInputLayout,
 }: ScheduleInputProps) {
   const theme = useTheme();
+  const { height, handleContentSize } = useInputHeight();
   const {
     edit,
     nativeValue,
@@ -98,17 +100,14 @@ export function ScheduleInput({
       cursorColor={theme.accent}
       underlineColorAndroid="transparent"
       textAlignVertical="top"
-      scrollEnabled
-      style={styles.input(theme)}
+      scrollEnabled={false}
+      onContentSizeChange={handleContentSize}
+      style={styles.input(theme, height)}
     />
   );
 
   return (
-    <Pressable
-      accessible={false}
-      onPress={() => input.current?.focus()}
-      style={styles.field(theme)}
-    >
+    <Pressable accessible={false} onPress={() => input.current?.focus()} style={styles.field}>
       {/* Native 입력 유지: 칩 전환 시 재마운트 방지. */}
       {[
         ...parts.slice(0, edit.index).map(renderChip),

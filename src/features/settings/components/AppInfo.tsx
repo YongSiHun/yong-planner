@@ -6,9 +6,9 @@ import {
 } from '../../../components/ui/settings.styles';
 import Constants from 'expo-constants';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Linking, View } from 'react-native';
 import fontNotice from '../../../../assets/fonts/NOTICE.json';
-import { Button, Label, design, useTheme } from '../../../components/ui';
+import { Button, Label, design, report, useTheme } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
 import * as styles from './AppInfo.styles';
 
@@ -27,6 +27,13 @@ export function AppInfo() {
           title={'용플래너 ' + version}
           accessibilityLabel={'용플래너 ' + version + ', 라이선스 정보 열기'}
           onPress={() => setLicenseOpen(true)}
+        />
+        <Button
+          labelSize={buttonLabelSize}
+          style={filledButton(theme)}
+          title="개발자 블로그"
+          accessibilityLabel="개발자 블로그, 브라우저에서 열기"
+          onPress={() => void Linking.openURL('https://2mukee.tistory.com/').catch(report)}
         />
       </View>
       {licenseOpen ? (

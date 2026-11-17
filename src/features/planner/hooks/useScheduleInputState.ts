@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TextInputChangeEvent } from 'react-native';
 import { report, showToast } from '../../../components/ui';
 import {
@@ -143,9 +143,11 @@ export function useScheduleInputState({
     [onSelect],
   );
 
+  const parts = useMemo(() => edit.text.split(NOTE_SEPARATOR), [edit.text]);
+
   return {
     edit,
-    parts: edit.text.split(NOTE_SEPARATOR),
+    parts,
     nativeValue,
     initialValue,
     ...caret,
