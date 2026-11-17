@@ -27,6 +27,7 @@ export const DayRow = memo(function DayRow({
   onCopyDate,
   onSelect,
   onOutsidePress,
+  onChipScrollLock,
   recurring,
   exceptions,
   holidayName,
@@ -109,20 +110,16 @@ export const DayRow = memo(function DayRow({
             date={date}
             note={note}
             noteTimes={noteTimes}
-            noteImportant={noteImportant}
-            noteAlarms={noteAlarms}
-            timeFormat={timeFormat}
             initialIndex={initialIndex}
             initialSlot={initialSlot}
-            onSelect={(index, begin) => onSelect(date, index, begin)}
             onBlur={handleBlur}
-            onEditPart={startEditing}
             onInputFocus={onInputFocus}
             onInputLayout={onInputLayout}
           />
         ) : (
           <DraggableSchedulePreview
             onMove={handleMove}
+            onScrollLock={onChipScrollLock}
             onOutsidePress={onOutsidePress}
             date={date}
             note={note}

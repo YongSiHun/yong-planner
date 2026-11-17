@@ -57,6 +57,7 @@ export interface DayRowProps {
   onCopyDate(date: string): void;
   onSelect(date: string, index: number, begin?: boolean): void;
   onOutsidePress?(): void;
+  onChipScrollLock?(locked: boolean): void;
   recurring: PlanEntry[];
   exceptions: RecurringPlanException[];
   holidayName: string | null;
@@ -74,13 +75,8 @@ export interface ScheduleInputProps {
   note: string;
   initialIndex?: number;
   noteTimes?: readonly (string | null)[];
-  noteImportant?: readonly boolean[];
-  noteAlarms?: readonly boolean[];
-  timeFormat?: TimeFormat;
   initialSlot?: number;
-  onSelect?(index: number, begin?: boolean): void;
   onBlur(): void;
-  onEditPart(index: number): void;
   onInputFocus(input: ComponentRef<typeof TextInput> | null): void;
   onInputLayout(): void;
 }

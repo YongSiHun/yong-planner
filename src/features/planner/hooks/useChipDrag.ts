@@ -8,6 +8,7 @@ export function useChipDrag(
   onMove: (from: number, boundary: number) => void,
   count: number,
   date: string,
+  onScrollLock?: (locked: boolean) => void,
 ) {
   const [snapshot, setSnapshot] = useState<ChipDragSnapshot>(null);
   const [session] = useState(
@@ -19,6 +20,12 @@ export function useChipDrag(
         return selected.size === 1 && selected.has(item?.id ?? '');
       }),
   );
+
+  useLayoutEffect(() => {
+    session.setOnScrollLock(onScrollLock);
+
+    return session.cancel;
+  }, [onScrollLock, session]);
 
   useLayoutEffect(() => {
     session.setOnMove(onMove);
@@ -38,5 +45,6 @@ export function useChipDrag(
     record: session.record,
     arm: session.arm,
     releaseArm: session.releaseArm,
+    cancel: session.cancel,
   };
 }

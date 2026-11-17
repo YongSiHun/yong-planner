@@ -6,10 +6,8 @@ const {
   SchedulePreview,
   SelectionBar,
   applyDailyNote,
-  boundary,
   buttonTitles,
   find,
-  renderInput,
   renderSelection,
   state,
 } = require('../support/planner.cjs');
@@ -57,27 +55,6 @@ test('selected schedules are deleted only after confirmation', () => {
   selection = renderSelection();
   selection.deleteSelected();
   assert.equal(state.plannerData.dailyPlanItems.length, 0);
-});
-
-test('an unsaved cursor slot does not shift the ID selected by long press', () => {
-  const selected = [];
-  const onSelect = (...args) => selected.push(args);
-  let editor = renderInput('회의,장보기', 0, onSelect);
-  find(
-    editor.tree,
-    (node) => node.type?.name === 'ScheduleChip' && node.props.content === '장보기',
-  ).props.onBefore();
-  editor = renderInput('회의,장보기', 0, onSelect);
-  const chip = find(
-    editor.tree,
-    (node) => node.type?.name === 'ScheduleChip' && node.props.content === '장보기',
-  );
-  chip.props.onLongPress();
-  assert.deepEqual(selected, [[1, true]]);
-  chip.props.onPress();
-  editor = renderInput('회의,장보기', 0, onSelect);
-  assert.equal(state.nativeText, boundary + '장보기');
-  assert.deepEqual(state.saved, []);
 });
 
 test('canceling delete confirmation retains both schedules and selection', () => {

@@ -5,11 +5,6 @@ const {
   dailyNoteItems,
   splitNote,
   NOTE_SEPARATOR,
-  replaceNotePart,
-  mergeNotePart,
-  changeNoteInput,
-  noteInputValue,
-  NOTE_INPUT_BOUNDARY,
 } = require('../../src/features/planner/services/note.ts');
 const { validateData } = require('../../src/services/backup/validation.ts');
 const date = '2026-11-07';
@@ -82,84 +77,6 @@ test('splitting and merging retain typed order after a custom daily sort', () =>
   assert.ok(data.dailyPlanOrders[0].itemIds.includes('recurring:hidden'));
   data = applyDailyNote(data, date, '둘중간,하나', createId);
   assert.deepEqual(read(data), ['둘중간', '하나']);
-});
-
-test('commas create editable chips and periods remain ordinary schedule text', () => {
-  assert.deepEqual(splitNote('3.5시간 공부,회의.'), ['3.5시간 공부', '회의.']);
-  assert.deepEqual(replaceNotePart('회의', 0, '회의,'), { text: '회의,', index: 1, caret: 0 });
-  assert.deepEqual(replaceNotePart('회의,', 1, '장보기'), {
-    text: '회의,장보기',
-    index: 1,
-    caret: undefined,
-  });
-});
-
-test('pasting several chips in the middle keeps the suffix and caret position', () => {
-  assert.deepEqual(replaceNotePart('회의,운동', 0, '점심,회의'), {
-    text: '점심,회의,운동',
-    index: 1,
-    caret: 0,
-  });
-  assert.deepEqual(replaceNotePart('a', 0, 'a,a'), { text: 'a,a', index: 1, caret: 1 });
-  assert.deepEqual(replaceNotePart('회의', 0, '회의,장보기,산책'), {
-    text: '회의,장보기,산책',
-    index: 2,
-    caret: 2,
-  });
-});
-
-test('backspace at a chip boundary merges adjacent schedules and returns to the join position', () => {
-  assert.deepEqual(mergeNotePart('회의,장보기', 1), { text: '회의장보기', index: 0, caret: 2 });
-  assert.deepEqual(mergeNotePart('회의,', 1), { text: '회의', index: 0, caret: 2 });
-  assert.deepEqual(mergeNotePart('회의, 장보기,산책', 1), {
-    text: '회의 장보기,산책',
-    index: 0,
-    caret: 2,
-  });
-  assert.equal(mergeNotePart('회의', 0), null);
-  assert.equal(mergeNotePart('회의', 2), null);
-});
-
-test('a comma becomes a chip without leaving a visible comma in the input', () => {
-  const split = changeNoteInput({ text: '회의', index: 0 }, '회의,');
-  assert.equal(split.text, '회의,');
-  assert.equal(split.index, 1);
-  assert.equal(noteInputValue(split), NOTE_INPUT_BOUNDARY);
-  assert.equal(noteInputValue(split).includes(','), false);
-  const typed = changeNoteInput(split, NOTE_INPUT_BOUNDARY + '장보기');
-  assert.equal(typed.text, '회의,장보기');
-  assert.equal(typed.text.includes(NOTE_INPUT_BOUNDARY), false);
-});
-
-test('native boundary deletion merges once and subsequent native text cannot duplicate the prefix', () => {
-  let edit = { text: '회의,장보기', index: 1, caret: 0 };
-  edit = changeNoteInput(edit, '장보기');
-  assert.deepEqual(edit, { text: '회의장보기', index: 0, caret: 2 });
-  edit = changeNoteInput(edit, noteInputValue(edit));
-  assert.equal(edit.text, '회의장보기');
-  edit = changeNoteInput(edit, '회의장보기 완료');
-  assert.equal(edit.text, '회의장보기 완료');
-});
-
-test('repeated split and backspace preserve Korean text without duplication', () => {
-  let edit = { text: '한글 일정', index: 0 };
-  for (let index = 0; index < 20; index++) {
-    edit = changeNoteInput(edit, noteInputValue(edit) + ',');
-    edit = changeNoteInput(edit, '');
-    assert.equal(edit.text, '한글 일정');
-    assert.equal(edit.index, 0);
-  }
-});
-
-test('middle merges preserve surrounding chips and strip copied input boundaries from saved text', () => {
-  let edit = changeNoteInput({ text: '처음,회의, 장보기,끝', index: 2 }, ' 장보기');
-  assert.equal(edit.text, '처음,회의 장보기,끝');
-  assert.equal(edit.index, 1);
-  edit = changeNoteInput(edit, noteInputValue(edit));
-  assert.equal(edit.text, '처음,회의 장보기,끝');
-  edit = changeNoteInput(edit, NOTE_INPUT_BOUNDARY + '회의' + NOTE_INPUT_BOUNDARY + ' 추가,산책');
-  assert.equal(edit.text, '처음,회의 추가,산책,끝');
-  assert.equal(edit.text.includes(NOTE_INPUT_BOUNDARY), false);
 });
 
 test('finishing input removes edge spaces and empty chips while preserving IDs, metadata and word spaces', () => {

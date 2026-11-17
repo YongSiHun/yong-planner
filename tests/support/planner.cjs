@@ -197,17 +197,13 @@ const { ScheduleChip } = require('../../src/features/planner/components/Schedule
 
 const { usePlannerGuide } = require('../../src/features/planner/hooks/usePlannerGuide.ts');
 
-const { NOTE_INPUT_BOUNDARY: boundary } = require('../../src/features/planner/services/note.ts');
-
 function renderInput(note = '회의,장보기', initialIndex, onSelect = noop, options = {}) {
   hooks.beginRender();
   const tree = ScheduleInput({
     date: '2026-11-07',
     note,
     initialIndex,
-    onSelect,
     onBlur: noop,
-    onEditPart: noop,
     onInputFocus: noop,
     onInputLayout: noop,
     ...options,
@@ -291,7 +287,6 @@ module.exports = {
   SchedulePreview,
   SelectionBar,
   applyDailyNote,
-  boundary,
   buttonTitles,
   changeInput,
   find,

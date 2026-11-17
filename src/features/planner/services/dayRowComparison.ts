@@ -20,6 +20,7 @@ const VALUE_KEYS = [
   'onCopyDate',
   'onSelect',
   'onOutsidePress',
+  'onChipScrollLock',
   'holidayName',
   'isToday',
   'isEditing',

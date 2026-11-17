@@ -79,6 +79,7 @@ test('saved time flows from the day row through the preview to the visible chip'
     );
   }
   assert.equal(DayRow.compare(props, { ...props, noteTimes: ['14:00'] }), false);
+  assert.equal(DayRow.compare(props, { ...props, onChipScrollLock() {} }), false);
 });
 
 test('chips show typed time only once while the editor still holds the raw prefix', () => {
@@ -118,7 +119,7 @@ test('long pressing either edge of the first chip arms dragging without insertin
   ]);
 });
 
-test('alarm marks follow schedule chips in both preview and editing', () => {
+test('alarm marks remain in preview while editing shows the full date as text', () => {
   const preview = SchedulePreview({
     note: '회의,식사',
     date: '2026-11-08',
@@ -130,7 +131,11 @@ test('alarm marks follow schedule chips in both preview and editing', () => {
   assert.match(ScheduleChip(chip.props).props.accessibilityLabel, /알람 설정됨/);
   hooks.reset();
   const editor = renderInput('회의,식사', 1, () => {}, { noteAlarms: [true, false] });
-  assert.equal(find(editor.tree, (node) => node.type === ScheduleChip).props.alarm, true);
+  assert.equal(
+    find(editor.tree, (node) => node.type === ScheduleChip),
+    undefined,
+  );
+  assert.equal(state.nativeText, '회의, 식사');
 });
 
 test('unselected dates use the latest global selection mode without rerendering their row', () => {

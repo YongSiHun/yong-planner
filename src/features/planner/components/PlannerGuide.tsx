@@ -38,13 +38,13 @@ export function PlannerGuide({
       <View style={styles.guideContent}>
         <GuideStep title="1. 눌러서 작성">
           <Label muted style={styles.plannerGuideLabelStyle}>
-            일정 칸이나 칩을 눌러 수정하세요. 자동으로 저장돼요.
+            일정 칸이나 칩을 누르면 하루 일정을 텍스트로 수정해요. 자동으로 저장돼요.
           </Label>
         </GuideStep>
         <GuideStep title="2. 쉼표(,)로 나누기">
           <SplitExample />
           <Label muted style={styles.plannerGuideLabelStyle}>
-            엔터로 줄바꿈하고, 입력을 마치면 칩으로 표시돼요.
+            쉼표로 일정을 구분하고 엔터로 줄바꿈해요. 입력을 마치면 칩으로 표시돼요.
           </Label>
         </GuideStep>
         <GuideStep title="3. 일정 복사">

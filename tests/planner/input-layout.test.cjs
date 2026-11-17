@@ -1,7 +1,6 @@
 const { assert, test } = require('../support/test.cjs');
 const {
   hooks,
-  boundary,
   changeInput,
   find,
   flushFrames,
@@ -58,14 +57,37 @@ test('native content height supports larger fonts without hidden measurement or 
   }
 });
 
-test('creating a chip keeps the plain native editor under the same sibling key', () => {
+test('commas stay in the same native editor without creating chip children', () => {
   let editor = renderInput('', 0);
   const ref = editor.input.props.ref;
-  for (const text of ['첫째,', boundary + '둘째,', boundary + '셋째']) {
+  for (const text of ['첫째,', '첫째,둘째,', '첫째,둘째,셋째']) {
     changeInput(editor.input, text);
     editor = renderInput('', 0);
-    assert.equal(editor.input.key, 'active-input');
     assert.equal(editor.input.props.ref, ref);
-    assert.equal(editor.input.props.style.borderWidth, undefined);
+    assert.equal(state.nativeText, text);
+    assert.equal(
+      find(editor.tree, (node) => node.type?.name === 'ScheduleChip'),
+      undefined,
+    );
   }
+});
+
+test('initial editor text and caret include all schedules and editable times', () => {
+  const { initialScheduleEdit } = require('../../src/features/planner/services/noteEditor.ts');
+  assert.deepEqual(initialScheduleEdit('회의,운동', []), { text: '회의, 운동', caret: 6 });
+  assert.deepEqual(initialScheduleEdit('회의,운동', [], 0), { text: '회의, 운동', caret: 2 });
+  assert.deepEqual(initialScheduleEdit('회의,운동', [], 1), { text: '회의, 운동', caret: 6 });
+  assert.deepEqual(initialScheduleEdit('회의,운동', [], undefined, 1), {
+    text: '회의, 운동',
+    caret: 4,
+  });
+  assert.deepEqual(initialScheduleEdit('회의,운동', [], undefined, 2), {
+    text: '회의, 운동',
+    caret: 6,
+  });
+  assert.deepEqual(initialScheduleEdit('회의\n안건,운동', ['13:10', null], 0), {
+    text: '13:10 회의\n안건, 운동',
+    caret: '13:10 회의\n안건'.length,
+  });
+  assert.deepEqual(initialScheduleEdit('', [], 99), { text: '', caret: 0 });
 });

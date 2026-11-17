@@ -36,8 +36,18 @@ test('reordering preserves IDs, time, other dates and recurrence positions', () 
   data = applyDailyNote(data, '2026-11-08', '다른 날', () => String(++id));
   data.dailyPlanOrders[0].itemIds.splice(1, 0, 'recurring:repeat');
   const before = data.dailyPlanItems;
+  const originalOrder = dailyNoteItems(data, date);
+  const originalIds = originalOrder.map((item) => item.id);
   const moved = moveDailyNote(data, date, 0, 3);
   assert.equal(moved.dailyPlanItems, before);
+  assert.deepEqual(
+    originalOrder.map((item) => item.id),
+    originalIds,
+  );
+  assert.deepEqual(
+    dailyNoteItems(data, date).map((item) => item.id),
+    originalIds,
+  );
   assert.deepEqual(
     dailyNoteItems(moved, date).map((item) => item.content),
     ['장보기', '운동', '회의'],
@@ -130,4 +140,104 @@ test('only the single selected chip can be armed or dropped', () => {
   handlers.onPanResponderGrant();
   handlers.onPanResponderRelease(null, { dx: 110, dy: 0 });
   assert.deepEqual(moves, [[0, 2]]);
+});
+
+test('arming a long press locks native scrolling before the first move and restores it after drop', () => {
+  const locks = [];
+  const moves = [];
+  const session = new ChipDragSession(() => {});
+  session.setOnScrollLock((locked) => locks.push(locked));
+  session.setOnMove((...args) => moves.push(args));
+  boxes.forEach((box, index) => session.record(index, { nativeEvent: { layout: box } }));
+  session.arm(0);
+  assert.deepEqual(locks, [true]);
+  session.arm(0);
+  assert.deepEqual(locks, [true]);
+  const handlers = session.pan.config;
+  assert.equal(handlers.onMoveShouldSetPanResponderCapture(), true);
+  handlers.onPanResponderGrant();
+  session.releaseArm();
+  assert.deepEqual(locks, [true]);
+  handlers.onPanResponderRelease(null, { dx: 110, dy: 0 });
+  assert.deepEqual(moves, [[0, 2]]);
+  assert.deepEqual(locks, [true, false]);
+});
+
+test('long press without movement, interruption and unmount all unlock scrolling without reordering', () => {
+  const locks = [];
+  const moves = [];
+  const session = new ChipDragSession(() => {});
+  session.setOnScrollLock((locked) => locks.push(locked));
+  session.setOnMove((...args) => moves.push(args));
+  session.record(0, { nativeEvent: { layout: boxes.get(0) } });
+  session.arm(0);
+  session.releaseArm();
+  assert.deepEqual(locks, [true, false]);
+  session.arm(0);
+  session.pan.config.onPanResponderGrant();
+  session.pan.config.onPanResponderTerminate();
+  assert.deepEqual(locks, [true, false, true, false]);
+  session.arm(0);
+  session.cancel();
+  assert.deepEqual(locks, [true, false, true, false, true, false]);
+  session.arm(99);
+  assert.equal(locks.length, 6);
+  assert.deepEqual(moves, []);
+});
+
+test('rejected gestures and failed drops restore scrolling', () => {
+  let allowed = true;
+  const locks = [];
+  const session = new ChipDragSession(
+    () => {},
+    () => allowed,
+  );
+  session.setOnScrollLock((locked) => locks.push(locked));
+  session.record(0, { nativeEvent: { layout: boxes.get(0) } });
+  session.arm(0);
+  allowed = false;
+  session.pan.config.onPanResponderGrant();
+  assert.deepEqual(locks, [true, false]);
+  allowed = true;
+  session.arm(0);
+  session.pan.config.onPanResponderReject();
+  assert.deepEqual(locks, [true, false, true, false]);
+  session.arm(0);
+  session.pan.config.onPanResponderGrant();
+  session.setOnMove(() => {
+    throw new Error('drop failed');
+  });
+  assert.throws(
+    () => session.pan.config.onPanResponderRelease(null, { dx: 100, dy: 0 }),
+    /drop failed/,
+  );
+  assert.deepEqual(locks, [true, false, true, false, true, false]);
+});
+
+test('unmounting a day while its chip is armed releases the native scroll lock', () => {
+  const { createHookHarness } = require('../support/hooks.cjs');
+  const hooks = createHookHarness();
+  mock('react', hooks.react);
+  let id = 0;
+  const date = '2026-11-07';
+  const data = applyDailyNote(emptyData(), date, '회의,운동', () => String(++id));
+  mock('../../src/stores/planner.ts', { usePlanner: { getState: () => ({ data }) } });
+  mock('../../src/stores/noteSelection.ts', {
+    useNoteSelectionStore: { getState: () => ({ selected: new Set([data.dailyPlanItems[0].id]) }) },
+  });
+  const { useChipDrag } = require('../../src/features/planner/hooks/useChipDrag.ts');
+  const locks = [];
+  const drag = hooks.render(() =>
+    useChipDrag(
+      () => assert.fail('unexpected move'),
+      2,
+      date,
+      (locked) => locks.push(locked),
+    ),
+  );
+  drag.record(0, { nativeEvent: { layout: boxes.get(0) } });
+  drag.arm(0);
+  assert.deepEqual(locks, [true]);
+  hooks.unmount();
+  assert.deepEqual(locks, [true, false]);
 });

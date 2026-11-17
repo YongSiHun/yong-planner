@@ -7,7 +7,7 @@ export function moveDailyNote(
   from: number,
   boundary: number,
 ): PlannerData {
-  const items = dailyNoteItems(data, date);
+  const items = [...dailyNoteItems(data, date)];
   const valid = validPosition(from, items.length - 1) && validPosition(boundary, items.length);
 
   if (!valid) {

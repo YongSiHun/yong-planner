@@ -12,6 +12,8 @@ export class ChipDragSession {
   onMove?: (from: number, boundary: number) => void;
   private armed: number | null = null;
   private moving: number | null = null;
+  private onScrollLock?: (locked: boolean) => void;
+  private scrollLocked = false;
   readonly pan = PanResponder.create({
     // Long press 후 첫 이동부터 캡처: ScrollView 선점 방지.
     onMoveShouldSetPanResponderCapture: () => this.armed !== null && this.canDrag(this.armed),
@@ -19,6 +21,7 @@ export class ChipDragSession {
     onPanResponderMove: (_, gesture) => this.move(gesture.dx, gesture.dy),
     onPanResponderRelease: (_, gesture) => this.finish(gesture.dx, gesture.dy),
     onPanResponderTerminate: () => this.cancel(),
+    onPanResponderReject: () => this.cancel(),
     onPanResponderTerminationRequest: () => false,
     onShouldBlockNativeResponder: () => true,
   });
@@ -42,14 +45,36 @@ export class ChipDragSession {
     this.onMove = onMove;
   }
 
+  setOnScrollLock(onScrollLock?: (locked: boolean) => void) {
+    this.onScrollLock = onScrollLock;
+  }
+
+  private lockScroll(locked: boolean) {
+    const unchanged = this.scrollLocked === locked;
+
+    if (unchanged) {
+      return;
+    }
+    this.scrollLocked = locked;
+    this.onScrollLock?.(locked);
+  }
+
   record = (index: number, event: LayoutChangeEvent) => {
     this.boxes.set(index, event.nativeEvent.layout);
   };
   arm = (index: number) => {
-    this.armed = this.canDrag(index) ? index : null;
+    const available = this.canDrag(index) && this.boxes.has(index);
+
+    this.armed = available ? index : null;
+    this.lockScroll(available);
   };
   releaseArm = () => {
     this.armed = null;
+    const idle = this.moving === null;
+
+    if (idle) {
+      this.lockScroll(false);
+    }
   };
 
   private begin() {
@@ -58,6 +83,8 @@ export class ChipDragSession {
     const canBegin = index !== null && box !== undefined && this.canDrag(index);
 
     if (!canBegin) {
+      this.cancel();
+
       return;
     }
     this.moving = index;
@@ -77,8 +104,11 @@ export class ChipDragSession {
       return;
     }
     this.updateTarget(box, dx, dy);
-    this.commit(source, this.target);
-    this.cancel();
+    try {
+      this.commit(source, this.target);
+    } finally {
+      this.cancel();
+    }
   }
 
   private commit(source: number, target: ChipDropTarget | null) {
@@ -124,6 +154,7 @@ export class ChipDragSession {
     this.target = null;
     this.markerHeight.setValue(0);
     this.offset.setValue({ x: 0, y: 0 });
+    this.lockScroll(false);
     this.publish(null);
   };
 }

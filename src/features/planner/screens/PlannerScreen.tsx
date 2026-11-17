@@ -45,6 +45,13 @@ export default function PlannerScreen() {
     handleViewportLayout,
   } = useMonthNavigation();
 
+  const handleChipScrollLock = useCallback(
+    (locked: boolean) => {
+      scrollRef.current?.setNativeProps({ scrollEnabled: !locked });
+    },
+    [scrollRef],
+  );
+
   useNotificationDate(showDate);
   useSearchDate(showDate);
   const { keyboardVisible, handleInputFocus, scheduleReveal, handleKeyboardScroll } =
@@ -169,6 +176,7 @@ export default function PlannerScreen() {
                   onCopyDate={selection.toggleCopyDate}
                   onSelect={selection.toggle}
                   onOutsidePress={dismissSelection}
+                  onChipScrollLock={handleChipScrollLock}
                   onMeasure={handleMeasure}
                   onInputFocus={handleInputFocus}
                   onInputLayout={scheduleReveal}

@@ -8,6 +8,7 @@ import { SchedulePreview } from './SchedulePreview';
 
 type DraggablePreviewProps = SchedulePreviewProps & {
   onMove(from: number, boundary: number): void;
+  onScrollLock?(locked: boolean): void;
 };
 
 export function DraggableSchedulePreview(props: DraggablePreviewProps) {
@@ -20,15 +21,15 @@ export function DraggableSchedulePreview(props: DraggablePreviewProps) {
   return <DraggableContent {...props} />;
 }
 
-function DraggableContent({ onMove, ...props }: DraggablePreviewProps) {
+function DraggableContent({ onMove, onScrollLock, ...props }: DraggablePreviewProps) {
   const theme = useTheme();
-  const drag = useChipDrag(onMove, props.note.split(',').length, props.date);
+  const drag = useChipDrag(onMove, props.note.split(',').length, props.date, onScrollLock);
   const index = drag.index;
   const box = drag.box;
   const hasOverlay = index !== null && box !== undefined;
 
   return (
-    <View {...drag.handlers} onTouchEnd={drag.releaseArm}>
+    <View {...drag.handlers} onTouchEnd={drag.releaseArm} onTouchCancel={drag.cancel}>
       <SchedulePreview
         {...props}
         onArm={drag.arm}

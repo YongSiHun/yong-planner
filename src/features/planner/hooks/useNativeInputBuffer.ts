@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
-// Native owns ordinary typing. Only chip transitions and invalid input need a write.
+// Native owns ordinary typing. Only invalid input or line-ending normalization needs a write.
 export function useNativeInputBuffer(initialText: string) {
   const [buffer, setBuffer] = useState(() => ({ text: initialText, replacing: false }));
   const replacement = useRef<typeof buffer | null>(null);
