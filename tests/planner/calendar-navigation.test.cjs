@@ -1,11 +1,11 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
-const { state, MonthPicker, DayDate, find } = require('../support/planner.cjs');
+const { hooks } = require('../support/planner.cjs');
+const { assert, test } = require('../support/test.cjs');
+const { MonthPicker, DayDate, find } = require('../support/planner.cjs');
 
 test('date navigation wraps months, preserves the year and blocks invalid values', () => {
   const choices = [];
   const render = () => {
-    state.cursor = 0;
+    hooks.beginRender();
     return MonthPicker({
       month: '2026-11-07',
       onClose() {},

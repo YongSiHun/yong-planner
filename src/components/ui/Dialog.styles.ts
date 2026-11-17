@@ -26,14 +26,14 @@ export function dialogViewStyle(
   height?: number,
   maxWidth: number = design.layout.dialogMaxWidth,
   paddingVertical?: number,
-  contentGap: number = design.space.sm,
+  contentGap: number = design.space.md,
 ) {
   return {
     backgroundColor: theme.bg,
-    borderRadius: design.space.lg,
+    borderRadius: design.radius.dialog,
     borderWidth: 1,
     borderColor: theme.line,
-    padding: design.space.md,
+    padding: design.space.lg,
     paddingVertical,
     height,
     maxHeight: '85%',
@@ -58,7 +58,7 @@ export const dialogHeadingViewStyle = {
 
 export const dialogHeadingContent = { flex: 1, minWidth: 0, gap: design.space.xs } as const;
 
-export function dialogHeadingLabelStyle(size: number = design.type.action) {
+export function dialogHeadingLabelStyle(size: number = design.type.title) {
   return {
     fontSize: size,
     lineHeight: design.lineHeights.title + size - design.type.title,
@@ -71,7 +71,7 @@ export const dialogHeadingPressableStyle = {
   height: design.touchTarget,
   alignItems: 'center',
   justifyContent: 'center',
-  marginRight: -design.space.md,
+  marginRight: -design.space.lg,
 } as const;
 
 export const actions = {

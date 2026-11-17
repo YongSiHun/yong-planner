@@ -1,6 +1,4 @@
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { assert, test } = require('../support/test.cjs');
 const { DatabaseSync } = require('node:sqlite');
 const {
   initialSchema,
@@ -45,17 +43,13 @@ const database = {
   },
 };
 // 실제 SQLite + Expo 연결 mock.
-const repositoryPath = require.resolve('../../src/database/repositories/planner.ts');
-require.cache[repositoryPath] = {
-  id: repositoryPath,
-  filename: repositoryPath,
-  loaded: true,
-  exports: {
-    getDatabase: async () => database,
-    loadData: async () => emptyData(),
-    replaceData: (data) => database.withTransactionAsync(() => replaceRows(database, data)),
-  },
-};
+const { createModuleMock } = require('../support/mock-module.cjs');
+const mock = createModuleMock(require);
+mock('../../src/database/repositories/planner.ts', {
+  getDatabase: async () => database,
+  loadData: async () => emptyData(),
+  replaceData: (data) => database.withTransactionAsync(() => replaceRows(database, data)),
+});
 const { persistData, restoreData } = require('../../src/database/repositories/persist.ts');
 const plan = {
   id: 'repeat',

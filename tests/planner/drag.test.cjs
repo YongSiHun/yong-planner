@@ -1,34 +1,28 @@
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { assert, test } = require('../support/test.cjs');
 const { moveDailyNote } = require('../../src/features/planner/services/noteMove.ts');
 const { applyDailyNote, dailyNoteItems } = require('../../src/features/planner/services/note.ts');
 const { emptyData } = require('../../src/features/planner/types/index.ts');
 const { dropTarget } = require('../../src/features/planner/services/dragGeometry.ts');
-const native = require.resolve('react-native');
-require.cache[native] = {
-  id: native,
-  filename: native,
-  loaded: true,
-  exports: {
-    Animated: {
-      Value: class {
-        constructor(value) {
-          this.value = value;
-        }
-        setValue(value) {
-          this.value = value;
-        }
-      },
-      ValueXY: class {
-        setValue(value) {
-          this.value = value;
-        }
-      },
+const { createModuleMock } = require('../support/mock-module.cjs');
+const mock = createModuleMock(require);
+mock('react-native', {
+  Animated: {
+    Value: class {
+      constructor(value) {
+        this.value = value;
+      }
+      setValue(value) {
+        this.value = value;
+      }
     },
-    PanResponder: { create: (config) => ({ config, panHandlers: {} }) },
+    ValueXY: class {
+      setValue(value) {
+        this.value = value;
+      }
+    },
   },
-};
+  PanResponder: { create: (config) => ({ config, panHandlers: {} }) },
+});
 const { ChipDragSession } = require('../../src/features/planner/hooks/ChipDragSession.ts');
 const boxes = new Map([
   [0, { x: 0, y: 0, width: 80, height: 30 }],

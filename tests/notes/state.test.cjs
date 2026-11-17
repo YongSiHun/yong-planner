@@ -1,29 +1,15 @@
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { beforeEach, test } = require('node:test');
-const React = require('react');
+const { assert, beforeEach, test } = require('../support/test.cjs');
+const { createHookHarness } = require('../support/hooks.cjs');
 const { createModuleMock } = require('../support/mock-module.cjs');
+const { deleteConfirmation } = require('../../src/services/confirmation.ts');
+const hooks = createHookHarness();
 const mock = createModuleMock(require);
-let slots, cursor, dialog, reported, deleted, restored, fail, store;
-mock('react', {
-  ...React,
-  useState(initial) {
-    const index = cursor++;
-    if (!(index in slots)) slots[index] = initial;
-    return [
-      slots[index],
-      (next) => {
-        slots[index] = typeof next === 'function' ? next(slots[index]) : next;
-      },
-    ];
-  },
-  useRef(initial) {
-    const index = cursor++;
-    if (!(index in slots)) slots[index] = { current: initial };
-    return slots[index];
-  },
-});
+let dialog, reported, deleted, restored, fail, store;
+mock('react', hooks.react);
 mock('../../src/components/ui/index.tsx', {
+  showDeleteDialog: (message, onConfirm) => {
+    dialog = deleteConfirmation(message, onConfirm);
+  },
   report: (error) => {
     reported = error;
   },
@@ -49,16 +35,14 @@ mock('../../src/features/notes/hooks/useMemoActions.ts', {
 });
 const readState = require('../../src/features/notes/hooks/useMemoState.ts').useMemoState;
 function render() {
-  cursor = 0;
-  return readState();
+  return hooks.render(readState);
 }
 async function confirmDelete() {
   dialog.actions.find((action) => action.style === 'destructive').onPress();
   await new Promise((resolve) => setImmediate(resolve));
 }
 beforeEach(() => {
-  slots = [];
-  cursor = 0;
+  hooks.reset();
   dialog = reported = deleted = restored = undefined;
   fail = false;
   store = {
@@ -90,12 +74,7 @@ test('long press enters selection; taps toggle IDs; confirmed bulk delete exits 
   assert.equal(render().selected.size, 0);
 });
 
-test('select all toggles; cancellation does not delete and stale IDs are excluded', () => {
-  render().startSelection();
-  render().selectAll();
-  assert.equal(render().selected.size, 3);
-  render().selectAll();
-  assert.equal(render().selected.size, 0);
+test('cancellation does not delete and stale IDs are excluded', () => {
   render().toggleSelection('missing');
   assert.equal(render().selected.size, 0);
   render().cancelSelection();
@@ -121,7 +100,7 @@ test('unsaved editor changes require discard; failed saves retain the draft', as
   assert.equal(render().editing, null);
   assert.equal(render().content, '작성 중');
   fail = true;
-  await render().run(render().save);
+  await render().save();
   assert.equal(render().editing, null);
   assert.equal(render().content, '작성 중');
   dialog.actions.find((action) => action.style === 'destructive').onPress();
@@ -132,7 +111,6 @@ test('restoring data disables editor and selection mutations', () => {
   store.restoring = true;
   render().open(null);
   render().toggleSelection('a');
-  render().startSelection();
   assert.equal(render().editing, undefined);
   assert.equal(render().selecting, false);
 });
@@ -207,15 +185,15 @@ test('trash supports individual and bulk restore and a failed restore keeps its 
   render().openTrash();
   render().open(trash);
   fail = true;
-  await render().run(render().restore);
+  await render().restore();
   assert.equal(render().editing.id, 'trash');
   assert.match(reported.message, /restore failed/);
   fail = false;
-  await render().run(render().restore);
+  await render().restore();
   assert.deepEqual(restored, ['trash']);
   assert.equal(render().editing, undefined);
   render().toggleSelection('trash');
-  await render().run(render().restore);
+  await render().restore();
   assert.deepEqual(restored, ['trash']);
   assert.equal(render().selecting, false);
 });

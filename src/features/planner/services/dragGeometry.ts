@@ -42,11 +42,3 @@ export function dropTarget(
 
   return nearest;
 }
-
-export function dropBoundary(
-  bounds: ReadonlyMap<number, ChipBounds>,
-  x: number,
-  y: number,
-): number | null {
-  return dropTarget(bounds, x, y)?.boundary ?? null;
-}

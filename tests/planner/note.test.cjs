@@ -1,6 +1,4 @@
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { assert, test } = require('../support/test.cjs');
 const { emptyData } = require('../../src/features/planner/types/index.ts');
 const {
   applyDailyNote,

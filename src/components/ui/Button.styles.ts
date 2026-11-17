@@ -1,30 +1,11 @@
-import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import type { Theme } from './palette';
 import { design, lineHeightForSize } from './tokens';
-
-export function label(
-  fontFamily: string,
-  fontSize: number,
-  muted: boolean,
-  theme: Theme,
-  style: StyleProp<TextStyle> | undefined,
-) {
-  return [
-    {
-      color: muted ? theme.muted : theme.text,
-      fontSize,
-      lineHeight: lineHeightForSize(fontSize),
-    } as const,
-    style,
-    { fontFamily, fontWeight: 'normal' } as const,
-  ] as const;
-}
 
 export function button(
   compact: boolean,
   selected: boolean,
   theme: Theme,
-
   disabled: boolean,
   style: ViewStyle | undefined,
 ) {
@@ -62,31 +43,6 @@ export function buttonLabel(
     lineHeight: lineHeightForSize(fontSize),
     fontFamily: selected || bold ? design.font.bold : design.font.medium,
   } as const;
-}
-
-export function input(
-  theme: Theme,
-  propsMultiline: boolean | undefined,
-  contentHeight: number,
-  propsStyle: StyleProp<TextStyle> | undefined,
-) {
-  return [
-    {
-      color: theme.text,
-      backgroundColor: theme.bg,
-      borderColor: theme.line,
-      borderWidth: 1,
-      borderRadius: design.radius.medium,
-      padding: design.space.md,
-      minHeight: design.controlHeight,
-      height: propsMultiline ? contentHeight : undefined,
-      fontSize: design.type.body,
-      lineHeight: design.lineHeights.body,
-      fontFamily: design.font.regular,
-      textAlignVertical: propsMultiline ? 'top' : 'center',
-    } as const,
-    propsStyle,
-  ] as const;
 }
 
 function getButtonOpacity(isDisabled: boolean, isPressed: boolean): number {

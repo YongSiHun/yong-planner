@@ -2,9 +2,6 @@ import { memoExpired, pruneMemoTrash } from '../services/trash';
 import { randomUUID } from 'expo-crypto';
 import { memoInputError } from '../services/validation';
 import { updatePlanner, flushPlanner } from '../../planner/controllers/persistence';
-import { usePlanner } from '../../../stores/planner';
-import { createNotesBackup } from '../../../services/backup/notes';
-import { shareFile } from '../../../services/export/files';
 
 export async function saveMemo(id: string | null, content: string, title?: string) {
   const error = memoInputError(content, title);
@@ -43,15 +40,6 @@ export async function deleteMemos(ids: ReadonlySet<string>) {
     ),
   }));
   await flushPlanner();
-}
-
-export async function exportMemos() {
-  await flushPlanner();
-  await shareFile(
-    'yongplanner-memos.json',
-    createNotesBackup(usePlanner.getState().data),
-    'application/json',
-  );
 }
 
 export async function restoreMemos(ids: ReadonlySet<string>) {

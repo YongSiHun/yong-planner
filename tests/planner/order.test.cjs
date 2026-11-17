@@ -1,6 +1,4 @@
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { assert, test } = require('../support/test.cjs');
 const { defaultSort, reconcileOrder } = require('../../src/features/planner/services/order.ts');
 function previousOrder(entries, custom) {
   const base = defaultSort(entries);

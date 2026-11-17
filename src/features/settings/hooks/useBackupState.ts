@@ -1,31 +1,10 @@
-import { useRef, useState } from 'react';
-import { report, showDialog } from '../../../components/ui';
+import { useAsyncOperation } from '../../../hooks/useAsyncOperation';
+import { showDialog } from '../../../components/ui';
 import type { PlannerBackup } from '../../../services/backup';
 import { useBackupActions } from './useBackupActions';
 export function useBackupState() {
   const { choose, restore, backup: backupAll } = useBackupActions();
-  const [isBusy, setBusy] = useState(false);
-  const operationBusy = useRef(false);
-
-  async function runAction(action: () => Promise<void>) {
-    const isRunning = operationBusy.current;
-
-    if (isRunning) {
-      return;
-    }
-
-    operationBusy.current = true;
-    setBusy(true);
-
-    try {
-      await action();
-    } catch (error) {
-      report(error);
-    } finally {
-      operationBusy.current = false;
-      setBusy(false);
-    }
-  }
+  const { busy: isBusy, run: runAction } = useAsyncOperation();
 
   async function restoreBackup(data: PlannerBackup) {
     await restore(data);

@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { hooks } = require('../support/planner.cjs');
+const { assert, test } = require('../support/test.cjs');
 const { applyDailyNote, state } = require('../support/planner.cjs');
 
 test('settings asks for confirmation before deleting every alarm', async () => {
@@ -15,7 +15,7 @@ test('settings asks for confirmation before deleting every alarm', async () => {
     ...state.plannerData,
     dailyPlanItems: state.plannerData.dailyPlanItems.map((item) => ({ ...item, alarm: true })),
   };
-  state.cursor = 0;
+  hooks.beginRender();
   const settings = useAlarmSettings();
   settings.requestDelete();
   assert.equal(
@@ -23,7 +23,7 @@ test('settings asks for confirmation before deleting every alarm', async () => {
     true,
   );
   const dialog = state.alerts.at(-1);
-  assert.equal(dialog.title, '모든 알람 삭제');
+  assert.equal(dialog.title, '삭제하시겠습니까?');
   assert.equal(dialog.actions[0].style, 'cancel');
   dialog.actions.find((action) => action.style === 'destructive').onPress();
   await new Promise((resolve) => setImmediate(resolve));

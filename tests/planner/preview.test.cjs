@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { hooks } = require('../support/planner.cjs');
+const { assert, test } = require('../support/test.cjs');
 const {
   DayRow,
   ScheduleChip,
@@ -68,7 +68,7 @@ test('saved time flows from the day row through the preview to the visible chip'
     ['24h', '13시 밥먹기'],
     ['12h', '오후 1시 밥먹기'],
   ]) {
-    state.cursor = 0;
+    hooks.beginRender();
     const row = DayRow.type({ ...props, timeFormat: format });
     const preview = find(row, (node) => node.type?.name === 'DraggableSchedulePreview');
     const tree = SchedulePreview(preview.props);
@@ -104,7 +104,7 @@ test('long pressing either edge of the first chip arms dragging without insertin
     onSelect: (...args) => selected.push(args),
   });
   const first = find(tree, (node) => node.type === ScheduleChip);
-  state.cursor = 0;
+  hooks.beginRender();
   const button = ScheduleChip(first.props);
   const edgeGroup = find(button, (node) => node.type?.name === 'ChipEdges');
   const edges = edgeGroup.type(edgeGroup.props).props.children;
@@ -128,6 +128,7 @@ test('alarm marks follow schedule chips in both preview and editing', () => {
   const chip = find(preview, (node) => node.type === ScheduleChip);
   assert.equal(chip.props.alarm, true);
   assert.match(ScheduleChip(chip.props).props.accessibilityLabel, /알람 설정됨/);
+  hooks.reset();
   const editor = renderInput('회의,식사', 1, () => {}, { noteAlarms: [true, false] });
   assert.equal(find(editor.tree, (node) => node.type === ScheduleChip).props.alarm, true);
 });

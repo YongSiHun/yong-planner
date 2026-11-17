@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { hooks } = require('../support/planner.cjs');
+const { assert, test } = require('../support/test.cjs');
 const {
   DayDate,
   ScheduleChip,
@@ -38,7 +38,7 @@ test('long press starts selection and selected chip taps toggle without editing'
   assert.equal(chip.props.selected, true);
 });
 
-test('single and multiple selections offer the same actions', () => {
+test('selected schedules are deleted only after confirmation', () => {
   state.plannerData = applyDailyNote(
     state.plannerData,
     '2026-11-07',
@@ -50,12 +50,8 @@ test('single and multiple selections offer the same actions', () => {
   selection.toggle('2026-11-07', 0, true);
   selection = renderSelection();
   assert.equal(selection.selected.size, 1);
-  let bar = SelectionBar({ count: 1, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
-  assert.deepEqual(buttonTitles(bar), ['시간 설정', '일정 복사', '알람 설정', '삭제']);
   selection.toggle('2026-11-07', 1);
   selection = renderSelection();
-  bar = SelectionBar({ count: 2, onEdit() {}, onCopy() {}, onDelete() {}, onCancel() {} });
-  assert.deepEqual(buttonTitles(bar), ['시간 설정', '일정 복사', '알람 설정', '삭제']);
   selection.requestDelete();
   assert.equal(state.plannerData.dailyPlanItems.length, 2);
   selection = renderSelection();
@@ -105,7 +101,7 @@ test('canceling delete confirmation retains both schedules and selection', () =>
 
 test('selection keeps chip edges mounted and tapping them toggles selection', () => {
   let toggles = 0;
-  state.cursor = 0;
+  hooks.beginRender();
   const button = ScheduleChip({
     content: '밥먹기',
     selecting: true,
@@ -206,25 +202,6 @@ test('empty days and date labels dismiss selection without opening input or date
   assert.equal(renderSelection().active, false);
 });
 
-test('selection bar omits selection count and bulk selection controls', () => {
-  state.cursor = 0;
-  const tree = SelectionBar({ count: 3 });
-  assert.deepEqual(buttonTitles(tree), ['시간 설정', '일정 복사', '알람 설정', '삭제']);
-  assert.equal(
-    find(tree, (node) => node.type === 'Label'),
-    undefined,
-  );
-});
-
-test('selection bar has four evenly spaced actions without more', () => {
-  const tree = SelectionBar({ count: 1 });
-  assert.deepEqual(buttonTitles(tree), ['시간 설정', '일정 복사', '알람 설정', '삭제']);
-  assert.equal(
-    find(tree, (node) => node.type === 'Dialog'),
-    undefined,
-  );
-});
-
 test('selecting a chip only changes colors and never adds a checkmark or changes geometry', () => {
   const props = { content: '회의', important: true, alarm: true, onPress() {}, onLongPress() {} };
   const normal = ScheduleChip({ ...props, selected: false });
@@ -251,4 +228,15 @@ test('selecting a chip only changes colors and never adds a checkmark or changes
   );
   assert.ok(normalBorder);
   assert.ok(selectedBorder);
+});
+
+test('selection toolbar keeps the same four actions for single and multiple selections', () => {
+  for (const count of [1, 3]) {
+    const tree = SelectionBar({ count });
+    assert.deepEqual(buttonTitles(tree), ['시간 설정', '일정 복사', '알람 설정', '삭제']);
+    assert.equal(
+      find(tree, (node) => node.type === 'Label' || node.type === 'Dialog'),
+      undefined,
+    );
+  }
 });

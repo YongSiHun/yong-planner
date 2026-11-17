@@ -1,18 +1,11 @@
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test, beforeEach } = require('node:test');
-const React = require('react');
+const { assert, test, beforeEach } = require('../support/test.cjs');
+const { createHookHarness } = require('../support/hooks.cjs');
+const hooks = createHookHarness();
 const { createModuleMock } = require('../support/mock-module.cjs');
 const { pruneMemoTrash, MEMO_RETENTION_MS } = require('../../src/features/notes/services/trash.ts');
 const mock = createModuleMock(require);
-let params, store, reference, cleanup, appStateChange, removed, purges;
-mock('react', {
-  ...React,
-  useRef: () => reference,
-  useEffect: (effect) => {
-    cleanup = effect();
-  },
-});
+let params, store, appStateChange, removed, purges;
+mock('react', hooks.react);
 mock('expo-router', { useLocalSearchParams: () => params });
 mock('react-native', {
   AppState: {
@@ -41,8 +34,8 @@ const { useMemoRoute } = require('../../src/features/notes/hooks/useMemoRoute.ts
 const { useMemoRetention } = require('../../src/features/notes/hooks/useMemoRetention.ts');
 beforeEach(() => {
   params = {};
-  reference = { current: undefined };
-  cleanup = appStateChange = undefined;
+  hooks.reset();
+  appStateChange = undefined;
   removed = false;
   purges = 0;
   store = { ready: true, restoring: false, data: { memos: [] } };
@@ -62,16 +55,16 @@ test('search opens the matching list and memo once per request, including after 
     closeTrash: () => calls.push('live-list'),
   };
   params = { memoId: 'live', memoKey: '1' };
-  useMemoRoute(state);
+  hooks.render(() => useMemoRoute(state));
   assert.deepEqual(calls, []);
   state.disabled = false;
-  useMemoRoute(state);
-  useMemoRoute(state);
+  hooks.render(() => useMemoRoute(state));
+  hooks.render(() => useMemoRoute(state));
   params = { memoId: 'trash', memoKey: '2' };
-  useMemoRoute(state);
+  hooks.render(() => useMemoRoute(state));
   assert.deepEqual(calls, ['live-list', 'live', 'trash-list', 'trash']);
   params = { memoId: 'missing', memoKey: '3' };
-  useMemoRoute(state);
+  hooks.render(() => useMemoRoute(state));
   assert.equal(calls.length, 4);
 });
 
@@ -79,7 +72,7 @@ test('retention survives the native timer maximum and purges at 30 days; foregro
   t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.parse('2026-11-01T00:00:00Z') });
   const now = new Date().toISOString();
   store.data.memos = [{ id: 'trash', content: '보관', updatedAt: now, deletedAt: now }];
-  useMemoRetention();
+  hooks.render(useMemoRetention);
   t.mock.timers.tick(2147483647);
   assert.equal(store.data.memos.length, 1);
   t.mock.timers.tick(MEMO_RETENTION_MS - 2147483647);
@@ -89,7 +82,7 @@ test('retention survives the native timer maximum and purges at 30 days; foregro
   assert.equal(purges, before);
   appStateChange('active');
   assert.equal(purges, before + 1);
-  cleanup();
+  hooks.unmount();
   assert.equal(removed, true);
   t.mock.timers.tick(10000);
   assert.equal(purges, before + 1);

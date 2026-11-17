@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { usePlanner } from '../../../stores/planner';
 import { memoExpired } from '../services/trash';
-import type { useMemoState } from './useMemoState';
+import type { MemoState } from '../types/presentation';
 
-export function useMemoRoute(state: ReturnType<typeof useMemoState>) {
+export function useMemoRoute(state: MemoState) {
   const { memoId, memoKey } = useLocalSearchParams<{ memoId?: string; memoKey?: string }>();
   const handled = useRef<string | undefined>(undefined);
   const { open, openTrash, closeTrash, disabled } = state;
@@ -33,7 +33,7 @@ function findMemo(id: string) {
 
 function openMemo(
   memo: NonNullable<ReturnType<typeof findMemo>>,
-  open: ReturnType<typeof useMemoState>['open'],
+  open: MemoState['open'],
   openTrash: () => void,
   closeTrash: () => void,
 ) {

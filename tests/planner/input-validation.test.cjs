@@ -1,6 +1,4 @@
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { assert, test } = require('../support/test.cjs');
 const { monthSelection } = require('../../src/features/planner/services/monthSelection.ts');
 const { scheduleLengthError, noteLengthError } = require('../../src/services/schedule.ts');
 const { NoteInputEvents } = require('../../src/features/planner/services/noteInputEvents.ts');

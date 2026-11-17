@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { hooks } = require('../support/planner.cjs');
+const { assert, test } = require('../support/test.cjs');
 const {
   DayDate,
   DayRow,
@@ -51,7 +51,7 @@ test('copy mode selects dates on the current page and retains dates across navig
 test('copy mode picks a visible day row and makes existing schedules read only', () => {
   const picked = [];
   const edits = [];
-  state.cursor = 0;
+  hooks.beginRender();
   const row = DayRow.type({
     date: '2026-11-08',
     note: '기존 일정',

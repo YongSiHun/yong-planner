@@ -31,7 +31,7 @@ async function synchronize(): Promise<void> {
   const scheduling = effectivePreferences(preferences, permission);
 
   await configureNotificationPresentation();
-  await prepareNotificationChannels(scheduling);
+  await prepareNotificationChannels();
   const holidays = createHolidayService(planner.data.holidayOverrides);
   const plan = buildNotificationPlan(planner.data, scheduling, new Date(), holidays);
   const port = await createNativeNotificationPort(scheduling);

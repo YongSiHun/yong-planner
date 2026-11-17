@@ -1,9 +1,8 @@
-const assert = require('node:assert/strict');
+const { assert, test } = require('../support/test.cjs');
 const { Buffer } = require('node:buffer');
 const { EventEmitter } = require('node:events');
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
-const { test } = require('node:test');
 const { runInNewContext } = require('node:vm');
 
 async function run(platform, env = {}, args = [], results = [{ status: 0 }]) {

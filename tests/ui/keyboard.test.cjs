@@ -1,13 +1,11 @@
+const { assert, test, afterEach } = require('../support/test.cjs');
 const { createModuleMock } = require('../support/mock-module.cjs');
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test, afterEach } = require('node:test');
 const React = require('react');
 let windowHeight = 800;
 const platform = { OS: 'android' };
 const cleanups = [];
-const frames = new Map();
-let frameId = 0;
+const { createAnimationFrames } = require('../support/frames.cjs');
+const frames = createAnimationFrames();
 const listeners = new Map();
 const keyboard = {
   visible: false,
@@ -23,54 +21,36 @@ const keyboard = {
     return { remove: () => listeners.delete(name) };
   },
 };
-const reactPath = require.resolve('react');
-const nativePath = require.resolve('react-native');
-require.cache[reactPath] = {
-  id: reactPath,
-  filename: reactPath,
-  loaded: true,
-  exports: {
-    ...React,
-    createContext: (value) => ({ value, Provider: 'Provider' }),
-    useContext: (context) => context.value,
-    useRef: (current) => ({ current }),
-    useState: (initial) => [typeof initial === 'function' ? initial() : initial, () => {}],
-    useCallback: (callback) => callback,
-    useEffect: (callback) => {
-      const cleanup = callback();
-      if (cleanup) cleanups.push(cleanup);
-    },
+const mock = createModuleMock(require);
+mock('react', {
+  ...React,
+  createContext: (value) => ({ value, Provider: 'Provider' }),
+  useContext: (context) => context.value,
+  useRef: (current) => ({ current }),
+  useState: (initial) => [typeof initial === 'function' ? initial() : initial, () => {}],
+  useCallback: (callback) => callback,
+  useEffect: (callback) => {
+    const cleanup = callback();
+    if (cleanup) cleanups.push(cleanup);
   },
-};
-require.cache[nativePath] = {
-  id: nativePath,
-  filename: nativePath,
-  loaded: true,
-  exports: {
-    Keyboard: keyboard,
-    Platform: platform,
-    Dimensions: { get: () => ({ height: windowHeight }) },
-    StyleSheet: { create: (styles) => styles, flatten: (style) => style },
-    KeyboardAvoidingView: 'KeyboardAvoidingView',
-    Modal: 'Modal',
-    Pressable: 'Pressable',
-    ScrollView: 'ScrollView',
-    View: 'View',
-    TextInput: 'TextInput',
-    Text: 'Text',
-  },
-};
-global.requestAnimationFrame = (callback) => {
-  frames.set(++frameId, callback);
-  return frameId;
-};
-global.cancelAnimationFrame = (id) => frames.delete(id);
+});
+mock('react-native', {
+  Keyboard: keyboard,
+  Platform: platform,
+  Dimensions: { get: () => ({ height: windowHeight }) },
+  StyleSheet: { create: (styles) => styles, flatten: (style) => style },
+  KeyboardAvoidingView: 'KeyboardAvoidingView',
+  Modal: 'Modal',
+  Pressable: 'Pressable',
+  ScrollView: 'ScrollView',
+  View: 'View',
+  TextInput: 'TextInput',
+  Text: 'Text',
+});
+global.requestAnimationFrame = frames.request;
+global.cancelAnimationFrame = frames.cancel;
 const { useInlineKeyboard } = require('../../src/hooks/useInlineKeyboard.ts');
-function flushFrames() {
-  const pending = [...frames.values()];
-  frames.clear();
-  pending.forEach((callback) => callback());
-}
+const flushFrames = frames.flush;
 function setup() {
   const calls = [];
   // React 훅: mock 하네스 실행.
@@ -85,7 +65,7 @@ function setup() {
 }
 afterEach(() => {
   cleanups.splice(0).forEach((cleanup) => cleanup());
-  frames.clear();
+  frames.reset();
   keyboard.visible = false;
   keyboard.top = 400;
   windowHeight = 800;

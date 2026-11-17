@@ -1,6 +1,4 @@
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { assert, test } = require('../support/test.cjs');
 const { emptyData } = require('../../src/features/planner/types/index.ts');
 const { memoFields } = require('../../src/features/notes/services/memo.ts');
 const { validateData } = require('../../src/services/backup/validation.ts');

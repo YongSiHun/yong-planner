@@ -1,5 +1,4 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { assert, test } = require('../support/test.cjs');
 const { applyDailyNote, renderSelection, state } = require('../support/planner.cjs');
 
 test('single selection sets time independently of schedule content', () => {

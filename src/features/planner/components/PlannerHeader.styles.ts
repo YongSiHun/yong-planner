@@ -76,12 +76,6 @@ export function plannerHeaderTextStyle3(theme: Theme) {
   } as const;
 }
 
-export const menuLines = { gap: 4 } as const;
-
-export function menuLine(theme: Theme) {
-  return { width: 18, height: 2, borderRadius: 1, backgroundColor: theme.accent } as const;
-}
-
 function headerIconAlignment(edge: 'left' | 'right' | undefined) {
   const alignment = { left: 'flex-start', right: 'flex-end' } as const;
 

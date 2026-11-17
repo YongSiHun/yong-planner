@@ -1,20 +1,11 @@
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test, beforeEach } = require('node:test');
-const React = require('react');
+const { assert, test, beforeEach } = require('../support/test.cjs');
+const { createHookHarness } = require('../support/hooks.cjs');
+const hooks = createHookHarness();
 const { createModuleMock } = require('../support/mock-module.cjs');
 const { find } = require('../support/tree.cjs');
 const mock = createModuleMock(require);
-let routes, state, params, refs, cursor;
-mock('react', {
-  ...React,
-  useEffect: (effect) => effect(),
-  useRef(initial) {
-    const index = cursor++;
-    refs[index] ??= { current: initial };
-    return refs[index];
-  },
-});
+let routes, state, params;
+mock('react', hooks.react);
 mock('react-native', {
   Keyboard: { dismiss() {} },
   Pressable: 'Pressable',
@@ -41,8 +32,7 @@ mock('../../src/features/planner/hooks/usePlannerSearch.ts', { usePlannerSearch:
 const Screen = require('../../src/features/planner/screens/SearchScreen.tsx').default;
 const readSearchDate = require('../../src/features/planner/hooks/useSearchDate.ts').useSearchDate;
 function handleDate(callback) {
-  cursor = 0;
-  readSearchDate(callback);
+  hooks.render(() => readSearchDate(callback));
 }
 const daily = {
   key: 'daily:a',
@@ -54,8 +44,7 @@ const daily = {
 beforeEach(() => {
   routes = [];
   params = {};
-  refs = [];
-  cursor = 0;
+  hooks.reset();
   state = {
     query: '회의',
     setQuery() {},

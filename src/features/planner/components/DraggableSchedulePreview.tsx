@@ -3,7 +3,8 @@ import { useTheme } from '../../../components/ui';
 import { useChipDrag } from '../hooks/useChipDrag';
 import type { SchedulePreviewProps } from '../types/presentation';
 import * as styles from './DraggableSchedulePreview.styles';
-import { ScheduleChip, SchedulePreview } from './ScheduleInput';
+import { ScheduleChip } from './ScheduleChip';
+import { SchedulePreview } from './SchedulePreview';
 
 type DraggablePreviewProps = SchedulePreviewProps & {
   onMove(from: number, boundary: number): void;

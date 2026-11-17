@@ -3,7 +3,7 @@ import { showToast } from '../../../components/ui';
 import { COPY_DUPLICATE_MESSAGE, hasCopyConflict } from '../services/copyTargets';
 import { useNoteSelectionStore as ui } from '../../../stores/noteSelection';
 import { usePlanner } from '../../../stores/planner';
-import { toggled } from '../services/selectionSet';
+import { toggled } from '../../../utils/selection';
 import { usePlannerActions } from './usePlannerActions';
 
 export function useSelectionCopyActions(clear: () => void) {

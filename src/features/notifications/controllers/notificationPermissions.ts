@@ -10,7 +10,7 @@ import type { NotificationPreferences } from '../types';
 import { PermissionError } from './notificationState';
 
 export async function ensurePermission(next: NotificationPreferences): Promise<void> {
-  await prepareNotificationChannels(next);
+  await prepareNotificationChannels();
   const permission = await askNotificationPermission(next.alarms);
 
   ui.setState({ permission });

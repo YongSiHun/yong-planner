@@ -20,9 +20,7 @@ export async function notificationRuntime(): Promise<typeof Notifications> {
 export function channelId(kind: 'summary' | 'alarm', visible: boolean): string {
   return 'yong-' + kind + '-' + (visible ? 'public' : 'hidden') + '-v1';
 }
-export async function prepareNotificationChannels(
-  preferences: NotificationPreferences,
-): Promise<void> {
+export async function prepareNotificationChannels(): Promise<void> {
   const android = Platform.OS === 'android';
 
   if (!android) {

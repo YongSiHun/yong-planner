@@ -10,7 +10,7 @@ export const design = {
   radius: { small: 6, medium: 10, dialog: 20, pill: 24 },
   layout: {
     contentMaxWidth: 480,
-    dialogMaxWidth: 360,
+    dialogMaxWidth: 448,
     menuMaxWidth: 248,
     pagePadding: 16,
     pageGap: 24,

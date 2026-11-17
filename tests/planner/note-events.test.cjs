@@ -1,6 +1,4 @@
-require('../support/register.cjs');
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
+const { assert, test } = require('../support/test.cjs');
 const { NoteInputEvents } = require('../../src/features/planner/services/noteInputEvents.ts');
 const { NOTE_INPUT_BOUNDARY: boundary } = require('../../src/features/planner/services/note.ts');
 

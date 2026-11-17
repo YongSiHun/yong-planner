@@ -4,10 +4,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Label, useTheme } from '../../../components/ui';
 import { HEADER_HEIGHT } from '../../../components/navigation/AppHeader.styles';
 import { design } from '../../../components/ui/tokens';
-import type { useMemoState } from '../hooks/useMemoState';
+import type { MemoState } from '../types/presentation';
 import * as styles from './MemoEditorMenu.styles';
 
-export function MemoEditorMenu({ state }: { state: ReturnType<typeof useMemoState> }) {
+export function MemoEditorMenu({ state }: { state: MemoState }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();

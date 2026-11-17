@@ -1,7 +1,5 @@
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
+const { assert, test } = require('../support/test.cjs');
 const { Buffer } = require('node:buffer');
-const { test } = require('node:test');
 const {
   createBackup,
   parseBackup,

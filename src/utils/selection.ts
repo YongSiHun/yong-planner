@@ -1,8 +1,4 @@
-export function toggled(
-  current: ReadonlySet<string>,
-  id: string,
-  begin: boolean,
-): ReadonlySet<string> {
+export function toggled<T>(current: ReadonlySet<T>, id: T, begin = false): ReadonlySet<T> {
   const next = new Set(current);
   const shouldRemove = current.has(id) && !begin;
 

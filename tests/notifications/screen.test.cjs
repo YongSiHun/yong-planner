@@ -1,29 +1,11 @@
+const { assert, test, beforeEach } = require('../support/test.cjs');
 const { find } = require('../support/tree.cjs');
 const { createModuleMock } = require('../support/mock-module.cjs');
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test, beforeEach } = require('node:test');
-const React = require('react');
-let slots, cursor, state;
+const { createHookHarness } = require('../support/hooks.cjs');
+const hooks = createHookHarness();
+let state;
 const mock = createModuleMock(require);
-mock('react', {
-  ...React,
-  useState(initial) {
-    const index = cursor++;
-    if (!(index in slots)) slots[index] = initial;
-    return [
-      slots[index],
-      (value) => {
-        slots[index] = value;
-      },
-    ];
-  },
-  useRef(initial) {
-    const index = cursor++;
-    if (!(index in slots)) slots[index] = { current: initial };
-    return slots[index];
-  },
-});
+mock('react', hooks.react);
 mock('react-native', {
   ScrollView: 'ScrollView',
   View: 'View',
@@ -56,13 +38,13 @@ function preference(title) {
   );
 }
 function renderSwitch(title = '상태바에 표시') {
-  cursor = 0;
-  const element = preference(title);
-  return find(element.type(element.props), (node) => node.type?.name === 'Toggle');
+  return hooks.render(() => {
+    const element = preference(title);
+    return find(element.type(element.props), (node) => node.type?.name === 'Toggle');
+  });
 }
 beforeEach(() => {
-  slots = [];
-  cursor = 0;
+  hooks.reset();
   state = {
     ready: true,
     busy: false,

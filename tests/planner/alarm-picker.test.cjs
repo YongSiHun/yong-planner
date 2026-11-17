@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { hooks } = require('../support/planner.cjs');
+const { assert, test } = require('../support/test.cjs');
 const {
   SelectionBar,
   applyDailyNote,
@@ -34,8 +34,8 @@ test('alarm modal applies and aligns all selected schedule times without an over
   alarmButton.props.onPress();
   const opened = renderSelection();
   assert.equal(opened.alarmSetting, true);
-  state.slots = [];
-  state.cursor = 0;
+  hooks.reset();
+  hooks.beginRender();
   const dialog = TimePicker({
     item: opened.timeSource,
     format: '24h',
@@ -86,8 +86,8 @@ test('time and alarm clear actions share footer styling and alarm clearing prese
   renderSelection().toggle('2026-11-08', 0, true);
   renderSelection().toggleAlarm();
   const selection = renderSelection();
-  state.slots = [];
-  state.cursor = 0;
+  hooks.reset();
+  hooks.beginRender();
   const dialog = TimePicker({
     item: selection.timeSource,
     items: selection.selectedItems,

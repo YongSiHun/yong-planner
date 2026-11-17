@@ -1,9 +1,9 @@
 import { Button, design } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
-import type { useMemoState } from '../hooks/useMemoState';
+import type { MemoState } from '../types/presentation';
 import * as styles from './MemoListMenu.styles';
 
-export function MemoListMenu({ state }: { state: ReturnType<typeof useMemoState> }) {
+export function MemoListMenu({ state }: { state: MemoState }) {
   const visible = state.listMenuOpen;
 
   if (!visible) {

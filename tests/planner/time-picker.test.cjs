@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { hooks } = require('../support/planner.cjs');
+const { assert, test } = require('../support/test.cjs');
 const {
   React,
   SelectionBar,
@@ -13,7 +13,7 @@ test('12-hour time picker selects AM/PM for all selected schedules and clamps in
   const { TimePicker } = require('../../src/features/planner/components/TimePicker.tsx');
   const savedTimes = [];
   const render = () => {
-    state.cursor = 0;
+    hooks.beginRender();
     return TimePicker({
       item: { id: 'a', content: '회의', time: '09:00' },
       count: 2,
@@ -62,8 +62,8 @@ test('time modal applies mixed selected times without an overwrite notice', () =
     (node) => node.type?.name === 'SheetAction' && node.props.title === '시간 설정',
   );
   assert.notEqual(timeButton.props.disabled, true);
-  state.slots = [];
-  state.cursor = 0;
+  hooks.reset();
+  hooks.beginRender();
   const dialog = TimePicker({
     item: selection.timeSource,
     format: '24h',
@@ -91,7 +91,7 @@ test('time modal applies mixed selected times without an overwrite notice', () =
 test('time clearing appears in the footer with the same typography as apply', () => {
   const { TimePicker } = require('../../src/features/planner/components/TimePicker.tsx');
   const saved = [];
-  state.cursor = 0;
+  hooks.beginRender();
   const dialog = TimePicker({
     item: { id: 'a', content: '회의', time: '13:00' },
     format: '24h',
@@ -125,8 +125,8 @@ test('time and alarm dialogs keep controls fixed and scroll only the schedule pr
   }));
   for (const format of ['12h', '24h']) {
     const dialogs = ['시간 설정', '알람 설정'].map((title) => {
-      state.slots = [];
-      state.cursor = 0;
+      hooks.reset();
+      hooks.beginRender();
       return TimePicker({
         title,
         item: items[0],
@@ -182,7 +182,7 @@ test('time modal warns below the title only when the chosen time would clear an 
     { id: 'b', content: '식사', time: '14:00' },
   ];
   const render = (alarmSetting = false) => {
-    state.cursor = 0;
+    hooks.beginRender();
     return TimePicker({
       item: items[0],
       items,

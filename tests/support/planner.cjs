@@ -16,7 +16,11 @@ function createSelection() {
 }
 
 const { beforeEach } = require('node:test');
-const React = require('react');
+const { createHookHarness } = require('./hooks.cjs');
+const { createAnimationFrames } = require('./frames.cjs');
+const hooks = createHookHarness();
+const React = hooks.react;
+const frames = createAnimationFrames();
 const { emptyData } = require('../../src/features/planner/types/index.ts');
 const { applyDailyNote } = require('../../src/features/planner/services/note.ts');
 const { deleteSelectedNotes } = require('../../src/features/planner/services/noteSelection.ts');
@@ -25,20 +29,9 @@ function changeInput(input, text, eventCount = ++state.nativeEventCount) {
   input.props.onChange({ nativeEvent: { text, eventCount } });
 }
 
-const frames = new Map();
-
-global.requestAnimationFrame = (callback) => {
-  frames.set(++state.frameId, callback);
-  return state.frameId;
-};
-
-global.cancelAnimationFrame = (id) => frames.delete(id);
-
-function flushFrames() {
-  const pending = [...frames.values()];
-  frames.clear();
-  pending.forEach((callback) => callback());
-}
+global.requestAnimationFrame = frames.request;
+global.cancelAnimationFrame = frames.cancel;
+const flushFrames = frames.flush;
 
 const nativeInput = {
   focus: () => state.focused++,
@@ -47,44 +40,7 @@ const nativeInput = {
 
 const cacheMock = createModuleMock(require);
 
-cacheMock('react', {
-  ...React,
-  useCallback: (callback) => callback,
-  useMemo: (factory) => factory(),
-  useState(initial) {
-    const index = state.cursor++;
-    if (!(index in state.slots))
-      state.slots[index] = typeof initial === 'function' ? initial() : initial;
-    return [
-      state.slots[index],
-      (value) => {
-        state.slots[index] = typeof value === 'function' ? value(state.slots[index]) : value;
-      },
-    ];
-  },
-  useRef(initial) {
-    const index = state.cursor++;
-    if (!(index in state.slots)) state.slots[index] = { current: initial };
-    return state.slots[index];
-  },
-  useLayoutEffect(effect, deps) {
-    const index = state.cursor++;
-    const previous = state.slots[index];
-    const changed = !previous || deps.some((value, position) => value !== previous.deps[position]);
-    if (changed) {
-      previous?.cleanup?.();
-      const slot = { deps };
-      state.slots[index] = slot;
-      state.layoutEffects.push(() => {
-        slot.cleanup = effect();
-      });
-    }
-  },
-  useEffect(effect) {
-    const index = state.cursor++;
-    if (!(index in state.slots)) state.slots[index] = { cleanup: effect() };
-  },
-});
+cacheMock('react', React);
 
 cacheMock('react-native', {
   StyleSheet: { create: (styles) => styles },
@@ -100,6 +56,10 @@ cacheMock('react-native', {
 
 cacheMock('../../src/components/ui/index.tsx', {
   design: require('../../src/components/ui/tokens.ts').design,
+  showDeleteDialog: (message, onConfirm) =>
+    state.alerts.push(
+      require('../../src/services/confirmation.ts').deleteConfirmation(message, onConfirm),
+    ),
   showToast: (message) => state.toasts.push(message),
   showDialog: (title, message, actions) => state.alerts.push({ title, message, actions }),
   Button: 'Button',
@@ -229,17 +189,15 @@ cacheMock('expo-sqlite/kv-store', {
   },
 });
 
-const {
-  ScheduleInput,
-  SchedulePreview,
-  ScheduleChip,
-} = require('../../src/features/planner/components/ScheduleInput.tsx');
+const { ScheduleInput } = require('../../src/features/planner/components/ScheduleInput.tsx');
+const { SchedulePreview } = require('../../src/features/planner/components/SchedulePreview.tsx');
+const { ScheduleChip } = require('../../src/features/planner/components/ScheduleChip.tsx');
 
 const { usePlannerGuide } = require('../../src/features/planner/hooks/usePlannerGuide.ts');
 const { NOTE_INPUT_BOUNDARY: boundary } = require('../../src/features/planner/services/note.ts');
 
 function renderInput(note = '회의,장보기', initialIndex, onSelect = () => {}, options = {}) {
-  state.cursor = 0;
+  hooks.beginRender();
   const tree = ScheduleInput({
     date: '2026-11-07',
     note,
@@ -253,36 +211,35 @@ function renderInput(note = '회의,장보기', initialIndex, onSelect = () => {
   });
   const input = find(tree, (node) => node.type === 'TextInput');
   input.props.ref.current = nativeInput;
-  state.layoutEffects.splice(0).forEach((effect) => effect());
+  hooks.flushLayoutEffects();
+  hooks.flushEffects();
   return { tree, input };
 }
 
 function renderGuide() {
-  state.cursor = 0;
+  hooks.beginRender();
   // React 훅: 상태 유지 mock 실행.
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  return usePlannerGuide();
+
+  return hooks.render(usePlannerGuide);
 }
 
 beforeEach(() => {
-  state.slots = [];
+  hooks.reset();
   state.toasts = [];
-  state.frameId = 0;
   state.alarmPermissionRequests = 0;
   state.alarmPermissionError = null;
-  state.cursor = 0;
+  hooks.beginRender();
   state.saved = [];
   state.flushes = 0;
   state.focused = 0;
   state.preferences = {};
-  state.layoutEffects = [];
   state.selections = [];
   state.alerts = [];
   state.nativeEventCount = 0;
   state.plannerData = emptyData();
   state.selectionState = createSelection();
   state.dimensions = { height: 800, width: 360, fontScale: 1 };
-  frames.clear();
+  frames.reset();
 });
 
 const { useNoteSelection } = require('../../src/features/planner/hooks/useNoteSelection.ts');
@@ -290,10 +247,10 @@ const { SelectionBar } = require('../../src/features/planner/components/Selectio
 const { MonthPicker } = require('../../src/features/planner/components/MonthPicker.tsx');
 
 function renderSelection() {
-  state.cursor = 0;
+  hooks.beginRender();
   // React 훅: 상태 유지 mock 실행.
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  return useNoteSelection(() => {});
+
+  return hooks.render(() => useNoteSelection(() => {}));
 }
 
 function buttonTitles(node) {
@@ -315,6 +272,7 @@ const { DayRow } = require('../../src/features/planner/components/DayRow.tsx');
 const { DayDate } = require('../../src/features/planner/components/DayDate.tsx');
 
 module.exports = {
+  hooks,
   DayDate,
   DayRow,
   MonthPicker,

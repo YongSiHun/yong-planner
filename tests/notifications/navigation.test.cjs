@@ -1,11 +1,10 @@
+const { assert, test, beforeEach } = require('../support/test.cjs');
 const { createModuleMock } = require('../support/mock-module.cjs');
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test, beforeEach } = require('node:test');
+const { createHookHarness } = require('../support/hooks.cjs');
+const hooks = createHookHarness();
 const mock = createModuleMock(require);
 let ready;
 let routes;
-let cleanups;
 let starts;
 let appStateHandler;
 let flushed;
@@ -17,18 +16,7 @@ let lastResponse;
 let runtime;
 let startup;
 let parameters;
-let refs;
-let cursor;
-mock('react', {
-  useEffect: (effect) => {
-    cleanups.push(effect());
-  },
-  useRef: (initial) => {
-    const index = cursor++;
-    refs[index] ??= { current: initial };
-    return refs[index];
-  },
-});
+mock('react', hooks.react);
 mock('react-native', {
   AppState: {
     addEventListener: (_event, listener) => {
@@ -72,19 +60,18 @@ function response(id, date) {
 }
 function renderLifecycle() {
   // React 훅: 생명주기 mock 실행.
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useNotificationLifecycle();
+
+  hooks.render(useNotificationLifecycle);
 }
 function renderDate(onNavigate) {
-  cursor = 0;
   // React 훅: query mock 실행.
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useNotificationDate(onNavigate);
+
+  hooks.render(() => useNotificationDate(onNavigate));
 }
 beforeEach(() => {
   ready = false;
   routes = [];
-  cleanups = [];
+  hooks.reset();
   starts = 0;
   flushed = 0;
   stops = 0;
@@ -95,8 +82,6 @@ beforeEach(() => {
   runtime = Promise.resolve(native);
   startup = Promise.resolve();
   parameters = {};
-  refs = [];
-  cursor = 0;
 });
 test('cold-start notification waits for navigation readiness and ignores unrelated responses', async () => {
   lastResponse = response('yong-planner:alarm:a', '2026-11-08');
@@ -119,7 +104,7 @@ test('cold-start notification waits for navigation readiness and ignores unrelat
   appStateHandler('background');
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(flushed, 2);
-  cleanups.at(-1)();
+  hooks.unmount();
   assert.equal(stops, 1);
   assert.equal(removed, 1);
 });
@@ -130,7 +115,7 @@ test('unmount before native import finishes does not install listeners or naviga
     release = resolve;
   });
   renderLifecycle();
-  cleanups.at(-1)();
+  hooks.unmount();
   release(native);
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(callback, undefined);
@@ -163,7 +148,7 @@ test('startup approval immediately applies enabled notifications', async () => {
   approve();
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(flushed, 1);
-  cleanups.at(-1)();
+  hooks.unmount();
 });
 
 test('startup approval after unmount does not restart notification work', async () => {
@@ -173,7 +158,7 @@ test('startup approval after unmount does not restart notification work', async 
     approve = resolve;
   });
   renderLifecycle();
-  cleanups.at(-1)();
+  hooks.unmount();
   approve();
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(flushed, 0);

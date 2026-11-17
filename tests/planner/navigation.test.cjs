@@ -1,51 +1,21 @@
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test, beforeEach } = require('node:test');
+const { assert, test, beforeEach } = require('../support/test.cjs');
 const { centeredDateOffset } = require('../../src/features/planner/services/navigation.ts');
-let slots = [];
-let cursor = 0;
-const reactPath = require.resolve('react');
-require.cache[reactPath] = {
-  id: reactPath,
-  filename: reactPath,
-  loaded: true,
-  exports: {
-    useCallback: (callback) => callback,
-    useRef(initial) {
-      const index = cursor++;
-      slots[index] ??= { current: initial };
-      return slots[index];
-    },
-    useState(initial) {
-      const index = cursor++;
-      if (!(index in slots)) slots[index] = typeof initial === 'function' ? initial() : initial;
-      return [
-        slots[index],
-        (value) => {
-          slots[index] = typeof value === 'function' ? value(slots[index]) : value;
-        },
-      ];
-    },
-  },
-};
+const { createHookHarness } = require('../support/hooks.cjs');
+const { createModuleMock } = require('../support/mock-module.cjs');
+const hooks = createHookHarness();
+const mock = createModuleMock(require);
+mock('react', hooks.react);
 const notices = [];
-const uiPath = require.resolve('../../src/components/ui/index.tsx');
-require.cache[uiPath] = {
-  id: uiPath,
-  filename: uiPath,
-  loaded: true,
-  exports: { showToast: (message) => notices.push(message) },
-};
+mock('../../src/components/ui/index.tsx', { showToast: (message) => notices.push(message) });
 const { useMonthNavigation } = require('../../src/features/planner/hooks/useMonthNavigation.ts');
 function render() {
-  cursor = 0;
   // React 훅: 상태 유지 mock 실행.
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  return useMonthNavigation();
+
+  return hooks.render(useMonthNavigation);
 }
 beforeEach(() => {
-  slots = [];
-  cursor = 0;
+  hooks.reset();
+  notices.length = 0;
 });
 
 test('dates start at the upper 20 percent for different row and screen heights', () => {

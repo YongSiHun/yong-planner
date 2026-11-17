@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { emptySelection, useNoteSelectionStore as ui } from '../../../stores/noteSelection';
 import { usePlanner } from '../../../stores/planner';
 import { dailyNoteItems } from '../services/note';
-import { toggled } from '../services/selectionSet';
+import { toggled } from '../../../utils/selection';
 import { usePlannerActions } from './usePlannerActions';
 import { useSelectionCopyActions } from './useSelectionCopyActions';
 import { useSelectionTimeActions } from './useSelectionTimeActions';

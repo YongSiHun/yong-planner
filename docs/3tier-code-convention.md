@@ -34,3 +34,11 @@ stores는 데이터와 초기값만 보유한다. 저장 큐, 초기화, 복원�
 - 인지 복잡도는 함수당 4 이하로 제한한다. 5 이상이면 책임을 나눈다. 중첩 if는 early return으로, 중첩 반복문은 Map/Set 인덱스나 순차 순회로 바꾼다.
 - ESLint가 복잡도, 중첩 if/반복문, 인라인 스타일, 계층 경계, 액션 훅의 상태·생명주기 구독을 검사한다.
 - 변경 후 typecheck, lint, format:check와 관련 회귀 테스트를 실행한다. 네이티브 변경은 Android/iOS 번들도 확인하며 실제 터치·키보드 검증 여부를 구분해 기록한다.
+
+## 공통 UI와 테스트
+
+- components/ui/index.tsx는 공개 API를 내보내는 배럴이며 Button·Input·Label·테마는 각 모듈에서 구현한다. UI 원시 요소는 배럴을 역으로 import하지 않는다.
+- 삭제 확인은 services/confirmation.ts의 요청 규칙과 공통 ConfirmationDialog를 사용한다. 개별 기능은 대상·개수·후속 동작만 전달한다.
+- 메모 화면은 헤더·목록·편집을 조합한다. 편집과 선택 상태는 각각의 훅이 관리하고 types/presentation.ts의 표시 계약을 사용한다.
+- 비동기 UI 작업의 실행 잠금·오류 보고는 useAsyncOperation에서 관리하고, 실제 저장과 후속 처리는 기능별 훅에 둔다.
+- 테스트 실행과 공통 도우미의 책임은 [tests/README.md](../tests/README.md)를 따른다.

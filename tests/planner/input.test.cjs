@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { hooks } = require('../support/planner.cjs');
+const { assert, test } = require('../support/test.cjs');
 const {
   boundary,
   changeInput,
@@ -208,7 +208,7 @@ test('leaving an editor without native blur commits its chips and flushes once',
     () => 'leave-' + ++id,
   );
   renderInput(' meeting , , exercise ,', 0);
-  for (const slot of state.slots) slot?.cleanup?.();
+  hooks.unmount();
   assert.deepEqual(
     state.plannerData.dailyPlanItems.map((item) => item.content),
     ['meeting', 'exercise'],
@@ -219,7 +219,7 @@ test('leaving an editor without native blur commits its chips and flushes once',
 test('blur followed by unmount does not save the same edit twice', () => {
   const editor = renderInput('meeting', 0);
   editor.input.props.onBlur();
-  for (const slot of state.slots) slot?.cleanup?.();
+  hooks.unmount();
   assert.equal(state.flushes, 1);
 });
 

@@ -1,6 +1,6 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
-const { state, find } = require('../support/planner.cjs');
+const { hooks } = require('../support/planner.cjs');
+const { assert, test } = require('../support/test.cjs');
+const { find } = require('../support/planner.cjs');
 const { createModuleMock } = require('../support/mock-module.cjs');
 const mock = createModuleMock(require);
 const saves = [];
@@ -14,7 +14,7 @@ const { HolidayDateInput } = require('../../src/features/settings/components/Hol
 const { HolidayOverrides } = require('../../src/features/settings/components/HolidayOverrides.tsx');
 
 function render() {
-  state.cursor = 0;
+  hooks.beginRender();
   return HolidayOverrides();
 }
 function editor() {

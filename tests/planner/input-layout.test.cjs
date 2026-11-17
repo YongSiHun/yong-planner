@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { hooks } = require('../support/planner.cjs');
+const { assert, test } = require('../support/test.cjs');
 const {
   boundary,
   changeInput,
@@ -45,7 +45,7 @@ test('typing after a wide word never first shrinks the editor to an estimated na
 test('editor stays within available phone and tablet widths at larger font scales', () => {
   for (const width of [320, 360, 768, 1024, 1366]) {
     for (const fontScale of [1, 1.4, 2]) {
-      state.slots = [];
+      hooks.reset();
       state.dimensions = { width, height: 800, fontScale };
       const available = Math.min(width, 960) - 88;
       let editor = renderInput('아주 긴 일정 내용입니다 '.repeat(30), 0);

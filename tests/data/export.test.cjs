@@ -1,7 +1,5 @@
+const { assert, test, beforeEach } = require('../support/test.cjs');
 const { createModuleMock } = require('../support/mock-module.cjs');
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test, beforeEach } = require('node:test');
 const { Buffer } = require('node:buffer');
 const content = new Map();
 let picked;

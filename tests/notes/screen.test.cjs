@@ -1,9 +1,7 @@
-require('../support/register.cjs');
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { assert, test } = require('../support/test.cjs');
 const React = require('react');
 const { createModuleMock } = require('../support/mock-module.cjs');
-const { find } = require('../support/tree.cjs');
+const { find, expand } = require('../support/tree.cjs');
 const mock = createModuleMock(require);
 mock('react', { ...React, useEffect() {} });
 mock('react-native', {
@@ -52,12 +50,6 @@ function navigation() {
     headerTitle: () => heading.props.children,
     headerRight: () => right.props.children,
   };
-}
-function expand(node) {
-  if (!node || typeof node !== 'object') return node;
-  if (Array.isArray(node)) return node.map(expand);
-  if (typeof node.type === 'function') return expand(node.type(node.props));
-  return { ...node, props: { ...node.props, children: expand(node.props?.children) } };
 }
 function initialState() {
   return {

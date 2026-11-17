@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const { hooks } = require('../support/planner.cjs');
+const { assert, test } = require('../support/test.cjs');
 const { renderGuide, state } = require('../support/planner.cjs');
 
 test('closing without opting out shows the guide on the next launch', async () => {
@@ -9,7 +9,7 @@ test('closing without opting out shows the guide on the next launch', async () =
   assert.equal(guide.guideOpen, true);
   guide.closeGuide();
   assert.equal(state.preferences['planner.guide.v1.hidden'], '0');
-  state.slots = [];
+  hooks.reset();
   renderGuide();
   await Promise.resolve();
   guide = renderGuide();
@@ -23,7 +23,7 @@ test('opting out hides the launch guide and the header can still reopen it', asy
   guide.setDontShowAgain(true);
   guide = renderGuide();
   guide.closeGuide();
-  state.slots = [];
+  hooks.reset();
   renderGuide();
   await Promise.resolve();
   guide = renderGuide();

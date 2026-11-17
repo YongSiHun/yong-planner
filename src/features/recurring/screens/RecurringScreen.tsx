@@ -8,7 +8,7 @@ import {
   Button,
   Label,
   styles as layoutStyles,
-  showDialog,
+  showDeleteDialog,
   useTheme,
 } from '../../../components/ui';
 import { usePlanner } from '../../../stores/planner';
@@ -33,10 +33,9 @@ function RecurringRow({
   const endDate = plan.endDate ? plan.endDate + '까지' : '계속';
 
   function handleDelete() {
-    showDialog('반복 일정 삭제', '이 반복 일정과 연결된 날짜별 예외를 모두 삭제합니다.', [
-      { text: '취소', style: 'cancel' },
-      { text: '삭제', style: 'destructive', onPress: () => deleteRecurring(plan.id) },
-    ]);
+    showDeleteDialog('선택한 반복 일정 1개와 연결된 날짜별 예외를 모두 삭제합니다.', () =>
+      deleteRecurring(plan.id),
+    );
   }
 
   return (
