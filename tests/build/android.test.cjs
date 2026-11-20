@@ -10,30 +10,38 @@ async function run(platform, env = {}, args = [], results = [{ status: 0 }]) {
   const output = [];
   const warnings = [];
   const errors = [];
+  const prepared = [];
   const script = path.join(process.cwd(), 'scripts/android.cjs');
   let finish;
   const completed = new Promise((resolve) => {
     finish = resolve;
   });
   const fakeRequire = (id) =>
-    id === 'node:child_process'
+    id === './android-device.cjs'
       ? {
-          spawn: (...values) => {
-            const result = results[spawned.length];
-            assert.ok(result, 'unexpected extra Expo invocation');
-            spawned.push(values);
-            const child = new EventEmitter();
-            child.stderr = new EventEmitter();
-            queueMicrotask(() => {
-              for (const chunk of result.stderr ?? [])
-                child.stderr.emit('data', Buffer.from(chunk));
-              if (result.error) child.emit('error', result.error);
-              child.emit('close', result.status ?? null, result.signal ?? null);
-            });
-            return child;
+          prepareAndroidDevice: async (values, options) => {
+            prepared.push({ values, options });
+            return values;
           },
         }
-      : require(id);
+      : id === 'node:child_process'
+        ? {
+            spawn: (...values) => {
+              const result = results[spawned.length];
+              assert.ok(result, 'unexpected extra Expo invocation');
+              spawned.push(values);
+              const child = new EventEmitter();
+              child.stderr = new EventEmitter();
+              queueMicrotask(() => {
+                for (const chunk of result.stderr ?? [])
+                  child.stderr.emit('data', Buffer.from(chunk));
+                if (result.error) child.emit('error', result.error);
+                child.emit('close', result.status ?? null, result.signal ?? null);
+              });
+              return child;
+            },
+          }
+        : require(id);
   fakeRequire.resolve = () => 'expo-cli';
   runInNewContext(readFileSync(script, 'utf8'), {
     require: fakeRequire,
@@ -48,7 +56,7 @@ async function run(platform, env = {}, args = [], results = [{ status: 0 }]) {
     },
   });
   const status = await completed;
-  return { spawned, status, output, warnings, errors };
+  return { spawned, status, output, warnings, errors, prepared };
 }
 
 const replaced =
@@ -139,4 +147,12 @@ test('build failures, uncertain installs, physical device replacement and interr
     assert.equal(spawned.length, 1);
     assert.equal(status, 1);
   }
+});
+
+test('Windows prepares ADB before Expo while other platforms keep Expo device startup', async () => {
+  const windows = await run('win32', { ANDROID_HOME: 'sdk' }, ['--device', 'Small_Phone']);
+  assert.equal(windows.prepared.length, 1);
+  assert.deepEqual(Array.from(windows.prepared[0].values), ['--device', 'Small_Phone']);
+  assert.equal(windows.prepared[0].options.env.ANDROID_HOME, 'sdk');
+  assert.equal((await run('darwin')).prepared.length, 0);
 });

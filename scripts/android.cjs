@@ -1,5 +1,6 @@
 const { spawn } = require('node:child_process');
 const { stripVTControlCharacters } = require('node:util');
+const { prepareAndroidDevice } = require('./android-device.cjs');
 
 // Fingerprint embedding is optional development metadata. Avoid the Windows
 // config-loader subprocess failure and its hashing cost on every native build.
@@ -34,7 +35,11 @@ function runExpo(args) {
 }
 
 async function main() {
-  const first = await runExpo(requestedArgs);
+  const args =
+    process.platform === 'win32'
+      ? await prepareAndroidDevice(requestedArgs, { env })
+      : requestedArgs;
+  const first = await runExpo(args);
   const failed = first.code !== null && first.code !== 0 && !first.spawnError;
   const changedTransport =
     /CommandError: Device (emulator-\d+) was replaced after discovery \(transport \d+ became \d+\)/.exec(
@@ -45,8 +50,8 @@ async function main() {
   }
 
   console.warn('에뮬레이터의 ADB 연결이 바뀌었습니다. 기기를 다시 탐색해 한 번 재시도합니다.');
-  const hasDevice = requestedArgs.some((arg) => /^(?:--device|-d)(?:=|$)/.test(arg));
-  const retryArgs = hasDevice ? requestedArgs : [...requestedArgs, '--device', changedTransport[1]];
+  const hasDevice = args.some((arg) => /^(?:--device|-d)(?:=|$)/.test(arg));
+  const retryArgs = hasDevice ? args : [...args, '--device', changedTransport[1]];
   const retry = await runExpo(retryArgs);
 
   return retry.code ?? 1;
