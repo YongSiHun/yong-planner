@@ -236,3 +236,16 @@ test('denied exact alarm permission prevents saving alarm preferences and permit
   assert.equal(useNotificationStore.getState().preferences.alarms, true);
   assert.equal(useNotificationStore.getState().preferences.exact, true);
 });
+
+test('automatically granted exact alarm access saves a precise alarm without a permission request', async () => {
+  state.granted = true;
+  state.exact = true;
+  await authorizeScheduleAlarm();
+  assert.equal(useNotificationStore.getState().preferences.alarms, true);
+  assert.equal(useNotificationStore.getState().preferences.exact, true);
+  assert.equal(
+    events.some((event) => event.type === 'exact'),
+    false,
+  );
+  assert.equal(events.includes('settings'), false);
+});

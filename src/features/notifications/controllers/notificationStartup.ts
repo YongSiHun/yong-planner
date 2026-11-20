@@ -1,6 +1,4 @@
-import { Platform } from 'react-native';
 import { useNotificationStore as ui } from '../../../stores/notifications';
-import { askExactAlarmPermission } from '../data/native';
 import { claimStartupPermissionRequest } from '../data/preferences';
 import { runPreferenceChange } from './notificationChanges';
 import { ensurePermission } from './notificationPermissions';
@@ -15,17 +13,7 @@ export function requestStartupNotificationPermission(): Promise<void> {
       return;
     }
     await ensurePermission({ ...ui.getState().preferences, alarms: true });
-    await requestMissingExactPermission();
   });
 
   return startupPermission;
-}
-
-async function requestMissingExactPermission(): Promise<void> {
-  const permission = ui.getState().permission;
-  const needsExact = Platform.OS === 'android' && !permission?.exact;
-
-  if (needsExact) {
-    ui.setState({ permission: await askExactAlarmPermission() });
-  }
 }

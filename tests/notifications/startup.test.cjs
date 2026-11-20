@@ -17,18 +17,14 @@ test('initialization never requests notification or exact alarm permission', asy
   assert.equal(useNotificationStore.getState().preferences.lockScreen, false);
 });
 
-test('Android startup requests notifications before exact alarms once without enabling display', async () => {
+test('Android startup requests notifications once without opening exact alarm settings', async () => {
   await Promise.all([
     requestStartupNotificationPermission(),
     requestStartupNotificationPermission(),
   ]);
   assert.equal(events.filter((event) => event.type === 'permission').length, 1);
   assert.equal(events.find((event) => event.type === 'permission').request.ios.allowSound, true);
-  assert.equal(events.filter((event) => event.type === 'exact').length, 1);
-  assert.ok(
-    events.findIndex((event) => event.type === 'exact') >
-      events.findIndex((event) => event.type === 'permission'),
-  );
+  assert.equal(events.filter((event) => event.type === 'exact').length, 0);
   assert.equal(useNotificationStore.getState().preferences.alarms, false);
   assert.equal(useNotificationStore.getState().preferences.summary, false);
 });
@@ -64,9 +60,11 @@ test('startup skips granted permissions and stops exact access after notificatio
   );
 });
 
-test('denied exact alarm access on startup keeps settings disabled without failing startup', async () => {
+test('startup does not request missing exact alarm access and leaves preferences unchanged', async () => {
   state.allowExact = false;
   await freshStartupRequest()();
+  assert.equal(events.filter((event) => event.type === 'exact').length, 0);
+  assert.equal(events.includes('settings'), false);
   assert.equal(useNotificationStore.getState().permission.granted, true);
   assert.equal(useNotificationStore.getState().permission.exact, false);
   assert.equal(useNotificationStore.getState().preferences.exact, false);
