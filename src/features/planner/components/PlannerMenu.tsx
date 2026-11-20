@@ -79,22 +79,8 @@ export function PlannerMenu({ type, month, onClose, onShowExport, onExport }: Pl
               bold
               labelSize={design.type.action}
               style={styles.plannerMenuButtonStyle}
-              title="TXT 파일 공유"
-              onPress={() => onExport('txt')}
-            />
-            <Button
-              bold
-              labelSize={design.type.action}
-              style={styles.plannerMenuButtonStyle}
               title="JSON 파일 공유"
               onPress={() => onExport('json')}
-            />
-            <Button
-              bold
-              labelSize={design.type.action}
-              style={styles.plannerMenuButtonStyle}
-              title="CSV 파일 공유"
-              onPress={() => onExport('csv')}
             />
           </>
         )}

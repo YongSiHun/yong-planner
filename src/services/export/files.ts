@@ -5,8 +5,9 @@ import * as Sharing from 'expo-sharing';
 import type { PlannerData } from '../../features/planner/types';
 import { createBackup, MAX_BACKUP_BYTES, parseBackup, type PlannerBackup } from '../backup';
 import { createHolidayService } from '../holiday';
-import { monthCsv, monthTxt } from './index';
+import { monthTxt } from './index';
 import { zipJson, unzipJson } from '../backup/zip';
+import { BackupRestoreError } from '../backup/errors';
 
 export type ExportFormat = keyof typeof monthExporters;
 type MonthExporter = (
@@ -18,10 +19,6 @@ type MonthExporter = (
 const monthExporters = {
   json: async (data, month) =>
     shareFile(monthFilename(month, 'json'), createBackup(data, month), 'application/json'),
-  txt: async (data, month, holidays) =>
-    shareFile(monthFilename(month, 'txt'), monthTxt(data, month, holidays), 'text/plain'),
-  csv: async (data, month, holidays) =>
-    shareFile(monthFilename(month, 'csv'), monthCsv(data, month, holidays), 'text/csv'),
   clipboard: async (data, month, holidays) =>
     Clipboard.setStringAsync(monthTxt(data, month, holidays)),
 } satisfies Record<string, MonthExporter>;
@@ -33,7 +30,6 @@ function monthFilename(month: string, extension: string): string {
 const fileTypes: Record<string, string> = {
   'application/json': 'public.json',
   'application/zip': 'public.zip-archive',
-  'text/csv': 'public.comma-separated-values-text',
 };
 
 export async function shareFile(
@@ -67,37 +63,72 @@ export async function exportMonth(
 }
 
 export async function chooseBackup(): Promise<PlannerBackup | null> {
-  const result = await DocumentPicker.getDocumentAsync({
-    type: [
-      'application/json',
-      'application/zip',
-      'application/x-zip-compressed',
-      'text/plain',
-      'application/octet-stream',
-    ],
-    copyToCacheDirectory: true,
-  });
+  const result = await pickBackupDocument();
   const isCancelled = result.canceled;
 
   if (isCancelled) {
     return null;
   }
 
-  const asset = result.assets[0]!;
+  return readBackupDocument(result.assets[0]!);
+}
+
+async function pickBackupDocument() {
+  try {
+    // Providers may omit or misidentify a backup's MIME type.
+    return await DocumentPicker.getDocumentAsync({
+      type: '*/*',
+      multiple: false,
+      copyToCacheDirectory: true,
+    });
+  } catch {
+    throw new BackupRestoreError('selection');
+  }
+}
+
+async function readBackupDocument(
+  asset: DocumentPicker.DocumentPickerAsset,
+): Promise<PlannerBackup> {
+  try {
+    return await readBackupAsset(asset);
+  } catch (error) {
+    const knownError = error instanceof BackupRestoreError;
+
+    if (knownError) {
+      throw error;
+    }
+
+    throw new BackupRestoreError('read');
+  }
+}
+
+async function readBackupAsset(asset: DocumentPicker.DocumentPickerAsset): Promise<PlannerBackup> {
   const file = new File(asset.uri);
   const zipped = asset.name.toLowerCase().endsWith('.zip');
   const limit = zipped ? MAX_BACKUP_BYTES + 1024 * 1024 : MAX_BACKUP_BYTES;
   const exceedsSizeLimit = file.size > limit;
 
   if (exceedsSizeLimit) {
-    throw new Error('백업 파일은 50MB 이하여야 합니다.');
+    throw new BackupRestoreError('size');
   }
 
   if (zipped) {
-    return readFullZip(file);
+    const bytes = await file.bytes();
+
+    return parseBackupContent(() => readFullZip(bytes));
   }
 
-  return parseBackup(await file.text());
+  const text = await file.text();
+
+  return parseBackupContent(() => parseBackup(text));
+}
+
+function parseBackupContent(parse: () => PlannerBackup): PlannerBackup {
+  try {
+    return parse();
+  } catch {
+    throw new BackupRestoreError('format');
+  }
 }
 
 export async function exportFullBackup(data: PlannerData): Promise<void> {
@@ -108,8 +139,8 @@ export async function exportFullBackup(data: PlannerData): Promise<void> {
   await shareFile('yongplanner-backup.zip', zipJson(json), 'application/zip');
 }
 
-async function readFullZip(file: File): Promise<PlannerBackup> {
-  const backup = parseBackup(unzipJson(await file.bytes()));
+function readFullZip(bytes: Uint8Array): PlannerBackup {
+  const backup = parseBackup(unzipJson(bytes));
   const entire = backup.month === undefined && backup.kind !== 'notes';
 
   if (!entire) {

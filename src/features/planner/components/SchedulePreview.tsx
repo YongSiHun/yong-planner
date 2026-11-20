@@ -5,6 +5,7 @@ import { useNoteSelectionStore } from '../../../stores/noteSelection';
 import type { SchedulePreviewProps } from '../types/presentation';
 import * as styles from './SchedulePreview.styles';
 import { ScheduleChip } from './ScheduleChip';
+import { useChipColumn } from '../hooks/useChipColumn';
 
 export function SchedulePreview({
   note,
@@ -31,6 +32,9 @@ export function SchedulePreview({
         .map((part, index) => ({ part, index }))
         .filter(({ part }) => part.trim().length > 0),
     [note],
+  );
+  const layout = useChipColumn(
+    JSON.stringify([note, noteTimes, noteImportant, noteAlarms, timeFormat]),
   );
   const hasContent = parts.length > 0;
 
@@ -79,11 +83,19 @@ export function SchedulePreview({
   }
 
   return (
-    <Pressable accessible={false} onPress={handleBlankPress} style={styles.preview}>
+    <Pressable
+      accessible={false}
+      onPress={handleBlankPress}
+      onLayout={layout.measureContainer}
+      style={styles.previewLayout(layout.column)}
+    >
       {parts.map(({ part, index }) => (
         <View
           key={index}
-          onLayout={(event) => onChipLayout?.(index, event)}
+          onLayout={(event) => {
+            layout.measureChip(index, event);
+            onChipLayout?.(index, event);
+          }}
           style={styles.chipWrapper(draggingIndex, index)}
         >
           <ScheduleChip

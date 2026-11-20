@@ -2,9 +2,20 @@ import { useAsyncOperation } from '../../../hooks/useAsyncOperation';
 import { showDialog } from '../../../components/ui';
 import type { PlannerBackup } from '../../../services/backup';
 import { useBackupActions } from './useBackupActions';
+import { restoreErrorMessage } from '../../../services/backup/errors';
 export function useBackupState() {
   const { choose, restore, backup: backupAll } = useBackupActions();
   const { busy: isBusy, run: runAction } = useAsyncOperation();
+
+  async function runRestore(action: () => Promise<void>) {
+    await runAction(async () => {
+      try {
+        await action();
+      } catch (error) {
+        showDialog('복원 실패', restoreErrorMessage(error));
+      }
+    });
+  }
 
   async function restoreBackup(data: PlannerBackup) {
     await restore(data);
@@ -47,7 +58,7 @@ export function useBackupState() {
           text: monthly ? '해당 월 교체' : '전체 교체',
           style: 'destructive',
           onPress: () => {
-            void runAction(() => restoreBackup(backup));
+            void runRestore(() => restoreBackup(backup));
           },
         },
       ],
@@ -71,7 +82,7 @@ export function useBackupState() {
         ],
       ),
     handleRestore: () => {
-      void runAction(handleRestore);
+      void runRestore(handleRestore);
     },
   };
 }

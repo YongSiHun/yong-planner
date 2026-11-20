@@ -20,6 +20,7 @@ test('blank space opens editing and an existing chip selects that chip', () => {
   tree.props.onPress();
   find(tree, (node) => node.type?.name === 'ScheduleChip').props.onPress();
   assert.deepEqual(edits, [undefined, 0]);
+  hooks.reset();
   const editor = renderInput();
   editor.tree.props.onPress();
   assert.equal(state.focused, 1);

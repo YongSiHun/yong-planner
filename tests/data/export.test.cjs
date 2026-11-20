@@ -92,11 +92,7 @@ test('content copy writes the same Korean plain text without opening the share s
   assert.equal(files.length, 0);
 });
 
-for (const [format, mimeType] of [
-  ['json', 'application/json'],
-  ['txt', 'text/plain'],
-  ['csv', 'text/csv'],
-]) {
+for (const [format, mimeType] of [['json', 'application/json']]) {
   test(format + ' uses the selected year and month in its filename', async () => {
     await exportMonth(fixture(), '2026-11-07', format);
     assert.equal(files[0].name, 'yongplanner-2026-11.' + format);
@@ -129,7 +125,7 @@ test('full export shares a ZIP that the picker restores as all data', async () =
   const restored = await chooseBackup();
   assert.equal(restored.kind, 'full');
   assert.deepEqual(restored.memos, [memo]);
-  assert.ok(requested.type.includes('application/zip'));
+  assert.equal(requested.type, '*/*');
 });
 
 test('JSON picker identifies a month or notes and rejects a partial backup disguised as full ZIP', async () => {
@@ -174,6 +170,6 @@ test('restore controller routes notes, months and whole backups without crossing
 
 test('failed file writes reject the export without opening the share sheet', async () => {
   writeFailure = new Error('disk full');
-  await assert.rejects(exportMonth(fixture(), '2026-11-01', 'txt'), /disk full/);
+  await assert.rejects(exportMonth(fixture(), '2026-11-01', 'json'), /disk full/);
   assert.equal(fileShares.length, 0);
 });

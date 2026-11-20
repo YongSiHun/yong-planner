@@ -63,6 +63,11 @@ export function BackupSettings() {
             전체 데이터 백업은 일정·메모·설정을 ZIP으로 저장합니다. 데이터가 많으면 시간이 오래 걸릴
             수 있습니다.
           </Label>
+          <Label>
+            파일이 보이지 않으면 파일 선택기의 탐색 메뉴에서 다운로드, 기기 저장 공간 또는 연결된
+            클라우드를 선택하세요. 클라우드 파일은 먼저 내려받아 주세요. 접근이 제한된 폴더의 백업은
+            다운로드(Android) 또는 파일 앱의 나의 iPhone/iPad·iCloud Drive(iOS)로 옮겨 주세요.
+          </Label>
           <Label>ZIP 전체 복원은 현재의 모든 데이터를 덮어씁니다.</Label>
         </Dialog>
       ) : null}
