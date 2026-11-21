@@ -76,6 +76,9 @@ export interface ScheduleInputProps {
   initialIndex?: number;
   noteTimes?: readonly (string | null)[];
   initialSlot?: number;
+  noteImportant?: readonly boolean[];
+  noteAlarms?: readonly boolean[];
+  timeFormat?: TimeFormat;
   onBlur(): void;
   onInputFocus(input: ComponentRef<typeof TextInput> | null): void;
   onInputLayout(): void;

@@ -1,4 +1,4 @@
-const { assert, test } = require('../support/test.cjs');
+﻿const { assert, test } = require('../support/test.cjs');
 const {
   hooks,
   changeInput,
@@ -7,144 +7,126 @@ const {
   renderInput,
   state,
 } = require('../support/planner.cjs');
+const chip = (tree, content) =>
+  find(tree, (node) => node.type?.name === 'ScheduleChip' && node.props.content === content);
 
-test('both a blank-area tap and a chip tap open the whole date with visible comma separators', () => {
-  for (const index of [undefined, 0, 1]) {
-    hooks.reset();
-    state.nativeText = undefined;
-    const editor = renderInput('회의,장보기,운동', index);
-    assert.equal(state.nativeText, '회의, 장보기, 운동');
-    assert.equal(
-      find(editor.tree, (node) => node.type?.name === 'ScheduleChip'),
-      undefined,
-    );
-  }
+test('only the tapped chip becomes text; a blank-area tap appends an empty editor', () => {
+  let editor = renderInput('회의,운동', 0);
+  assert.equal(state.nativeText, '회의');
+  assert.equal(chip(editor.tree, '회의'), undefined);
+  assert.ok(chip(editor.tree, '운동'));
+  hooks.reset();
+  state.nativeText = undefined;
+  editor = renderInput('회의,운동');
+  assert.equal(state.nativeText, '');
+  assert.ok(chip(editor.tree, '회의'));
+  assert.ok(chip(editor.tree, '운동'));
 });
 
-test('the initial caret targets the tapped schedule and is then left to the native editor', () => {
-  let editor = renderInput('회의,장보기,운동', 1);
-  flushFrames();
-  assert.deepEqual(state.selections, [{ start: 7, end: 7 }]);
-  assert.equal(editor.input.props.selection, undefined);
-  changeInput(editor.input, '회의,장보기 수정,운동');
-  editor = renderInput('회의,장보기,운동', 1);
-  flushFrames();
-  assert.equal(state.selections.length, 1);
-  assert.equal(state.saved.at(-1), '회의,장보기 수정,운동');
+test('inserting between chips preserves both neighbors and commits on comma', () => {
+  let editor = renderInput('회의,운동', undefined, undefined, { initialSlot: 1 });
+  assert.equal(editor.tree.props.children[1].type, 'TextInput');
+  changeInput(editor.input, '점심,');
+  editor = renderInput('회의,운동');
+  assert.ok(chip(editor.tree, '회의'));
+  assert.ok(chip(editor.tree, '점심'));
+  assert.ok(chip(editor.tree, '운동'));
+  assert.equal(editor.tree.props.children[2].type, 'TextInput');
+  assert.equal(state.nativeText, '');
+  changeInput(editor.input, '산책');
+  assert.equal(state.saved.at(-1), '회의,점심,산책,운동');
 });
 
-test('Hangul composition, commas and newlines dispatch no React state updates or native text writes', () => {
+test('switching chips commits the current text and opens only the next chip', () => {
+  let editor = renderInput('회의,운동', 0);
+  changeInput(editor.input, '회의 수정');
+  chip(editor.tree, '운동').props.onPress();
+  editor = renderInput('회의,운동', 0);
+  assert.equal(state.nativeText, '운동');
+  assert.ok(chip(editor.tree, '회의 수정'));
+  assert.equal(chip(editor.tree, '운동'), undefined);
+  changeInput(editor.input, '산책');
+  assert.equal(state.saved.at(-1), '회의 수정,산책');
+});
+
+test('switching from an empty insertion does not delete or shift the tapped chip', () => {
+  let editor = renderInput('회의,운동', undefined, undefined, { initialSlot: 0 });
+  chip(editor.tree, '운동').props.onPress();
+  editor = renderInput('회의,운동');
+  assert.equal(state.nativeText, '운동');
+  changeInput(editor.input, '산책');
+  assert.equal(state.saved.at(-1), '회의,산책');
+});
+
+test('chip edges move the insertion point while editing', () => {
+  let editor = renderInput('회의,운동', 0);
+  chip(editor.tree, '운동').props.onBefore();
+  editor = renderInput('회의,운동');
+  changeInput(editor.input, '점심');
+  assert.equal(state.saved.at(-1), '회의,점심,운동');
+});
+
+test('Hangul composition and newlines leave ordinary typing to native input', () => {
   let editor = renderInput('', 0);
   flushFrames();
-  state.selections = [];
   const writes = hooks.getStateWrites();
-  const ref = editor.input.props.ref;
-  for (const text of ['ㅎ', '하', '한', '한ㄱ', '한글', '한글,ㅎ', '한글,한\n글']) {
+  for (const text of ['ㅎ', '하', '한', '한글', '한글\n안건']) {
     changeInput(editor.input, text);
-    assert.equal(hooks.getStateWrites(), writes);
     editor = renderInput('', 0);
-    assert.equal(editor.input.props.ref, ref);
-    assert.equal(editor.input.props.defaultValue, '');
+    assert.equal(hooks.getStateWrites(), writes);
     assert.equal(editor.input.props.value, undefined);
     assert.equal(state.saved.at(-1), text);
-    assert.equal(
-      find(editor.tree, (node) => node.type?.name === 'ScheduleChip'),
-      undefined,
-    );
   }
-  flushFrames();
-  assert.deepEqual(state.nativeWrites, []);
-  assert.deepEqual(state.selections, []);
-});
-
-test('a fast first keystroke cancels pending initial caret placement', () => {
-  const editor = renderInput('회의', 0);
-  changeInput(editor.input, '회의ㅎ');
-  flushFrames();
-  assert.deepEqual(state.selections, []);
-  assert.equal(state.saved.at(-1), '회의ㅎ');
-});
-
-test('deleting a comma merges schedules with no sentinel or text replacement', () => {
-  const editor = renderInput('회의,장보기', 0);
-  changeInput(editor.input, '회의장보기');
-  assert.equal(state.saved.at(-1), '회의장보기');
   assert.deepEqual(state.nativeWrites, []);
 });
 
-test('every saved time is editable and deleting one retains the other schedule time', () => {
+test('saved times remain editable and untouched schedule times are retained', () => {
   const editor = renderInput('회의,운동', 0, undefined, { noteTimes: ['13:10', '18:00'] });
-  assert.equal(state.nativeText, '13:10 회의, 18:00 운동');
-  changeInput(editor.input, '회의,18:00 운동');
+  assert.equal(state.nativeText, '13:10 회의');
+  changeInput(editor.input, '회의');
   assert.equal(state.saved.at(-1), '회의,18:00 운동');
 });
 
-test('native events arriving before a render keep the newest complete text', () => {
-  const editor = renderInput('회의', 0);
-  for (const text of ['회의,ㅎ', '회의,하', '회의,한', '회의,한글\n둘째 줄']) {
-    changeInput(editor.input, text);
-  }
-  assert.equal(state.saved.at(-1), '회의,한글\n둘째 줄');
-  assert.deepEqual(state.nativeWrites, []);
-});
-
-test('stale and repeated native event counts cannot replace newer input', () => {
-  const editor = renderInput('회의', 0);
-  changeInput(editor.input, '회의 내용', 10);
-  const count = state.saved.length;
+test('stale native events cannot replace newer input', () => {
+  const editor = renderInput('회의,운동', 0);
+  changeInput(editor.input, '회의 수정', 10);
   changeInput(editor.input, '회의', 9);
   changeInput(editor.input, '회의', 10);
-  assert.equal(state.saved.length, count);
-  assert.equal(state.saved.at(-1), '회의 내용');
-  assert.deepEqual(state.nativeWrites, []);
+  assert.equal(state.saved.at(-1), '회의 수정,운동');
 });
 
-test('oversized text restores the last valid full-date buffer and typing resumes', () => {
-  const original = '회의,' + '가'.repeat(255);
-  let editor = renderInput(original, 1);
-  changeInput(editor.input, original + '나');
-  editor = renderInput(original, 1);
-  assert.equal(state.nativeText, original.replace(',', ', '));
+test('oversized text restores only the active buffer and typing resumes', () => {
+  let editor = renderInput('회의,운동', 1);
+  changeInput(editor.input, '가'.repeat(256));
+  editor = renderInput('회의,운동', 1);
+  assert.equal(state.nativeText, '운동');
   assert.equal(state.toasts.length, 1);
   assert.deepEqual(state.saved, []);
-  changeInput(editor.input, original.slice(0, -1));
-  editor = renderInput(original, 1);
-  assert.equal(editor.input.props.value, undefined);
-  assert.equal(state.saved.at(-1), original.slice(0, -1));
+  changeInput(editor.input, '산책');
+  assert.equal(state.saved.at(-1), '회의,산책');
 });
 
-test('the character limit applies per comma-separated schedule rather than per date', () => {
-  const editor = renderInput('', 0);
-  changeInput(editor.input, '가'.repeat(255) + ',' + '나'.repeat(255));
-  assert.equal(state.saved.at(-1), '가'.repeat(255) + ',' + '나'.repeat(255));
-  changeInput(editor.input, '가'.repeat(255) + ',' + '나'.repeat(256));
-  assert.equal(state.toasts.length, 1);
+test('pasting multiple schedules commits preceding chips and edits the final segment', () => {
+  let editor = renderInput('처음,끝', undefined, undefined, { initialSlot: 1 });
+  changeInput(editor.input, '회의\r\n안건, 운동');
+  editor = renderInput('처음,끝');
+  assert.equal(state.saved.at(-1), '처음,회의\n안건,운동,끝');
+  assert.ok(chip(editor.tree, '회의\n안건'));
+  assert.equal(state.nativeText, '운동');
 });
 
-test('pasted line endings stay inside schedules and normalize to LF', () => {
-  let editor = renderInput('', 0);
-  changeInput(editor.input, '회의\r\n안건\r정리,운동');
-  editor = renderInput('', 0);
-  assert.equal(state.saved.at(-1), '회의\n안건\n정리,운동');
-  assert.equal(state.nativeText, '회의\n안건\n정리,운동');
-});
-
-test('blur and unmount finish once and preserve internal spaces', () => {
-  const { applyDailyNote } = require('../../src/features/planner/services/note.ts');
-  let id = 0;
-  state.plannerData = applyDailyNote(
-    state.plannerData,
-    '2026-11-07',
-    ' 회의  내용 , , 운동 ,',
-    () => 'commit-' + ++id,
-  );
-  const editor = renderInput(' 회의  내용 , , 운동 ,', 0);
+test('blur commits once; tapping another chip cancels the pending row exit', () => {
+  let closed = 0;
+  let editor = renderInput('회의,운동', 0, undefined, { onBlur: () => closed++ });
   editor.input.props.onBlur();
+  chip(editor.tree, '운동').props.onPress();
+  editor = renderInput('회의,운동', 0, undefined, { onBlur: () => closed++ });
+  flushFrames();
+  assert.equal(closed, 0);
+  editor.input.props.onBlur();
+  flushFrames();
+  assert.equal(closed, 1);
   hooks.unmount();
-  assert.deepEqual(
-    state.plannerData.dailyPlanItems.map((item) => item.content),
-    ['회의  내용', '운동'],
-  );
   assert.equal(state.flushes, 1);
 });
 
@@ -154,17 +136,16 @@ test('unmount without native blur still finishes the pending draft', () => {
   assert.equal(state.flushes, 1);
 });
 
-test('opening uses one separator space while saving preserves times, content spaces and the full length limit', () => {
-  const content = '가'.repeat(255);
-  let editor = renderInput('회의,   ' + content + ',  운동  계획', 1, undefined, {
-    noteTimes: ['13:10', null, '18:00'],
+test('inserting a blank slot retains important and alarm marks on the following chip', () => {
+  let editor = renderInput('회의,운동', undefined, undefined, {
+    initialSlot: 0,
+    noteImportant: [true, false],
+    noteAlarms: [true, false],
   });
-  const display = '13:10 회의, ' + content + ', 18:00   운동  계획';
-  assert.equal(state.nativeText, display);
-  changeInput(editor.input, display);
-  editor = renderInput('회의,   ' + content + ',  운동  계획', 1);
-  assert.deepEqual(state.toasts, []);
-  assert.equal(state.saved.at(-1), '13:10 회의,' + content + ',18:00   운동  계획');
-  assert.equal(editor.input.props.value, undefined);
-  assert.deepEqual(state.nativeWrites, []);
+  assert.equal(chip(editor.tree, '회의').props.important, true);
+  assert.equal(chip(editor.tree, '회의').props.alarm, true);
+  changeInput(editor.input, '점심,');
+  editor = renderInput('회의,운동');
+  assert.equal(chip(editor.tree, '회의').props.important, true);
+  assert.equal(chip(editor.tree, '회의').props.alarm, true);
 });

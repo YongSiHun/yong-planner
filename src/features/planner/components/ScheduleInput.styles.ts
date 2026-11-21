@@ -5,7 +5,8 @@ export const field = {
   flexDirection: 'row',
   flexWrap: 'wrap',
   alignItems: 'flex-start',
-  gap: design.space.xs,
+  gap: 6,
+  paddingVertical: 4,
 } as const;
 
 export function input(theme: Theme, height?: number) {
@@ -18,9 +19,10 @@ export function input(theme: Theme, height?: number) {
     paddingHorizontal: 0,
     paddingVertical: 2,
     height,
-    flexGrow: 1,
     flexShrink: 1,
     minWidth: 80,
     maxWidth: '100%',
   } as const;
 }
+
+export const chipWrapper = { maxWidth: '100%', flexShrink: 1 } as const;

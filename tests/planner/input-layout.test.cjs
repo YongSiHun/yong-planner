@@ -1,4 +1,4 @@
-const { assert, test } = require('../support/test.cjs');
+﻿const { assert, test } = require('../support/test.cjs');
 const {
   hooks,
   changeInput,
@@ -57,37 +57,30 @@ test('native content height supports larger fonts without hidden measurement or 
   }
 });
 
-test('commas stay in the same native editor without creating chip children', () => {
-  let editor = renderInput('', 0);
-  const ref = editor.input.props.ref;
-  for (const text of ['첫째,', '첫째,둘째,', '첫째,둘째,셋째']) {
-    changeInput(editor.input, text);
-    editor = renderInput('', 0);
-    assert.equal(editor.input.props.ref, ref);
-    assert.equal(state.nativeText, text);
-    assert.equal(
-      find(editor.tree, (node) => node.type?.name === 'ScheduleChip'),
-      undefined,
-    );
-  }
-});
-
-test('initial editor text and caret include all schedules and editable times', () => {
+test('initial editor chooses one chip or creates a slot without exposing other text', () => {
   const { initialScheduleEdit } = require('../../src/features/planner/services/noteEditor.ts');
-  assert.deepEqual(initialScheduleEdit('회의,운동', []), { text: '회의, 운동', caret: 6 });
-  assert.deepEqual(initialScheduleEdit('회의,운동', [], 0), { text: '회의, 운동', caret: 2 });
-  assert.deepEqual(initialScheduleEdit('회의,운동', [], 1), { text: '회의, 운동', caret: 6 });
+  assert.deepEqual(initialScheduleEdit('회의,운동', [], 1), {
+    parts: ['회의', '운동'],
+    active: 1,
+    text: '운동',
+    caret: 2,
+  });
   assert.deepEqual(initialScheduleEdit('회의,운동', [], undefined, 1), {
-    text: '회의, 운동',
-    caret: 4,
+    parts: ['회의', '', '운동'],
+    active: 1,
+    text: '',
+    caret: 0,
   });
-  assert.deepEqual(initialScheduleEdit('회의,운동', [], undefined, 2), {
-    text: '회의, 운동',
-    caret: 6,
+  assert.deepEqual(initialScheduleEdit('회의,운동', ['13:10', null], 0), {
+    parts: ['13:10 회의', '운동'],
+    active: 0,
+    text: '13:10 회의',
+    caret: 8,
   });
-  assert.deepEqual(initialScheduleEdit('회의\n안건,운동', ['13:10', null], 0), {
-    text: '13:10 회의\n안건, 운동',
-    caret: '13:10 회의\n안건'.length,
+  assert.deepEqual(initialScheduleEdit('', [], 99), {
+    parts: [''],
+    active: 0,
+    text: '',
+    caret: 0,
   });
-  assert.deepEqual(initialScheduleEdit('', [], 99), { text: '', caret: 0 });
 });

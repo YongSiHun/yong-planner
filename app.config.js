@@ -3,7 +3,7 @@ const { withGradleProperties } = require('expo/config-plugins');
 const appConfig = {
   name: '용플래너',
   slug: 'yong-planner',
-  version: '1.0.0',
+  version: '1.0.1',
   scheme: 'yongplanner',
   userInterfaceStyle: 'automatic',
   ios: {

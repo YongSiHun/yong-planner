@@ -1,11 +1,12 @@
-import { Pressable, View } from 'react-native';
-import { useMemo } from 'react';
+import { Pressable, View, type GestureResponderEvent } from 'react-native';
+import { useMemo, useRef } from 'react';
 import { NOTE_SEPARATOR } from '../services/note';
 import { useNoteSelectionStore } from '../../../stores/noteSelection';
 import type { SchedulePreviewProps } from '../types/presentation';
 import * as styles from './SchedulePreview.styles';
 import { ScheduleChip } from './ScheduleChip';
 import { useChipColumn } from '../hooks/useChipColumn';
+import { dropTarget, type ChipBounds } from '../services/dragGeometry';
 
 export function SchedulePreview({
   note,
@@ -37,8 +38,10 @@ export function SchedulePreview({
     JSON.stringify([note, noteTimes, noteImportant, noteAlarms, timeFormat]),
   );
   const hasContent = parts.length > 0;
+  const blankIndex = hasContent ? undefined : 0;
+  const boxes = useRef(new Map<number, ChipBounds>());
 
-  function handleBlankPress() {
+  function handleBlankPress(event?: GestureResponderEvent) {
     const active = selecting || useNoteSelectionStore.getState().active;
 
     if (active) {
@@ -46,7 +49,18 @@ export function SchedulePreview({
 
       return;
     }
-    onEdit(hasContent ? undefined : 0);
+    const visibleBoxes = new Map(
+      [...boxes.current].filter(([index]) => parts.some((part) => part.index === index)),
+    );
+    const target = insertionTarget(visibleBoxes, event);
+    const canInsert = target !== null && onInsert !== undefined;
+
+    if (canInsert) {
+      onInsert(target.boundary);
+
+      return;
+    }
+    onEdit(blankIndex);
   }
 
   function handleChipPress(index: number) {
@@ -93,6 +107,7 @@ export function SchedulePreview({
         <View
           key={index}
           onLayout={(event) => {
+            boxes.current.set(index, event.nativeEvent.layout);
             layout.measureChip(index, event);
             onChipLayout?.(index, event);
           }}
@@ -119,4 +134,14 @@ export function SchedulePreview({
       {overlay}
     </Pressable>
   );
+}
+
+function insertionTarget(boxes: ReadonlyMap<number, ChipBounds>, event?: GestureResponderEvent) {
+  const hasEvent = event !== undefined;
+
+  if (!hasEvent) {
+    return null;
+  }
+
+  return dropTarget(boxes, event.nativeEvent.locationX, event.nativeEvent.locationY);
 }

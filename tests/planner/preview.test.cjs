@@ -1,4 +1,4 @@
-const { hooks } = require('../support/planner.cjs');
+﻿const { hooks } = require('../support/planner.cjs');
 const { assert, test } = require('../support/test.cjs');
 const {
   DayRow,
@@ -120,7 +120,7 @@ test('long pressing either edge of the first chip arms dragging without insertin
   ]);
 });
 
-test('alarm marks remain in preview while editing shows the full date as text', () => {
+test('alarm marks remain on untouched chips while editing one schedule', () => {
   const preview = SchedulePreview({
     note: '회의,식사',
     date: '2026-11-08',
@@ -132,11 +132,8 @@ test('alarm marks remain in preview while editing shows the full date as text', 
   assert.match(ScheduleChip(chip.props).props.accessibilityLabel, /알람 설정됨/);
   hooks.reset();
   const editor = renderInput('회의,식사', 1, () => {}, { noteAlarms: [true, false] });
-  assert.equal(
-    find(editor.tree, (node) => node.type === ScheduleChip),
-    undefined,
-  );
-  assert.equal(state.nativeText, '회의, 식사');
+  assert.equal(find(editor.tree, (node) => node.type === ScheduleChip).props.alarm, true);
+  assert.equal(state.nativeText, '식사');
 });
 
 test('unselected dates use the latest global selection mode without rerendering their row', () => {
@@ -180,4 +177,24 @@ test('blank stored items create no phantom gaps and visible chip events retain t
   assert.equal(second.props.content, '운동');
   second.props.onPress();
   assert.deepEqual(edited, [2]);
+});
+
+test('blank gap coordinates insert at the nearby boundary rather than the end', () => {
+  const inserted = [];
+  const tree = SchedulePreview({
+    note: '회의,운동,식사',
+    date: '2026-11-07',
+    onEdit() {},
+    onInsert: (boundary) => inserted.push(boundary),
+  });
+  const wrappers = tree.props.children[0];
+  wrappers.forEach((wrapper, index) =>
+    wrapper.props.onLayout({
+      nativeEvent: {
+        layout: { x: index * 66, y: 4, width: 60, height: 26 },
+      },
+    }),
+  );
+  tree.props.onPress({ nativeEvent: { locationX: 63, locationY: 16 } });
+  assert.deepEqual(inserted, [1]);
 });
