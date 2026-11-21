@@ -60,21 +60,11 @@ const appConfig = {
   },
 };
 
-function withAndroidBuildProperties(config) {
+function withCmakePathLimit(config) {
   return withGradleProperties(config, (modConfig) => {
-    const versions = {
-      'android.compileSdkVersion': '37',
-      'android.targetSdkVersion': '37',
-      'android.buildToolsVersion': '37.0.0',
-    };
     const propertyName = 'expo.android.cmakeObjectPathMax';
-    const properties = modConfig.modResults.filter(
-      (entry) => entry.key !== propertyName && !(entry.key in versions),
-    );
+    const properties = modConfig.modResults.filter((entry) => entry.key !== propertyName);
 
-    for (const [key, value] of Object.entries(versions)) {
-      properties.push({ type: 'property', key, value });
-    }
     const isWindows = process.platform === 'win32';
 
     // 경로 해시: Win Ninja 길이 제한 회피.
@@ -109,7 +99,7 @@ function getBuildNumber(value) {
 
 module.exports = function configureApp({ config }) {
   config = { ...config, ...appConfig };
-  const nativeConfig = withAndroidBuildProperties(config);
+  const nativeConfig = withCmakePathLimit(config);
   const buildNumber = getBuildNumber(process.env.BUILD);
   const hasBuildNumber = buildNumber !== undefined;
 
