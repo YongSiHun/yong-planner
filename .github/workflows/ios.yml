@@ -1,7 +1,5 @@
 name: yong-planner-ios
 
-run-name: yong-planner-ios-build
-
 on:
   workflow_dispatch:
     inputs:
@@ -21,6 +19,7 @@ on:
 
 env:
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+  DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
 
 jobs:
   build:
@@ -38,54 +37,27 @@ jobs:
           node-version: 26.13.1
           cache: yarn
 
-      - name: Select Xcode 27.2
+      - name: prepare-build
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.2.app/Contents/Developer
-          xcodebuild -version
-          xcrun --sdk iphoneos --show-sdk-version
-
-      - name: install-dependencies
-        run: |
-          npm install -g yarn@1.22.22 eas-cli
+          npm install -g yarn@1.22.22 eas-cli@27.2.0
           yarn install --frozen-lockfile
 
-      - name: versioning
-        run: |
-          VERSION=$(npx expo config --json | jq -r '.version')
-          BUILD=$((100 + ${{ github.run_number }}))
-
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "BUILD=$BUILD" >> $GITHUB_ENV
-
-          echo "Version: $VERSION"
-          echo "Build: $BUILD"
-
-      - name: build-ipa-local
+      - name: build-ios
         env:
-          BUILD: ${{ env.BUILD }}
-          DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
+          ENVIRONMENT: ${{ inputs.environment }}
         run: |
-          eas build \
-            -p ios \
-            --profile ${{ github.event.inputs.environment }} \
-            --local \
-            --non-interactive
-
-          IPA=$(find . -type f -name "*.ipa" | xargs ls -t | head -n 1)
-
-          if [ -z "$IPA" ]; then
-            echo "IPA not found"
-            exit 1
-          fi
-
-          echo "Found: $IPA"
-
-          cp "$IPA" \
-            "yong-planner-${VERSION}-${BUILD}-${{ github.event.inputs.environment }}.ipa"
+          export BUILD=$((100 + GITHUB_RUN_NUMBER))
+          VERSION=$(npx expo config --json | jq -r '.version')
+          PREFIX="yong-planner-${VERSION}-${BUILD}-${ENVIRONMENT}"
+          echo "ARTIFACT_NAME=${PREFIX}-ios" >> "$GITHUB_ENV"
+          mkdir -p artifacts
+          OUTPUT="artifacts/${PREFIX}.ipa"
+          eas build -p ios --profile "$ENVIRONMENT" --local --non-interactive --output "$OUTPUT"
+          test -s "$OUTPUT"
 
       - name: upload-artifact
         uses: actions/upload-artifact@v5
         with:
-          name: yong-planner-${{ env.VERSION }}-${{ env.BUILD }}-${{ github.event.inputs.environment }}-ios
-          path: |
-            yong-planner-${{ env.VERSION }}-${{ env.BUILD }}-${{ github.event.inputs.environment }}.ipa
+          name: ${{ env.ARTIFACT_NAME }}
+          path: artifacts/*
+          if-no-files-found: error
