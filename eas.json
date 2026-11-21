@@ -6,8 +6,12 @@
   },
   "build": {
     "base": {
-      "node": "22.23.2",
-      "credentialsSource": "remote"
+      "node": "26.13.1",
+      "credentialsSource": "remote",
+      "ios": {
+        "image": "macos-tahoe-26.6-xcode-27.2"
+      },
+      "yarn": "1.22.22"
     },
     "production": {
       "extends": "base",

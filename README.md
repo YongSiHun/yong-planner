@@ -13,7 +13,7 @@
 - App: RN · Expo · Expo Router · TS
 - Data: SQLite · Zustand · date-fns
 - Font: Pretendard 1.3.9 · SIL OFL 1.1
-- Tool: Node 22 · Yarn 1.22.22 · ESLint · Prettier · Husky · GHA · EAS
+- Tool: Node 26 LTS · Yarn 1.22.22 · ESLint · Prettier · Husky · GHA · EAS
 - Holiday: [date-holidays](https://github.com/commenthol/date-holidays) · commenthol 외 · ISC / CC BY 3.0
 
 ## 명령어

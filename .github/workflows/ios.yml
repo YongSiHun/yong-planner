@@ -24,7 +24,7 @@ env:
 
 jobs:
   build:
-    runs-on: macos-26
+    runs-on: xcode-27
 
     steps:
       - name: checkout
@@ -35,17 +35,18 @@ jobs:
       - name: setup-nodeJS
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 26.13.1
           cache: yarn
 
-      - name: Select Xcode 26.6
+      - name: Select Xcode 27.2
         run: |
-          sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_27.2.app/Contents/Developer
           xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
 
       - name: install-dependencies
         run: |
-          npm install -g eas-cli@27.2.0
+          npm install -g yarn@1.22.22 eas-cli
           yarn install --frozen-lockfile
 
       - name: versioning
@@ -62,7 +63,7 @@ jobs:
       - name: build-ipa-local
         env:
           BUILD: ${{ env.BUILD }}
-          DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+          DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
         run: |
           eas build \
             -p ios \

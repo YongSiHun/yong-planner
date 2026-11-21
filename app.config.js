@@ -1,9 +1,80 @@
 const { withGradleProperties } = require('expo/config-plugins');
 
-function withCmakePathLimit(config) {
+const appConfig = {
+  name: '용플래너',
+  slug: 'yong-planner',
+  version: '1.0.0',
+  scheme: 'yongplanner',
+  userInterfaceStyle: 'automatic',
+  ios: {
+    supportsTablet: true,
+    bundleIdentifier: 'com.yongplanner.app',
+    icon: './assets/icon-dragon.png',
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+    },
+  },
+  android: {
+    package: 'com.yongplanner.app',
+    softwareKeyboardLayoutMode: 'resize',
+    allowBackup: false,
+    adaptiveIcon: {
+      foregroundImage: './assets/mark-dragon.png',
+      backgroundColor: '#F7FBFF',
+    },
+    permissions: ['android.permission.SCHEDULE_EXACT_ALARM', 'android.permission.USE_EXACT_ALARM'],
+    blockedPermissions: [
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+      'android.permission.SYSTEM_ALERT_WINDOW',
+      'android.permission.VIBRATE',
+    ],
+  },
+  plugins: [
+    'expo-router',
+    './plugins/with-gradle-download-timeout.cjs',
+    'expo-sqlite',
+    'expo-document-picker',
+    'expo-sharing',
+    './plugins/with-dragon-splash.cjs',
+    './plugins/with-planner-notifications.cjs',
+    [
+      'expo-notifications',
+      {
+        color: '#1F6EAC',
+        enableRemoteNotifications: false,
+        enableBackgroundRemoteNotifications: false,
+      },
+    ],
+  ],
+  experiments: {
+    typedRoutes: true,
+  },
+  icon: './assets/icon-dragon.png',
+  primaryColor: '#1F6EAC',
+  orientation: 'default',
+  extra: {
+    eas: {
+      projectId: 'ec9b10b4-1ac7-45c0-b445-da0f7ae5e1eb',
+    },
+  },
+};
+
+function withAndroidBuildProperties(config) {
   return withGradleProperties(config, (modConfig) => {
+    const versions = {
+      'android.compileSdkVersion': '37',
+      'android.targetSdkVersion': '37',
+      'android.buildToolsVersion': '37.0.0',
+    };
     const propertyName = 'expo.android.cmakeObjectPathMax';
-    const properties = modConfig.modResults.filter((entry) => entry.key !== propertyName);
+    const properties = modConfig.modResults.filter(
+      (entry) => entry.key !== propertyName && !(entry.key in versions),
+    );
+
+    for (const [key, value] of Object.entries(versions)) {
+      properties.push({ type: 'property', key, value });
+    }
     const isWindows = process.platform === 'win32';
 
     // 경로 해시: Win Ninja 길이 제한 회피.
@@ -37,7 +108,8 @@ function getBuildNumber(value) {
 }
 
 module.exports = function configureApp({ config }) {
-  const nativeConfig = withCmakePathLimit(config);
+  config = { ...config, ...appConfig };
+  const nativeConfig = withAndroidBuildProperties(config);
   const buildNumber = getBuildNumber(process.env.BUILD);
   const hasBuildNumber = buildNumber !== undefined;
 
