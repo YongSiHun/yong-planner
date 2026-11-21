@@ -1,101 +1,60 @@
-import { useRef } from 'react';
-import { Pressable, TextInput, View } from 'react-native';
-import { useTheme } from '../../../components/ui';
+import { Pressable, View } from 'react-native';
 import { useScheduleInputState } from '../hooks/useScheduleInputState';
-import { useInputHeight } from '../hooks/useInputHeight';
+import { useScheduleChipLayout } from '../hooks/useScheduleChipLayout';
 import type { ScheduleInputProps } from '../types/presentation';
-import { ScheduleChip } from './ScheduleChip';
-import { dropTarget, type ChipBounds } from '../services/dragGeometry';
+import { ScheduleInputChip } from './ScheduleInputChip';
+import { ScheduleTextField } from './ScheduleTextField';
 import * as styles from './ScheduleInput.styles';
 
 export function ScheduleInput(props: ScheduleInputProps) {
-  const theme = useTheme();
-  const boxes = useRef(new Map<number, ChipBounds>());
-  const { height, handleContentSize } = useInputHeight();
-  const {
-    input,
-    nativeValue,
-    initialValue,
-    handleChange,
-    handleBlur,
-    parts,
-    active,
-    activate,
-    marks,
-    session,
-  } = useScheduleInputState(props);
+  const editor = useScheduleInputState(props);
+  const layout = useScheduleChipLayout(editor.entries, editor.activate);
 
   return (
-    <Pressable
-      accessible={false}
-      onPress={(event) => {
-        const target =
-          event &&
-          dropTarget(
-            new Map([...boxes.current].filter(([index]) => index < parts.length)),
-            event.nativeEvent.locationX,
-            event.nativeEvent.locationY,
-          );
+    <Pressable accessible={false} onPress={layout.handleBlankPress} style={styles.field}>
+      {editor.entries.flatMap((entry, index) => {
+        const active = index === editor.active;
 
-        activate(target?.boundary ?? parts.length, true);
-      }}
-      style={styles.field}
-    >
-      {parts.map((part, index) =>
-        index === active ? (
-          <TextInput
-            key={'editor-' + session}
-            ref={input}
-            multiline
-            submitBehavior="newline"
-            autoFocus
-            autoCorrect={false}
-            spellCheck={false}
-            autoCapitalize="none"
-            smartInsertDelete={false}
-            defaultValue={initialValue}
-            value={nativeValue}
-            onPressIn={(event) => event.stopPropagation()}
-            onTouchEnd={(event) => event.stopPropagation()}
-            onChange={handleChange}
-            onFocus={() => props.onInputFocus(input.current)}
-            onBlur={handleBlur}
+        if (!active) {
+          return [
+            <ScheduleInputChip
+              key={entry.key}
+              entry={entry}
+              timeFormat={props.timeFormat}
+              onActivate={editor.activateEntry}
+              onRecord={layout.record}
+            />,
+          ];
+        }
+        const hasFollowing = index < editor.entries.length - 1;
+
+        return [
+          <ScheduleTextField
+            key={'editor-' + editor.session}
+            date={props.date}
+            inputRef={editor.input}
+            initialValue={editor.initialValue}
+            nativeValue={editor.nativeValue}
+            onChange={editor.handleChange}
+            onFocus={editor.handleFocus}
+            onBlur={editor.handleBlur}
             onLayout={(event) => {
-              boxes.current.set(index, event.nativeEvent.layout);
+              layout.record(entry.key, event);
               props.onInputLayout();
             }}
-            accessibilityLabel={props.date + ' 일정 입력'}
-            accessibilityHint="쉼표를 입력하거나 다른 곳을 누르면 칩으로 완성해요."
-            placeholder="일정 입력"
-            placeholderTextColor={theme.muted}
-            selectionColor={theme.accent}
-            cursorColor={theme.accent}
-            underlineColorAndroid="transparent"
-            textAlignVertical="top"
-            scrollEnabled={false}
-            onContentSizeChange={handleContentSize}
-            style={styles.input(theme, height)}
-          />
-        ) : (
-          <View
-            key={'chip-' + index}
-            onLayout={(event) => boxes.current.set(index, event.nativeEvent.layout)}
-            style={styles.chipWrapper}
-          >
-            <ScheduleChip
-              key={'chip-' + index}
-              content={part}
-              important={marks[index]?.important}
-              alarm={marks[index]?.alarm}
-              timeFormat={props.timeFormat}
-              onPress={() => activate(index)}
-              onLongPress={() => activate(index)}
-              onBefore={() => activate(index, true)}
-              onAfter={() => activate(index + 1, true)}
-            />
-          </View>
-        ),
-      )}
+          />,
+          ...(hasFollowing
+            ? [
+                <View
+                  key="editor-break"
+                  pointerEvents="none"
+                  accessible={false}
+                  style={styles.editorBreak}
+                />,
+              ]
+            : []),
+        ];
+      })}
     </Pressable>
   );
 }

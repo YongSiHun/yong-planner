@@ -12,3 +12,6 @@ export {
 } from './notificationSettings';
 
 export { clearScheduleAlarms } from './alarmActions';
+
+export { subscribeNotificationDates } from './notificationResponses';
+export { openSystemNotificationSettings } from '../data/native';

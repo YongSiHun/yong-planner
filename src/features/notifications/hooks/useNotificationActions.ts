@@ -4,8 +4,8 @@ import {
   changeNotificationPreference,
   refreshNotificationPermissions,
   syncNotifications,
+  openSystemNotificationSettings,
 } from '../controllers/notifications';
-import { openSystemNotificationSettings } from '../data/native';
 import type { NotificationPreferences } from '../types';
 
 async function run(action: () => Promise<void>): Promise<void> {

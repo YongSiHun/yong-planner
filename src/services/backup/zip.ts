@@ -1,5 +1,5 @@
 import { deflate, inflate } from './deflate';
-import { MAX_BACKUP_BYTES } from './index';
+import { MAX_BACKUP_BYTES } from './limits';
 import { ensureValid } from './readers';
 
 const encoder = new TextEncoder();
@@ -99,6 +99,8 @@ export function unzipJson(bytes: Uint8Array): string {
 
   ensureValid(validCentral, 'ZIP 백업의 목록이 올바르지 않습니다.');
 
+  validateDirectory(view, central, end);
+
   return readEntry(bytes, view, central);
 }
 
@@ -144,4 +146,17 @@ function readPayload(
   const content = method === 8 ? inflate(payload, size) : payload;
 
   return content;
+}
+
+function validateDirectory(view: DataView, central: number, end: number) {
+  const directorySize = view.getUint32(end + 12, true);
+  const entryEnd =
+    central +
+    46 +
+    view.getUint16(central + 28, true) +
+    view.getUint16(central + 30, true) +
+    view.getUint16(central + 32, true);
+  const validDirectory = entryEnd === central + directorySize && entryEnd <= end;
+
+  ensureValid(validDirectory, 'ZIP 백업의 목록 길이가 올바르지 않습니다.');
 }

@@ -1,4 +1,4 @@
-﻿const { assert, test } = require('../support/test.cjs');
+const { assert, test } = require('../support/test.cjs');
 const {
   hooks,
   changeInput,
@@ -207,4 +207,14 @@ test('touching editable text stays within native input and cannot open an insert
   editor.input.props.onTouchEnd({ stopPropagation: () => stopped++ });
   assert.equal(stopped, 2);
   assert.deepEqual(state.saved, []);
+});
+
+test('regaining native focus cancels a pending blur without moving the cursor', () => {
+  let closed = 0;
+  const editor = renderInput('회의,운동', 0, undefined, { onBlur: () => closed++ });
+  editor.input.props.onBlur();
+  editor.input.props.onFocus();
+  flushFrames();
+  assert.equal(closed, 0);
+  assert.deepEqual(state.selections, []);
 });

@@ -1,6 +1,3 @@
-import type { Theme } from '../../../components/ui/palette';
-import { design } from '../../../components/ui/tokens';
-
 export const field = {
   flexDirection: 'row',
   flexWrap: 'wrap',
@@ -9,20 +6,10 @@ export const field = {
   paddingVertical: 4,
 } as const;
 
-export function input(theme: Theme, height?: number) {
-  return {
-    fontFamily: design.font.regular,
-    fontSize: design.type.body,
-    lineHeight: design.lineHeights.body,
-    includeFontPadding: true,
-    color: theme.text,
-    paddingHorizontal: 0,
-    paddingVertical: 2,
-    height,
-    flexShrink: 1,
-    minWidth: 80,
-    maxWidth: '100%',
-  } as const;
-}
-
-export const chipWrapper = { maxWidth: '100%', flexShrink: 1 } as const;
+// Visual line boundary only; the schedule text and chip identities stay unchanged.
+export const editorBreak = {
+  flexBasis: '100%',
+  height: 0,
+  flexGrow: 0,
+  flexShrink: 0,
+} as const;

@@ -32,6 +32,10 @@ mock('expo-router', {
   useLocalSearchParams: () => parameters,
 });
 mock('../../src/features/notifications/controllers/notifications.ts', {
+  subscribeNotificationDates: (onDate) =>
+    require('../../src/features/notifications/controllers/notificationResponses.ts').subscribeNotificationDates(
+      onDate,
+    ),
   startNotificationSync: () => {
     starts++;
     return () => stops++;

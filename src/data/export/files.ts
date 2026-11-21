@@ -3,13 +3,19 @@ import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import type { PlannerData } from '../../features/planner/types';
-import { createBackup, MAX_BACKUP_BYTES, parseBackup, type PlannerBackup } from '../backup';
-import { createHolidayService } from '../holiday';
-import { monthTxt } from './index';
-import { zipJson, unzipJson } from '../backup/zip';
-import { BackupRestoreError } from '../backup/errors';
+import {
+  createBackup,
+  MAX_BACKUP_BYTES,
+  parseBackup,
+  type PlannerBackup,
+} from '../../services/backup';
+import { createHolidayService } from '../../services/holiday';
+import { monthTxt } from '../../services/export';
+import { zipJson, unzipJson } from '../../services/backup/zip';
+import { BackupRestoreError } from '../../services/backup/errors';
 
-export type ExportFormat = keyof typeof monthExporters;
+import type { ExportFormat } from '../../services/export/types';
+export type { ExportFormat } from '../../services/export/types';
 type MonthExporter = (
   data: PlannerData,
   month: string,
@@ -37,6 +43,11 @@ export async function shareFile(
   content: string | Uint8Array,
   mimeType: string,
 ): Promise<void> {
+  const safeName = safeShareFilename(name);
+
+  if (!safeName) {
+    throw new Error('공유 파일 이름이 올바르지 않습니다.');
+  }
   const canShare = await Sharing.isAvailableAsync();
 
   if (!canShare) {
@@ -148,4 +159,14 @@ function readFullZip(bytes: Uint8Array): PlannerBackup {
   }
 
   return { ...backup, kind: 'full' };
+}
+
+function safeShareFilename(name: string): boolean {
+  const separator = name.includes('/') || name.includes(String.fromCharCode(92));
+  const control = /[\x00-\x1f]/.test(name);
+
+  const validLength = name.length > 0 && name.length <= 200;
+  const reserved = name === '.' || name === '..';
+
+  return [validLength, !separator, !control, !reserved].every(Boolean);
 }

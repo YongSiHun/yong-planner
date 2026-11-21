@@ -1,4 +1,4 @@
-import { MAX_SCHEDULE_LENGTH } from '../../../services/schedule';
+import { scheduleLengthError } from '../../../services/schedule';
 import { parseDate } from '../../../utils/date';
 import { monthSelection } from '../../planner/services/monthSelection';
 
@@ -39,7 +39,7 @@ export function holidayNameError(value: string): string | null {
   if (blank) {
     return '공휴일 이름을 입력하거나 완전히 비워 주세요.';
   }
-  const tooLong = Array.from(value).length > MAX_SCHEDULE_LENGTH;
+  const tooLong = scheduleLengthError(value) !== null;
 
   return tooLong ? '공휴일 이름은 255자까지 입력할 수 있어요.' : null;
 }

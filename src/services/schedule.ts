@@ -1,16 +1,30 @@
 export const MAX_SCHEDULE_LENGTH = 255;
 export const SCHEDULE_LENGTH_MESSAGE = '일정은 255자까지 입력할 수 있어요.';
 
-export function scheduleLengthError(value: string): string | null {
-  const tooLong = Array.from(value).length > MAX_SCHEDULE_LENGTH;
+function exceedsLimit(value: string, separated: boolean): boolean {
+  let length = 0;
 
-  return tooLong ? SCHEDULE_LENGTH_MESSAGE : null;
+  for (const character of value) {
+    const separator = separated && character === ',';
+
+    length = (length + 1) * Number(!separator);
+    const tooLong = length > MAX_SCHEDULE_LENGTH;
+
+    if (tooLong) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// Constant extra memory, bounded work for oversized individual schedules.
+export function scheduleLengthError(value: string): string | null {
+  return exceedsLimit(value, false) ? SCHEDULE_LENGTH_MESSAGE : null;
 }
 
 export function noteLengthError(value: string): string | null {
-  const tooLong = value.split(',').some((part) => scheduleLengthError(part) !== null);
-
-  return tooLong ? SCHEDULE_LENGTH_MESSAGE : null;
+  return exceedsLimit(value, true) ? SCHEDULE_LENGTH_MESSAGE : null;
 }
 
 export function normalizeScheduleLineEndings(value: string): string {

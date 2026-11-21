@@ -21,7 +21,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "test": "node tests/run.cjs"
+    "test": "node tests/run.cjs",
+    "benchmark:input": "node scripts/benchmark-schedule.cjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

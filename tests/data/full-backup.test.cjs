@@ -93,3 +93,16 @@ test('notes restore merges IDs without changing schedules or settings; month exp
   assert.deepEqual(merged.settings, current.settings);
   assert.deepEqual(parseBackup(createBackup(current, '2026-11')).memos, []);
 });
+
+test('raw decompression rejects unsafe allocation sizes before reading compressed data', () => {
+  for (const size of [-1, NaN, Infinity, 0.5, 50 * 1024 * 1024 + 1]) {
+    assert.throws(() => inflate(new Uint8Array(), size), /50MB/);
+  }
+});
+
+test('ZIP directory length fields cannot point outside the central directory', () => {
+  const zip = Buffer.from(zipJson('{"test":true}'));
+  const central = zip.readUInt32LE(zip.length - 6);
+  zip.writeUInt16LE(65535, central + 28);
+  assert.throws(() => unzipJson(zip), /목록 길이/);
+});

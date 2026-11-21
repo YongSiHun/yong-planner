@@ -1,41 +1,23 @@
-import { useEditingActions } from '../hooks/useEditingActions';
-import { useEffect, useCallback, useMemo, useState } from 'react';
-import { useNotificationDate } from '../hooks/useNotificationDate';
+import { router } from 'expo-router';
 import { Keyboard, KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, report, showDialog, useTheme } from '../../../components/ui';
-import { type ExportFormat } from '../../../services/export/files';
-import { usePlanner } from '../../../stores/planner';
-import { useNoteSelectionStore } from '../../../stores/noteSelection';
-import { monthDates, today } from '../../../utils/date';
+import { Button, useTheme } from '../../../components/ui';
 import { PlannerDay } from '../components/PlannerDay';
 import { PlannerDialogs } from '../components/PlannerDialogs';
 import { PlannerFooter } from '../components/PlannerFooter';
 import { PlannerHeader } from '../components/PlannerHeader';
-import { router } from 'expo-router';
-import { useSearchDate } from '../hooks/useSearchDate';
-import { type PlannerMenuType } from '../components/PlannerMenu';
-import { useExportActions } from '../hooks/useExportActions';
-import { useHolidays } from '../hooks/useHolidays';
-import { useInlineKeyboard } from '../../../hooks/useInlineKeyboard';
-import { useMonthNavigation } from '../hooks/useMonthNavigation';
-import { useNoteSelection } from '../hooks/useNoteSelection';
-import { usePlannerActions } from '../hooks/usePlannerActions';
-import { usePlannerGuide } from '../hooks/usePlannerGuide';
-import { useToday } from '../hooks/useToday';
+import { usePlannerScreen } from '../hooks/usePlannerScreen';
 import * as styles from './PlannerScreen.styles';
 
 const NO_SELECTED_IDS: ReadonlySet<string> = new Set();
 
 export default function PlannerScreen() {
   const theme = useTheme();
-  const timeFormat = usePlanner((state) => state.data.settings.timeFormat ?? '24h');
-  const { flush } = usePlannerActions();
-  const { exportMonth } = useExportActions();
-  const error = usePlanner((state) => state.error);
-  const currentDate = useToday();
-  const holidays = useHolidays();
   const {
+    timeFormat,
+    error,
+    currentDate,
+    holidays,
     month,
     scrollRef,
     showDate,
@@ -43,66 +25,24 @@ export default function PlannerScreen() {
     handleContentSizeChange,
     handleMeasure,
     handleViewportLayout,
-  } = useMonthNavigation();
-
-  const handleChipScrollLock = useCallback(
-    (locked: boolean) => {
-      scrollRef.current?.setNativeProps({ scrollEnabled: !locked });
-    },
-    [scrollRef],
-  );
-
-  useNotificationDate(showDate);
-  useSearchDate(showDate);
-  const { keyboardVisible, handleInputFocus, scheduleReveal, handleKeyboardScroll } =
-    useInlineKeyboard(scrollRef, month.slice(0, 7));
-  const guide = usePlannerGuide();
-  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
-  const { closePlannerEditor } = useEditingActions();
-
-  useEffect(() => closePlannerEditor, [closePlannerEditor]);
-  const [menu, setMenu] = useState<PlannerMenuType | null>(null);
-  const dates = useMemo(() => monthDates(month), [month]);
-  const beginSelection = useCallback(() => {
-    Keyboard.dismiss();
-    closePlannerEditor();
-  }, [closePlannerEditor]);
-  const selection = useNoteSelection(beginSelection);
-  const { clear: clearSelection } = selection;
-  const dismissSelection = useCallback(() => {
-    Keyboard.dismiss();
-    const active = useNoteSelectionStore.getState().active;
-
-    if (active) {
-      clearSelection();
-    }
-  }, [clearSelection]);
-
-  function handleRetrySave() {
-    void flush().catch(report);
-  }
-
-  function handleToday() {
-    Keyboard.dismiss();
-    selection.clear();
-    showDate(today());
-  }
-
-  async function handleExport(format: ExportFormat) {
-    try {
-      await exportMonth(month, format);
-      setMenu(null);
-      const isClipboard = format === 'clipboard';
-
-      if (isClipboard) {
-        showDialog('복사 완료', '이번 달 계획을 클립보드에 복사했습니다.', undefined, {
-          dismissOnPress: true,
-        });
-      }
-    } catch (error) {
-      report(error);
-    }
-  }
+    handleChipScrollLock,
+    keyboardVisible,
+    handleInputFocus,
+    scheduleReveal,
+    handleKeyboardScroll,
+    guide,
+    monthPickerOpen,
+    setMonthPickerOpen,
+    closePlannerEditor,
+    menu,
+    setMenu,
+    dates,
+    selection,
+    dismissSelection,
+    handleRetrySave,
+    handleToday,
+    handleExport,
+  } = usePlannerScreen();
 
   return (
     <KeyboardAvoidingView

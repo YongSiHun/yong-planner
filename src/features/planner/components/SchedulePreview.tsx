@@ -1,11 +1,10 @@
 import { Pressable, View, type GestureResponderEvent } from 'react-native';
 import { useMemo, useRef } from 'react';
-import { NOTE_SEPARATOR } from '../services/note';
+import { NOTE_SEPARATOR } from '../services/noteText';
 import { useNoteSelectionStore } from '../../../stores/noteSelection';
 import type { SchedulePreviewProps } from '../types/presentation';
 import * as styles from './SchedulePreview.styles';
 import { ScheduleChip } from './ScheduleChip';
-import { useChipColumn } from '../hooks/useChipColumn';
 import { dropTarget, type ChipBounds } from '../services/dragGeometry';
 
 export function SchedulePreview({
@@ -33,9 +32,6 @@ export function SchedulePreview({
         .map((part, index) => ({ part, index }))
         .filter(({ part }) => part.trim().length > 0),
     [note],
-  );
-  const layout = useChipColumn(
-    JSON.stringify([note, noteTimes, noteImportant, noteAlarms, timeFormat]),
   );
   const hasContent = parts.length > 0;
   const blankIndex = hasContent ? undefined : 0;
@@ -97,18 +93,12 @@ export function SchedulePreview({
   }
 
   return (
-    <Pressable
-      accessible={false}
-      onPress={handleBlankPress}
-      onLayout={layout.measureContainer}
-      style={styles.previewLayout(layout.column)}
-    >
+    <Pressable accessible={false} onPress={handleBlankPress} style={styles.preview}>
       {parts.map(({ part, index }) => (
         <View
           key={index}
           onLayout={(event) => {
             boxes.current.set(index, event.nativeEvent.layout);
-            layout.measureChip(index, event);
             onChipLayout?.(index, event);
           }}
           style={styles.chipWrapper(draggingIndex, index)}

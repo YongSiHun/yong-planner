@@ -56,11 +56,7 @@ mock('expo-document-picker', {
     return picked;
   },
 });
-const {
-  exportMonth,
-  chooseBackup,
-  exportFullBackup,
-} = require('../../src/services/export/files.ts');
+const { exportMonth, chooseBackup, exportFullBackup } = require('../../src/data/export/files.ts');
 const { emptyData } = require('../../src/features/planner/types/index.ts');
 function fixture() {
   return {
@@ -172,4 +168,25 @@ test('failed file writes reject the export without opening the share sheet', asy
   writeFailure = new Error('disk full');
   await assert.rejects(exportMonth(fixture(), '2026-11-01', 'json'), /disk full/);
   assert.equal(fileShares.length, 0);
+});
+
+test('shared filenames cannot traverse the cache directory', async () => {
+  const { shareFile } = require('../../src/data/export/files.ts');
+  for (const name of [
+    '../backup.json',
+    'folder/backup.json',
+    'folder\\backup.json',
+    'bad\u0000.json',
+  ]) {
+    await assert.rejects(() => shareFile(name, '{}', 'application/json'), /파일 이름/);
+  }
+  assert.equal(files.length, 0);
+});
+
+test('shared filenames reject directory aliases and embedded control characters', async () => {
+  const { shareFile } = require('../../src/data/export/files.ts');
+  for (const name of ['.', '..', 'backup' + String.fromCharCode(0) + '.json']) {
+    await assert.rejects(() => shareFile(name, '{}', 'application/json'), /파일 이름/);
+  }
+  assert.equal(files.length, 0);
 });

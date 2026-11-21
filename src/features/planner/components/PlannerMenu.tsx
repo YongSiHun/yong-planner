@@ -2,11 +2,12 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 import { Button, design } from '../../../components/ui';
 import { Dialog } from '../../../components/ui/Dialog';
-import type { ExportFormat } from '../../../services/export/files';
+import type { ExportFormat } from '../../../services/export/types';
 import { monthLabel } from '../../../utils/date';
 import * as styles from './PlannerMenu.styles';
 
-export type PlannerMenuType = 'menu' | 'export';
+import type { PlannerMenuType } from '../types/presentation';
+export type { PlannerMenuType } from '../types/presentation';
 
 interface PlannerMenuProps {
   type: PlannerMenuType;

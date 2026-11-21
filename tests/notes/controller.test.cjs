@@ -15,7 +15,7 @@ mock('../../src/features/planner/controllers/persistence.ts', {
   },
 });
 mock('../../src/stores/planner.ts', { usePlanner: {} });
-mock('../../src/services/export/files.ts', { shareFile: async () => {} });
+mock('../../src/data/export/files.ts', { shareFile: async () => {} });
 const {
   deleteMemos,
   restoreMemos,

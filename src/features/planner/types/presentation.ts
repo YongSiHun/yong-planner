@@ -1,5 +1,6 @@
-import type { ComponentRef, ReactNode } from 'react';
-import type { LayoutChangeEvent, TextInput } from 'react-native';
+import type { EditorEntry } from '../services/ScheduleEditSession';
+import type { ComponentRef, ReactNode, RefObject } from 'react';
+import type { LayoutChangeEvent, TextInput, TextInputChangeEvent } from 'react-native';
 import type { DailyPlanItem, PlanEntry, RecurringPlanException, TimeFormat } from './index';
 
 export interface NoteSelectionModel {
@@ -101,4 +102,24 @@ export interface SchedulePreviewProps {
   selecting?: boolean;
   selectedIndexes?: ReadonlySet<number>;
   onSelect?(index: number, begin?: boolean): void;
+}
+
+export type PlannerMenuType = 'menu' | 'export';
+
+export interface ScheduleTextFieldProps {
+  date: string;
+  inputRef: RefObject<ComponentRef<typeof TextInput> | null>;
+  initialValue: string;
+  nativeValue?: string;
+  onChange(event: TextInputChangeEvent): void;
+  onBlur(): void;
+  onFocus(input: ComponentRef<typeof TextInput> | null): void;
+  onLayout(event: LayoutChangeEvent): void;
+}
+
+export interface ScheduleInputChipProps {
+  entry: EditorEntry;
+  timeFormat?: TimeFormat;
+  onActivate(key: number, mode: 'edit' | 'before' | 'after'): void;
+  onRecord(key: number, event: LayoutChangeEvent): void;
 }

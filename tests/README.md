@@ -35,3 +35,10 @@
 - support/notification-plan.cjs: 부작용 없는 알림 계획 fixture.
 
 훅 하네스와 요소 확장은 React Native 렌더러가 아니다. 실제 터치·키보드·네이티브 재마운트·화면 깜빡임 검증은 기기에서 별도로 수행한다. 타입 검사는 `yarn typecheck`, 코드 규칙은 `yarn lint`, 포맷은 `yarn format:check`로 검증한다.
+
+## 계층 경계와 성능 확인
+
+- `yarn test --suite=architecture`: 순수 서비스·UI·컨트롤러·외부 IO의 의존 방향 검사.
+- `yarn test --suite=planner/editor-session`: 네이티브 환경과 무관한 편집 상태 전이, 10,000개 일정에서 snapshot 참조 유지, 중복·역순 이벤트 검사.
+- `yarn benchmark:input`: 입력 경로의 JS 중앙값 비교. 성능 임계치를 테스트에 하드코딩하지 않는다.
+- input.test는 네이티브 이벤트 연결, editor-session.test는 편집 규칙, data/controller.test는 지연 직렬화와 실제 저장 순서를 각각 검증한다.

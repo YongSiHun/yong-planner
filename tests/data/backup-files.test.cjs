@@ -27,7 +27,7 @@ mock('expo-file-system', {
   },
   Paths: {},
 });
-const { chooseBackup } = require('../../src/services/export/files.ts');
+const { chooseBackup } = require('../../src/data/export/files.ts');
 const { createBackup, MAX_BACKUP_BYTES } = require('../../src/services/backup/index.ts');
 const { emptyData } = require('../../src/features/planner/types/index.ts');
 const { zipJson } = require('../../src/services/backup/zip.ts');

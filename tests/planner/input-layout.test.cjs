@@ -1,4 +1,4 @@
-﻿const { assert, test } = require('../support/test.cjs');
+const { assert, test } = require('../support/test.cjs');
 const {
   hooks,
   changeInput,
@@ -83,4 +83,26 @@ test('initial editor chooses one chip or creates a slot without exposing other t
     text: '',
     caret: 0,
   });
+});
+
+test('editing adds one visual line break immediately after the input, with following chips in row flow', () => {
+  const editor = renderInput('회의,운동,식사', 1);
+  const children = editor.tree.props.children;
+  const index = children.findIndex((node) => node.type === 'TextInput');
+  assert.equal(index, 1);
+  assert.equal(children[index + 1].key, 'editor-break');
+  assert.equal(children[index + 1].props.style.flexBasis, '100%');
+  assert.equal(children[index + 1].props.style.height, 0);
+  assert.equal(editor.tree.props.style.flexDirection, 'row');
+  assert.equal(editor.tree.props.style.flexWrap, 'wrap');
+  assert.equal(state.nativeText, '운동');
+  assert.deepEqual(state.saved, []);
+});
+
+test('the final input does not add a trailing empty layout row', () => {
+  const editor = renderInput('회의,운동', 1);
+  assert.equal(
+    find(editor.tree, (node) => node.key === 'editor-break'),
+    undefined,
+  );
 });

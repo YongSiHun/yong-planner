@@ -1,4 +1,4 @@
-﻿const { assert, test, beforeEach } = require('../support/test.cjs');
+const { assert, test, beforeEach } = require('../support/test.cjs');
 const { centeredDateOffset } = require('../../src/features/planner/services/navigation.ts');
 const { createHookHarness } = require('../support/hooks.cjs');
 const { createModuleMock } = require('../support/mock-module.cjs');

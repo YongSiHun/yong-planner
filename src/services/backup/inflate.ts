@@ -1,3 +1,5 @@
+import { MAX_BACKUP_BYTES } from './limits';
+import { ensureValid } from './readers';
 import { lengths, lengthBits, distances, distanceBits, fixedLengths } from './deflateTables';
 import { Reader, tree, symbol, type Tree } from './huffman';
 
@@ -178,6 +180,10 @@ function block(reader: Reader, output: Output): boolean {
 }
 
 export function inflate(input: Uint8Array, expectedSize: number): Uint8Array {
+  const bounded =
+    Number.isSafeInteger(expectedSize) && expectedSize >= 0 && expectedSize <= MAX_BACKUP_BYTES;
+
+  ensureValid(bounded, '압축 해제 크기는 0~50MB 범위의 정수여야 합니다.');
   const output = new Output(expectedSize);
   const reader = new Reader(input);
   let final = false;

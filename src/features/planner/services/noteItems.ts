@@ -1,3 +1,4 @@
+import { timeChangeClearsAlarm } from './alarms';
 import type { DailyPlanItem, DailyPlanOrder, PlannerData } from '../types';
 import { reconcileOrder } from './order';
 import { dailyItemsForDate } from './plans';
@@ -68,14 +69,17 @@ export function applyDailyNote(
 
   const preserved = preserveNoteItems(existing, contents);
   const latest = latestForNewItems(data, preserved);
-  const items = contents.map((content, index) => ({
-    ...preserved[index],
-    id: preserved[index]?.id ?? createId(),
-    date,
-    content,
-    ...parsedTime(parsed[index]!.time, replaceTimes),
-    createdAt: preserved[index]?.createdAt ?? new Date(latest + index + 1).toISOString(),
-  }));
+  const items = contents.map((content, index) =>
+    updatedNote(
+      preserved[index],
+      date,
+      content,
+      parsed[index]!.time,
+      replaceTimes,
+      createId,
+      latest + index + 1,
+    ),
+  );
   const previousOrder = data.dailyPlanOrders.find((order) => order.date === date)?.itemIds ?? [];
   const itemIds = mergeNoteOrder(
     previousOrder,
@@ -127,15 +131,21 @@ function matchesSavedNote(
 function parsedTime(
   time: string | undefined,
   replaceTimes: boolean,
+  previous?: DailyPlanItem,
 ): { time?: string | null; alarm?: undefined } {
   const clearTime = replaceTimes && time === undefined;
 
   if (clearTime) {
     return { time: null, alarm: undefined };
   }
-  const hasTime = time !== undefined;
+  const missingTime = time === undefined;
 
-  return hasTime ? { time } : {};
+  if (missingTime) {
+    return {};
+  }
+  const clearAlarm = timeChangeClearsAlarm(previous ?? {}, time ?? null);
+
+  return { time, ...(clearAlarm ? { alarm: undefined } : {}) };
 }
 
 function latestForNewItems(data: PlannerData, preserved: (DailyPlanItem | undefined)[]): number {
@@ -205,4 +215,30 @@ function committedOrder(
   const unchanged = itemIds.length === order.itemIds.length;
 
   return unchanged ? order : { ...order, itemIds };
+}
+
+function updatedNote(
+  previous: DailyPlanItem | undefined,
+  date: string,
+  content: string,
+  time: string | undefined,
+  replaceTimes: boolean,
+  createId: () => string,
+  timestamp: number,
+): DailyPlanItem {
+  const unchanged =
+    previous !== undefined && matchesSavedNote(previous, content, time, replaceTimes);
+
+  if (unchanged) {
+    return previous;
+  }
+
+  return {
+    ...previous,
+    id: previous?.id ?? createId(),
+    date,
+    content,
+    ...parsedTime(time, replaceTimes, previous),
+    createdAt: previous?.createdAt ?? new Date(timestamp).toISOString(),
+  };
 }

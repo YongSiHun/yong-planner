@@ -3,11 +3,12 @@ import { fitsUtf8Limit } from '../../utils/utf8';
 import type { PlannerData } from '../../features/planner/types';
 import { backupMonth, monthData, type PlannerBackup } from './month';
 import { ensureValid, readRecord, readTimestamp, validateData } from './validation';
+
+import { MAX_BACKUP_BYTES } from './limits';
 export { mergeMonthBackup, type PlannerBackup } from './month';
 
 export { validateData } from './validation';
-
-export const MAX_BACKUP_BYTES = 50 * 1024 * 1024;
+export { MAX_BACKUP_BYTES } from './limits';
 
 export function parseBackup(json: string): PlannerBackup {
   const hasValidSize = fitsUtf8Limit(json, MAX_BACKUP_BYTES);

@@ -126,3 +126,26 @@ test('multiline chips retain their line breaks through save and reopening', () =
   assert.deepEqual(read(data), ['회의\n안건 정리', '운동']);
   assert.equal(applyDailyNote(data, date, text, createId), data);
 });
+
+test('unchanged siblings retain references while editing one schedule', () => {
+  const original = applyDailyNote(emptyData(), date, '회의,운동,독서', createId);
+  const before = dailyNoteItems(original, date);
+  const next = applyDailyNote(original, date, '회의,산책,독서', createId);
+  const after = dailyNoteItems(next, date);
+  assert.equal(after[0], before[0]);
+  assert.equal(after[2], before[2]);
+  assert.notEqual(after[1], before[1]);
+});
+
+test('inline nonempty time changes clear alarms while unrelated timed chips retain theirs', () => {
+  let data = applyDailyNote(emptyData(), date, '13:00 회의,18:00 운동', createId, true);
+  data = { ...data, dailyPlanItems: data.dailyPlanItems.map((item) => ({ ...item, alarm: true })) };
+  const before = dailyNoteItems(data, date);
+  const after = dailyNoteItems(
+    applyDailyNote(data, date, '14:00 회의,18:00 운동', createId, true),
+    date,
+  );
+  assert.equal(after[0].alarm, undefined);
+  assert.equal(after[1].alarm, true);
+  assert.equal(after[1], before[1]);
+});

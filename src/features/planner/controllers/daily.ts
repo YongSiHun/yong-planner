@@ -12,7 +12,19 @@ export function saveDailyNote(date: string, text: string, replaceTimes = false):
   updatePlanner(dailyNoteChange(date, text, replaceTimes));
 }
 
-export function stageDailyNote(date: string, text: string, replaceTimes = false): void {
+export function stageDailyNote(
+  date: string,
+  text: string | (() => string),
+  replaceTimes = false,
+): void {
+  const deferred = typeof text === 'function';
+
+  if (deferred) {
+    parseDate(date);
+    stagePlannerChange(date, (data) => dailyNoteChange(date, text(), replaceTimes)(data));
+
+    return;
+  }
   stagePlannerChange(date, dailyNoteChange(date, text, replaceTimes));
 }
 

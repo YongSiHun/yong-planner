@@ -243,6 +243,34 @@ module.exports = defineConfig([
     },
   },
   {
+    files: ['src/features/**/services/**/*.ts', 'src/services/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                'react',
+                'react-native',
+                'expo-*',
+                '**/components/**',
+                '**/screens/**',
+                '**/hooks/**',
+                '**/controllers/**',
+                '**/stores/**',
+                '**/database/**',
+                '**/data/**',
+              ],
+              allowTypeImports: true,
+              message: '순수 업무 규칙은 UI·상태 저장소·외부 IO에 의존하지 않습니다.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/stores/**/*.ts'],
     rules: {
       'no-restricted-imports': [

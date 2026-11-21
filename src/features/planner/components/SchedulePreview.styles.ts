@@ -9,22 +9,10 @@ export const emptyPreview = {
 export const preview = {
   flexDirection: 'row',
   flexWrap: 'wrap',
+  alignItems: 'flex-start',
   gap: 6,
   paddingVertical: 4,
 } as const;
-
-export function previewLayout(column: boolean) {
-  if (column) {
-    return {
-      ...preview,
-      flexDirection: 'column',
-      flexWrap: 'nowrap',
-      alignItems: 'flex-start',
-    } as const;
-  }
-
-  return preview;
-}
 
 export function chipWrapper(draggingIndex: number | null | undefined, index: number) {
   return { maxWidth: '100%', flexShrink: 1, opacity: draggingIndex === index ? 0.35 : 1 } as const;

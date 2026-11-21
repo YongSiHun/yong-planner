@@ -1,5 +1,3 @@
-import type { NotificationResponse } from 'expo-notifications';
-import { NOTIFICATION_PREFIX } from '../services/plan';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import { router, useRootNavigationState, useNavigationContainerRef } from 'expo-router';
@@ -9,8 +7,8 @@ import {
   requestStartupNotificationPermission,
   flushEnabledNotifications,
   startNotificationSync,
+  subscribeNotificationDates,
 } from '../controllers/notifications';
-import { notificationRuntime } from '../data/native';
 
 function openDate(value: unknown): void {
   const text = typeof value === 'string';
@@ -46,7 +44,7 @@ export function useNotificationLifecycle(): void {
         }
       })
       .catch(() => {});
-    let removeResponse: (() => void) | undefined;
+    const stopResponses = subscribeNotificationDates(openDate);
     const subscription = AppState.addEventListener('change', (state) => {
       const active = state === 'active';
 
@@ -58,46 +56,11 @@ export function useNotificationLifecycle(): void {
       void flushEnabledNotifications().catch(() => {});
     });
 
-    void notificationRuntime()
-      .then((native) => {
-        if (disposed) {
-          return;
-        }
-        const handleResponse = (response: NotificationResponse | null) => {
-          const owned = openResponse(response);
-
-          if (owned) {
-            native.clearLastNotificationResponse();
-          }
-        };
-        const listener = native.addNotificationResponseReceivedListener(handleResponse);
-
-        removeResponse = () => listener.remove();
-        handleResponse(native.getLastNotificationResponse());
-      })
-      .catch(() => {});
-
     return () => {
       disposed = true;
       stop();
       subscription.remove();
-      removeResponse?.();
+      stopResponses();
     };
   }, [ready]);
-}
-
-function openResponse(response: NotificationResponse | null): boolean {
-  const hasResponse = response !== null;
-
-  if (!hasResponse) {
-    return false;
-  }
-  const owned = response.notification.request.identifier.startsWith(NOTIFICATION_PREFIX);
-
-  if (!owned) {
-    return false;
-  }
-  openDate(response.notification.request.content.data?.date);
-
-  return true;
 }

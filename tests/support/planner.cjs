@@ -108,7 +108,7 @@ const plannerActions = {
     );
   },
   saveDailyNote: (date, text) => state.saved.push(text),
-  stageDailyNote: (date, text) => state.saved.push(text),
+  stageDailyNote: (date, text) => state.saved.push(typeof text === 'function' ? text() : text),
   commitPlannerChanges() {},
   flush: async () => {
     state.flushes = (state.flushes ?? 0) + 1;
@@ -199,7 +199,7 @@ const { usePlannerGuide } = require('../../src/features/planner/hooks/usePlanner
 
 function renderInput(note = '회의,장보기', initialIndex, onSelect = noop, options = {}) {
   hooks.beginRender();
-  const tree = ScheduleInput({
+  const element = ScheduleInput({
     date: '2026-11-07',
     note,
     initialIndex,
@@ -208,6 +208,7 @@ function renderInput(note = '회의,장보기', initialIndex, onSelect = noop, o
     onInputLayout: noop,
     ...options,
   });
+  const tree = renderInputChildren(element);
   const input = find(tree, (node) => node.type === 'TextInput');
   input.props.ref.current = nativeInput;
   if (state.nativeText === undefined) state.nativeText = input.props.defaultValue ?? '';
@@ -296,3 +297,15 @@ module.exports = {
   renderSelection,
   state,
 };
+
+// Render isolated input leaves in this deterministic harness without expanding ScheduleChip hooks.
+function renderInputChildren(node) {
+  if (!node || typeof node !== 'object') return node;
+  if (Array.isArray(node)) return node.map(renderInputChildren);
+  const component = node.type?.type ?? node.type;
+  if (['ScheduleTextField', 'ScheduleInputChip'].includes(component?.name)) {
+    const rendered = component(node.props);
+    return { ...renderInputChildren(rendered), key: node.key };
+  }
+  return { ...node, props: { ...node.props, children: renderInputChildren(node.props?.children) } };
+}

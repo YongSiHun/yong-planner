@@ -256,3 +256,32 @@ test('a rejected command retains pending input for the next save', async () => {
   await flushPlanner();
   assert.equal(writes.at(-1).dailyPlanItems[0].content, 'keep this draft');
 });
+
+test('draft serialization runs at commit, not on each native keystroke', async () => {
+  const {
+    stageDailyNote,
+    commitPlannerChanges,
+  } = require('../../src/features/planner/controllers/planner.ts');
+  const date = '2026-12-10';
+  let reads = 0;
+  let text = '';
+  for (let count = 1; count <= 100; count++) {
+    text = '가'.repeat(count);
+    stageDailyNote(
+      date,
+      () => {
+        reads++;
+        return text;
+      },
+      true,
+    );
+  }
+  assert.equal(reads, 0);
+  commitPlannerChanges();
+  assert.equal(reads, 1);
+  assert.equal(
+    usePlanner.getState().data.dailyPlanItems.find((item) => item.date === date).content,
+    text,
+  );
+  await flushPlanner();
+});
