@@ -1,4 +1,4 @@
-﻿const { hooks } = require('../support/planner.cjs');
+const { hooks } = require('../support/planner.cjs');
 const { assert, test } = require('../support/test.cjs');
 const {
   DayRow,
@@ -23,7 +23,9 @@ test('blank space opens editing and an existing chip selects that chip', () => {
   hooks.reset();
   const editor = renderInput();
   editor.tree.props.onPress();
-  assert.equal(state.focused, 1);
+  const insertion = renderInput();
+  assert.equal(insertion.input.props.autoFocus, true);
+  assert.notEqual(insertion.input.key, editor.input.key);
 });
 
 test('today empty preview is blank while keeping the row available for editing', () => {

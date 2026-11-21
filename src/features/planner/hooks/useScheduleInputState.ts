@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ComponentRef,
-} from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentRef } from 'react';
 import type { TextInput, TextInputChangeEvent } from 'react-native';
 import { report, showToast } from '../../../components/ui';
 import { normalizeScheduleLineEndings, noteLengthError } from '../../../services/schedule';
@@ -31,6 +24,7 @@ export function useScheduleInputState({
 
     return {
       ...value,
+      session: 0,
       marks: initialScheduleMarks(
         note,
         noteImportant,
@@ -75,17 +69,6 @@ export function useScheduleInputState({
     },
     [finish],
   );
-  useLayoutEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      const untouched = eventCount.current === -1;
-
-      if (untouched) {
-        input.current?.setSelection(initial.caret, initial.caret);
-      }
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [initial]);
 
   function publish(parts: string[]) {
     finalized.current = false;
@@ -94,7 +77,12 @@ export function useScheduleInputState({
 
   function handleChange(event: TextInputChangeEvent) {
     const native = event.nativeEvent;
-    const stale = native.eventCount <= eventCount.current;
+    const stale = isStaleInput(
+      editor.session,
+      current.current.session,
+      native.eventCount,
+      eventCount.current,
+    );
 
     if (stale) {
       return;
@@ -125,6 +113,7 @@ export function useScheduleInputState({
       ...segments.slice(1).map(() => ({ important: false, alarm: false })),
     );
     current.current = {
+      session: current.current.session + Number(split),
       parts: next,
       active: nextActive,
       text: tail,
@@ -134,6 +123,7 @@ export function useScheduleInputState({
     draft.current = tail;
     publish(next);
     if (split) {
+      eventCount.current = -1;
       replace(tail);
       setEditor(current.current);
     } else {
@@ -168,20 +158,27 @@ export function useScheduleInputState({
     }
     const text = next[target] ?? '';
 
-    current.current = { parts: next, active: target, text, caret: text.length, marks: nextMarks };
+    current.current = {
+      parts: next,
+      active: target,
+      text,
+      caret: text.length,
+      marks: nextMarks,
+      session: current.current.session + 1,
+    };
+    eventCount.current = -1;
     draft.current = text;
     publish(next);
     replace(text);
     setEditor(current.current);
-    input.current?.focus();
-    requestAnimationFrame(() => {
-      input.current?.focus();
-      input.current?.setSelection(text.length, text.length);
-      onInputFocus(input.current);
-    });
   }
 
   function handleBlur() {
+    const previousSession = editor.session !== current.current.session;
+
+    if (previousSession) {
+      return;
+    }
     // A chip press in this row can cancel the blur and move the editor first.
     blurFrame.current = requestAnimationFrame(() => {
       blurFrame.current = null;
@@ -198,6 +195,7 @@ export function useScheduleInputState({
     handleChange,
     handleBlur,
     marks: editor.marks,
+    session: editor.session,
     parts: editor.parts,
     active: editor.active,
     activate,
@@ -241,4 +239,8 @@ function initialScheduleMarks(
   }
 
   return items;
+}
+
+function isStaleInput(session: number, currentSession: number, count: number, latest: number) {
+  return session !== currentSession || count <= latest;
 }

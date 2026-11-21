@@ -22,6 +22,7 @@ export function ScheduleInput(props: ScheduleInputProps) {
     active,
     activate,
     marks,
+    session,
   } = useScheduleInputState(props);
 
   return (
@@ -43,7 +44,7 @@ export function ScheduleInput(props: ScheduleInputProps) {
       {parts.map((part, index) =>
         index === active ? (
           <TextInput
-            key="editor"
+            key={'editor-' + session}
             ref={input}
             multiline
             submitBehavior="newline"
@@ -54,6 +55,8 @@ export function ScheduleInput(props: ScheduleInputProps) {
             smartInsertDelete={false}
             defaultValue={initialValue}
             value={nativeValue}
+            onPressIn={(event) => event.stopPropagation()}
+            onTouchEnd={(event) => event.stopPropagation()}
             onChange={handleChange}
             onFocus={() => props.onInputFocus(input.current)}
             onBlur={handleBlur}

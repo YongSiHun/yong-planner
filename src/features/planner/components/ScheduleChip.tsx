@@ -61,7 +61,10 @@ export function ScheduleChip({
       accessibilityLabel={chipAccessibilityLabel(label, important) + (alarm ? ', 알람 설정됨' : '')}
       accessibilityState={{ selected, checked: selected }}
       accessibilityHint="길게 누르면 여러 일정을 선택할 수 있어요."
-      onPress={onPress}
+      onPress={(event) => {
+        event?.stopPropagation();
+        onPress?.();
+      }}
       onLongPress={onLongPress}
       style={chipStyle}
     >
@@ -100,7 +103,10 @@ function ChipEdge({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      onPress={onPress}
+      onPress={(event) => {
+        event?.stopPropagation();
+        onPress?.();
+      }}
       onLongPress={onLongPress}
       hitSlop={2}
       style={styles.chipEdge(side)}

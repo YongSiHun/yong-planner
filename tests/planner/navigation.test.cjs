@@ -1,8 +1,11 @@
-const { assert, test, beforeEach } = require('../support/test.cjs');
+﻿const { assert, test, beforeEach } = require('../support/test.cjs');
 const { centeredDateOffset } = require('../../src/features/planner/services/navigation.ts');
 const { createHookHarness } = require('../support/hooks.cjs');
 const { createModuleMock } = require('../support/mock-module.cjs');
 const hooks = createHookHarness();
+const frames = require('../support/frames.cjs').createAnimationFrames();
+global.requestAnimationFrame = frames.request;
+global.cancelAnimationFrame = frames.cancel;
 const mock = createModuleMock(require);
 mock('react', hooks.react);
 const notices = [];
@@ -15,6 +18,7 @@ function render() {
 }
 beforeEach(() => {
   hooks.reset();
+  frames.reset();
   notices.length = 0;
 });
 
@@ -45,6 +49,7 @@ test('initial navigation waits for row, viewport and content measurements', () =
   controller = render();
   assert.deepEqual(calls, []);
   controller.handleContentSizeChange(320, 1400);
+  frames.flush();
   assert.deepEqual(calls, [{ y: 480, animated: false }]);
   calls.length = 0;
   controller.showDate(target);
@@ -62,6 +67,7 @@ test('month transitions reset old content limits and resize uses the new viewpor
   controller.handleMeasure('2027-02-28', 1188, 44);
   assert.deepEqual(calls, []);
   controller.handleContentSizeChange(320, 1788);
+  frames.flush();
   assert.deepEqual(calls, [{ y: 1068, animated: false }]);
   calls.length = 0;
   controller.handleViewportLayout({ nativeEvent: { layout: { height: 400 } } });
@@ -92,9 +98,39 @@ test('month-end navigation clamps to real content and does not keep snapping bac
   controller = render();
   controller.handleMeasure('2027-02-28', 1188, 44);
   controller.handleContentSizeChange(320, 1308);
+  frames.flush();
   assert.deepEqual(calls.at(-1), { y: 708, animated: false });
   calls.length = 0;
   controller.handleContentSizeChange(320, 1320);
   controller.handleMeasure('2027-02-28', 1200, 44);
+  frames.flush();
+  assert.deepEqual(calls, []);
+});
+
+test('launch waits for the first layout frame and uses the latest measurements for Today', () => {
+  const controller = render();
+  const calls = [];
+  controller.scrollRef.current = { scrollTo: (options) => calls.push(options) };
+  controller.handleViewportLayout({ nativeEvent: { layout: { height: 600 } } });
+  controller.handleMeasure(controller.month, 400, 44);
+  controller.handleContentSizeChange(320, 1000);
+  assert.deepEqual(calls, []);
+  controller.handleMeasure(controller.month, 900, 44);
+  controller.handleContentSizeChange(320, 2000);
+  frames.flush();
+  assert.deepEqual(calls, [{ y: 780, animated: false }]);
+  controller.showDate(controller.month);
+  assert.deepEqual(calls.at(-1), { y: 780, animated: true });
+});
+
+test('unmount cancels pending launch scrolling', () => {
+  const controller = render();
+  const calls = [];
+  controller.scrollRef.current = { scrollTo: (options) => calls.push(options) };
+  controller.handleMeasure(controller.month, 900, 44);
+  controller.handleViewportLayout({ nativeEvent: { layout: { height: 600 } } });
+  controller.handleContentSizeChange(320, 2000);
+  hooks.unmount();
+  frames.flush();
   assert.deepEqual(calls, []);
 });

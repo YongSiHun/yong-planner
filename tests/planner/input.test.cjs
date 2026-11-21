@@ -149,3 +149,62 @@ test('inserting a blank slot retains important and alarm marks on the following 
   assert.equal(chip(editor.tree, '회의').props.important, true);
   assert.equal(chip(editor.tree, '회의').props.alarm, true);
 });
+
+test('late native events after a comma cannot insert the same schedule twice', () => {
+  let editor = renderInput('회의,운동', undefined, undefined, { initialSlot: 1 });
+  const previousInput = editor.input;
+  changeInput(previousInput, '점심,', 10);
+  changeInput(previousInput, '점심,', 11);
+  editor = renderInput('회의,운동');
+  assert.equal(state.saved.at(-1), '회의,점심,,운동');
+  changeInput(editor.input, '산책', 1);
+  assert.equal(state.saved.at(-1), '회의,점심,산책,운동');
+});
+
+test('late native events after moving the insertion point cannot duplicate the previous draft', () => {
+  let editor = renderInput('회의,운동', undefined, undefined, { initialSlot: 1 });
+  changeInput(editor.input, '점심', 10);
+  const previousInput = editor.input;
+  chip(editor.tree, '운동').props.onBefore();
+  changeInput(previousInput, '점심', 11);
+  editor = renderInput('회의,운동');
+  assert.equal(state.nativeText, '');
+  changeInput(editor.input, '산책', 1);
+  assert.equal(state.saved.at(-1), '회의,점심,산책,운동');
+});
+
+test('unmount blur from a replaced native editor cannot close the new insertion', () => {
+  let closed = 0;
+  let editor = renderInput('회의,운동', undefined, undefined, {
+    initialSlot: 1,
+    onBlur: () => closed++,
+  });
+  const previousInput = editor.input;
+  changeInput(previousInput, '점심,', 10);
+  previousInput.props.onBlur();
+  editor = renderInput('회의,운동', undefined, undefined, { onBlur: () => closed++ });
+  flushFrames();
+  assert.equal(closed, 0);
+  changeInput(editor.input, '산책', 1);
+  assert.equal(state.saved.at(-1), '회의,점심,산책,운동');
+});
+
+test('opening or switching an editor does not overwrite the native cursor after a tap', () => {
+  let editor = renderInput('회의,운동', 0);
+  flushFrames();
+  assert.deepEqual(state.selections, []);
+  chip(editor.tree, '운동').props.onPress();
+  editor = renderInput('회의,운동');
+  flushFrames();
+  assert.deepEqual(state.selections, []);
+  assert.equal(editor.input.props.selection, undefined);
+});
+
+test('touching editable text stays within native input and cannot open an insertion', () => {
+  const editor = renderInput('회의,운동', 0);
+  let stopped = 0;
+  editor.input.props.onPressIn({ stopPropagation: () => stopped++ });
+  editor.input.props.onTouchEnd({ stopPropagation: () => stopped++ });
+  assert.equal(stopped, 2);
+  assert.deepEqual(state.saved, []);
+});

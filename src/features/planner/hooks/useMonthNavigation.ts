@@ -1,5 +1,5 @@
 import { showToast } from '../../../components/ui';
-import { useCallback, useRef, useState, type ComponentRef } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentRef } from 'react';
 import type { LayoutChangeEvent, ScrollView } from 'react-native';
 import { safeShiftMonth, today } from '../../../utils/date';
 import { centeredDateOffset } from '../services/navigation';
@@ -15,12 +15,16 @@ export function useMonthNavigation() {
   const positions = useRef(new Map<string, RowPosition>());
   const viewportHeight = useRef(0);
   const contentHeight = useRef(0);
+  const navigationFrame = useRef<number | null>(null);
   const pendingDate = useRef<string | null>(today());
 
   const scrollToDate = useCallback((date: string, animated = true) => {
     const position = positions.current.get(date);
     const hasLayout =
-      position !== undefined && viewportHeight.current > 0 && contentHeight.current > 0;
+      position !== undefined &&
+      viewportHeight.current > 0 &&
+      contentHeight.current > 0 &&
+      scrollRef.current !== null;
 
     if (!hasLayout) {
       return;
@@ -39,13 +43,38 @@ export function useMonthNavigation() {
   }, []);
 
   const finishPendingNavigation = useCallback(() => {
-    const date = pendingDate.current;
-    const hasPendingDate = date !== null;
+    const hasPendingDate = pendingDate.current !== null;
 
-    if (hasPendingDate) {
-      scrollToDate(date, false);
+    if (!hasPendingDate) {
+      return;
     }
+    const hasFrame = navigationFrame.current !== null;
+
+    if (hasFrame) {
+      cancelAnimationFrame(navigationFrame.current!);
+    }
+    // Initial native layout must finish before scrolling, just like a later Today tap.
+    navigationFrame.current = requestAnimationFrame(() => {
+      navigationFrame.current = null;
+      const date = pendingDate.current;
+      const hasDate = date !== null;
+
+      if (hasDate) {
+        scrollToDate(date, false);
+      }
+    });
   }, [scrollToDate]);
+
+  useEffect(
+    () => () => {
+      const hasFrame = navigationFrame.current !== null;
+
+      if (hasFrame) {
+        cancelAnimationFrame(navigationFrame.current!);
+      }
+    },
+    [],
+  );
 
   function showDate(date: string) {
     pendingDate.current = date;
