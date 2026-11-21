@@ -52,6 +52,9 @@ jobs:
           distribution: temurin
           java-version: 25
 
+      - name: setup-android-sdk
+        uses: android-actions/setup-android@v4
+
       - name: install-android-sdk
         run: sdkmanager "platforms;android-37" "build-tools;37.0.0"
 
